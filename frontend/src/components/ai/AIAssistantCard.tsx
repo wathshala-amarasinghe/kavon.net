@@ -1,0 +1,62 @@
+"use client";
+
+import React from 'react';
+import { useCart } from "@/context/CartContext";
+import { ShoppingBag, ArrowRight } from "lucide-react";
+import toast from "react-hot-toast";
+import { useRouter } from 'next/navigation';
+import { Product } from '@/data/products';
+
+export function AIAssistantCard({ product, closeChat }: { product: Product, closeChat: () => void }) {
+    const { addToCart } = useCart();
+    const router = useRouter();
+
+    const handleQuickAdd = () => {
+        // Safe size selection: try index 1 (Medium), fallback to index 0, then "M"
+        const defaultSize = product.sizes && product.sizes.length > 0 
+            ? (product.sizes[1]?.label || product.sizes[0].label) 
+            : "M";
+
+        addToCart({
+            ...product,
+            quantity: 1,
+            size: defaultSize,
+            image: product.image
+        });
+        toast.success(`${product.name} ADDED TO ARCHIVE`);
+    };
+
+    const handleView = () => {
+        router.push(`/products/${product._id || product.id}`);
+        closeChat();
+    };
+
+    return (
+        <div className="bg-white/5 border border-white/10 p-3 flex gap-4 my-3 group transition-all hover:border-brand-volt/50 rounded-sm">
+            <div className="w-20 h-24 bg-black shrink-0 overflow-hidden rounded-sm">
+                { }
+<img src={product.image} className="w-full h-full object-cover grayscale group-hover:grayscale-0" alt="" />
+            </div>
+            <div className="flex-1 flex flex-col justify-between py-0.5">
+                <div>
+                    <h4 className="text-[12px] font-semibold leading-snug text-white/90 line-clamp-2">{product.name}</h4>
+                    <p className="text-[11px] font-medium text-brand-volt mt-1">LKR {product.price.toLocaleString()}</p>
+                </div>
+                <div className="flex gap-3 mt-2">
+                    <button
+                        onClick={handleQuickAdd}
+                        className="bg-brand-volt text-black text-[10px] font-bold px-3 py-1.5 uppercase flex items-center gap-1.5 hover:brightness-110 rounded-sm transition-all"
+                    >
+                        <ShoppingBag size={12} /> Add
+                    </button>
+                    <button
+                        onClick={handleView}
+                        className="text-white/60 hover:text-white text-[10px] uppercase font-medium flex items-center gap-1 transition-colors"
+                    >
+                        View <ArrowRight size={12} />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -1,0 +1,255 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 247, 247, 247;
+  --background-start-rgb: 5, 5, 5;
+  --background-end-rgb: 5, 5, 5;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: #050505;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .tactical-glass {
+    @apply bg-white/[0.02] border border-white/5 backdrop-blur-md;
+  }
+
+  /* Custom Typography System */
+  .text-hero-xl {
+    font-family: var(--font-heading);
+    font-size: 48px;
+    line-height: 50px;
+    font-weight: 800;
+  }
+  @media (min-width: 768px) {
+    .text-hero-xl {
+      font-size: 72px;
+      line-height: 76px;
+    }
+  }
+
+  .text-hero {
+    font-family: var(--font-heading);
+    font-size: 48px;
+    line-height: 50px;
+    font-weight: 800;
+  }
+  @media (min-width: 768px) {
+    .text-hero {
+      font-size: 60px;
+      line-height: 64px;
+    }
+  }
+
+  .text-page-title {
+    font-family: var(--font-heading);
+    font-size: 36px;
+    line-height: 40px;
+    font-weight: 700;
+  }
+  @media (min-width: 768px) {
+    .text-page-title {
+      font-size: 44px;
+      line-height: 50px;
+    }
+  }
+
+  .text-section-title {
+    font-family: var(--font-heading);
+    font-size: 28px;
+    line-height: 34px;
+    font-weight: 700;
+  }
+  @media (min-width: 768px) {
+    .text-section-title {
+      font-size: 32px;
+      line-height: 38px;
+    }
+  }
+
+  .text-card-title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: 600;
+  }
+  @media (min-width: 768px) {
+    .text-card-title {
+      font-size: 24px;
+      line-height: 30px;
+    }
+  }
+
+  .text-small-heading {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 600;
+  }
+  @media (min-width: 768px) {
+    .text-small-heading {
+      font-size: 20px;
+      line-height: 26px;
+    }
+  }
+
+  .text-large-body {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+  }
+  @media (min-width: 768px) {
+    .text-large-body {
+      line-height: 26px;
+    }
+  }
+
+  .text-normal-body {
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 22px;
+    font-weight: 400;
+  }
+
+  .text-small-body {
+    font-family: var(--font-body);
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 400;
+  }
+
+  .text-navigation {
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+  }
+  @media (min-width: 768px) {
+    .text-navigation {
+      font-size: 12px;
+      line-height: 16px;
+    }
+  }
+
+  .text-button {
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+  }
+  @media (min-width: 768px) {
+    .text-button {
+      font-size: 12px;
+      line-height: 16px;
+    }
+  }
+
+  .text-form-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    line-height: 14px;
+    font-weight: 700;
+  }
+
+  .text-product-name {
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+  }
+  @media (min-width: 768px) {
+    .text-product-name {
+      font-size: 14px;
+      line-height: 20px;
+    }
+  }
+
+  .text-product-price {
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 500;
+  }
+  @media (min-width: 768px) {
+    .text-product-price {
+      font-size: 14px;
+      line-height: 20px;
+    }
+  }
+
+  .text-large-product-price {
+    font-family: var(--font-body);
+    font-size: 20px;
+    line-height: 26px;
+    font-weight: 600;
+  }
+
+  .text-badge {
+    font-family: var(--font-body);
+    font-size: 9px;
+    line-height: 12px;
+    font-weight: 700;
+  }
+
+  .text-caption {
+    font-family: var(--font-body);
+    font-size: 10px;
+    line-height: 15px;
+    font-weight: 500;
+  }
+
+  /* Layout & Component Dimensions */
+  .btn-h {
+    height: 52px;
+  }
+  @media (min-width: 768px) {
+    .btn-h {
+      height: 48px;
+    }
+  }
+
+  .input-h {
+    height: 52px;
+  }
+  @media (min-width: 768px) {
+    .input-h {
+      height: 48px;
+    }
+  }
+
+  .nav-h {
+    height: 64px;
+  }
+  @media (min-width: 768px) {
+    .nav-h {
+      height: 80px;
+    }
+  }
+
+  .card-radius {
+    border-radius: 2px;
+  }
+}
+
+/* Hide spin buttons on number inputs */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
