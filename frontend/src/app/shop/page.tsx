@@ -54,10 +54,14 @@ function ShopContent() {
                 };
                 
                 const data = await getProducts(params);
-                setProducts(data.products);
-                setTotalPages(data.pages);
-                setTotalItems(data.total);
-                syncInventory(data.products);
+                const safeProducts = Array.isArray(data?.products) ? data.products : [];
+                const safePages = Number.isFinite(Number(data?.pages)) ? Number(data.pages) : 0;
+                const safeTotal = Number.isFinite(Number(data?.total)) ? Number(data.total) : safeProducts.length;
+
+                setProducts(safeProducts);
+                setTotalPages(safePages);
+                setTotalItems(safeTotal);
+                syncInventory(safeProducts);
             } catch (error) {
                 console.error("CATALOG_SYNC_FAILURE:", error);
             } finally {

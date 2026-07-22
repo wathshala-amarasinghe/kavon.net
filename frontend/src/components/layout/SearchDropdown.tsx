@@ -67,7 +67,7 @@ export function SearchDropdown({ query, results, close }: { query: string, resul
                                         <Highlight text={product.category} query={query} />
                                     </span>
                                     <span className="text-[12px] font-mono text-[#df0715ff]/80 uppercase">
-                                        REF: {(product._id || product.id).toString().slice(-6).toUpperCase()}
+                                        REF: {String(product._id || product.id || "UNKNOWN").slice(-6).toUpperCase()}
                                     </span>
                                 </div>
                             </div>

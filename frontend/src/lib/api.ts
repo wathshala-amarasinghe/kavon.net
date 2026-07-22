@@ -1,5 +1,15 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+const EMPTY_PRODUCT_RESPONSE = {
+  products: [],
+  total: 0,
+  page: 1,
+  pages: 0,
+  // Keep the legacy names too so every existing caller receives safe values.
+  totalPages: 0,
+  currentPage: 1,
+};
+
 export async function getProducts(params: Record<string, unknown> = {}) {
   try {
     const query = new URLSearchParams();
@@ -13,14 +23,31 @@ export async function getProducts(params: Record<string, unknown> = {}) {
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      return { products: [], totalPages: 0, currentPage: 1 };
-    }
+    if (!res.ok) return EMPTY_PRODUCT_RESPONSE;
 
-    return res.json();
+    const raw = await res.json();
+    const data = raw && typeof raw === "object" ? raw : {};
+    const products = Array.isArray(data.products) ? data.products : [];
+    const total = Number.isFinite(Number(data.total)) ? Number(data.total) : products.length;
+    const page = Number.isFinite(Number(data.page ?? data.currentPage))
+      ? Number(data.page ?? data.currentPage)
+      : 1;
+    const pages = Number.isFinite(Number(data.pages ?? data.totalPages))
+      ? Number(data.pages ?? data.totalPages)
+      : 0;
+
+    return {
+      ...data,
+      products,
+      total,
+      page,
+      pages,
+      totalPages: pages,
+      currentPage: page,
+    };
   } catch (error) {
     console.warn("API_FETCH_ERROR [getProducts]:", error);
-    return { products: [], totalPages: 0, currentPage: 1 };
+    return EMPTY_PRODUCT_RESPONSE;
   }
 }
 

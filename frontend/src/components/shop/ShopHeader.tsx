@@ -13,6 +13,8 @@ interface ShopHeaderProps {
 
 export function ShopHeader({ resultCount, sortOption, setSortOption, searchQuery, setSearchQuery, viewMode, setViewMode, onOpenFilters }: ShopHeaderProps) {
 
+    const safeResultCount = Number.isFinite(resultCount) ? resultCount : 0;
+
     return (
         <header className="mb-12">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 border-l-2 border-brand-volt pl-8">
@@ -21,7 +23,7 @@ export function ShopHeader({ resultCount, sortOption, setSortOption, searchQuery
                     <h1 className="text-6xl md:text-8xl font-heading italic uppercase tracking-tighter">Shop <span className="text-white/20">Kavon</span></h1>
                 </div>
                 <div className="flex items-center gap-4 md:gap-6 text-[12px] font-mono text-white/30 uppercase tracking-[0.2em]">
-                    <span className="hidden sm:inline">Products: {resultCount.toString().padStart(2, '0')}</span>
+                    <span className="hidden sm:inline">Products: {safeResultCount.toString().padStart(2, '0')}</span>
                     
                     {/* Mobile Filter Trigger */}
                     <button 

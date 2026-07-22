@@ -24,6 +24,8 @@ export function FilterBar({
     setSortOption,
     resultCount,
 }: FilterBarProps) {
+    const safeResultCount = Number.isFinite(resultCount) ? resultCount : 0;
+
     const sortOptions = [
         { label: "Latest Arrivals", value: "latest" },
         { label: "Price: Low to High", value: "price_asc" },
@@ -117,7 +119,7 @@ export function FilterBar({
                 <div className="hidden sm:block h-8 w-[1px] bg-white/10 mx-2" />
 
                 <div className="hidden sm:flex items-center gap-2 font-mono text-[9px] text-white/30 uppercase tracking-[0.4em]">
-                    {`Showing_${resultCount.toString().padStart(2, "0")}_Assets`}
+                    {`Showing_${safeResultCount.toString().padStart(2, "0")}_Assets`}
                 </div>
             </div>
         </div>
