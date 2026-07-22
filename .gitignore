@@ -23,3 +23,5 @@ Thumbs.db
 # Linting logs
 frontend/lint_errors.txt
 frontend/lint_output*.txt
+.vercel
+.env*
