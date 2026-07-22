@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useCurrency } from '@/context/CurrencyContext';
+import { PRODUCT_CATEGORIES } from '@/lib/catalog';
 
 interface FiltersSidebarProps {
     activeCategory: string;
@@ -14,6 +15,7 @@ interface FiltersSidebarProps {
     toggleColor: (color: string) => void;
     priceMax: number;
     setPriceMax: (val: number) => void;
+    priceFilterActive?: boolean;
     inStockOnly: boolean;
     setInStockOnly: (val: boolean) => void;
     clearAll: () => void;
@@ -25,11 +27,11 @@ export const FiltersSidebar = ({
     activeGender, setActiveGender,
     activeSizes, toggleSize,
     activeColors, toggleColor,
-    priceMax, setPriceMax,
+    priceMax, setPriceMax, priceFilterActive = true,
     inStockOnly, setInStockOnly,
     clearAll, hasActiveFilters
 }: FiltersSidebarProps) => {
-    const categories = ["All", "Oversized", "Streetwear", "Limited"];
+    const categories = ["All", ...PRODUCT_CATEGORIES];
     const sizes = ["S", "M", "L", "XL", "XXL"];
     const colors = [
         { name: "Phantom Black", hex: "#000000" },
@@ -88,9 +90,19 @@ export const FiltersSidebar = ({
             <div>
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-[11px] font-mono tracking-[0.4em] text-white/60 uppercase">PRICE LIMIT</h3>
-                    <span className="text-brand-volt font-mono text-[12px] font-bold">{formatPrice(priceMax)}</span>
+                    <span className="text-brand-volt font-mono text-[12px] font-bold">
+                        {priceFilterActive ? formatPrice(priceMax) : 'ANY'}
+                    </span>
                 </div>
-                <input type="range" min="3000" max="30000" step="500" value={priceMax} onChange={(e) => setPriceMax(parseInt(e.target.value))} className="w-full h-1 bg-white/10 appearance-none cursor-pointer accent-brand-volt" />
+                <input
+                    type="range"
+                    min="3000"
+                    max="100000"
+                    step="1000"
+                    value={priceFilterActive ? priceMax : 100000}
+                    onChange={(e) => setPriceMax(parseInt(e.target.value))}
+                    className="w-full h-1 bg-white/10 appearance-none cursor-pointer accent-brand-volt"
+                />
             </div>
 
             <div className="pt-6 border-t border-white/5">

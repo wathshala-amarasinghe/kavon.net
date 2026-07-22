@@ -11,6 +11,7 @@ import { useCurrency } from '@/context/CurrencyContext';
 import { products } from '@/data/products';
 import { SearchDropdown } from './SearchDropdown';
 import { MiniCart } from './MiniCart';
+import { COLLECTION_NAV_LINKS } from '@/lib/catalog';
 import toast from 'react-hot-toast';
 import {
     Search,
@@ -110,14 +111,7 @@ export function Navbar() {
         { 
             name: 'Collections', 
             href: '/shop', 
-            dropdown: [
-                { name: 'Shop All', href: '/shop' },
-                { name: 'New Drops', href: '/shop?isNewDrop=true' },
-                { name: 'Oversized', href: '/shop?category=Oversized' },
-                { name: 'Essentials', href: '/shop?category=Essentials' },
-                { name: 'Limited Edition', href: '/shop?category=Limited Edition' },
-                { name: 'Best Sellers', href: '/shop?isBestSeller=true' },
-            ]
+            dropdown: COLLECTION_NAV_LINKS
         },
         { name: 'Tracking', href: '/order-track' },
         { name: 'About', href: '/about' },

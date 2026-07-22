@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { PRODUCT_CATEGORIES } from "../constants/catalog";
 
 export interface IProduct extends Document {
     name: string;
@@ -20,7 +21,12 @@ const ProductSchema: Schema = new Schema(
         name: { type: String, required: true },
         description: { type: String, required: true },
         price: { type: Number, required: true },
-        category: { type: String, required: true },
+        category: {
+            type: String,
+            required: true,
+            enum: PRODUCT_CATEGORIES,
+            trim: true,
+        },
         gender: { type: String, enum: ['Men', 'Women', 'Child', 'Unisex'], default: 'Unisex' },
         images: { type: [String], required: true },
         colors: { type: [{ name: String, hex: String, img: String }], default: [] },

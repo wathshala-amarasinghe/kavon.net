@@ -39,7 +39,10 @@ router.post("/", protect, admin, async (req, res) => {
 // @access  Private/Admin
 router.put("/:id", protect, admin, async (req, res) => {
     try {
-        const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+            runValidators: true,
+        });
         if (product) {
             res.json(product);
         } else {
@@ -95,7 +98,8 @@ router.get("/", async (req, res) => {
             sizes, 
             colors,
             isNewDrop,
-            isBestSeller
+            isBestSeller,
+            inStock
         } = req.query;
 
         const query: any = {};
@@ -139,6 +143,10 @@ router.get("/", async (req, res) => {
 
         if (isBestSeller === 'true') {
             query.salesCount = { $gt: 0 }; // Temporarily lowering to show items easily
+        }
+
+        if (inStock === 'true') {
+            query.stock = { $gt: 0 };
         }
 
         // 4. Sorting Logic

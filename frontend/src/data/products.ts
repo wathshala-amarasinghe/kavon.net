@@ -50,7 +50,7 @@ export const products: Product[] = [
         name: "VOID HOODIE // ARCHIVE",
         price: 12500,
         oldPrice: 28000,
-        category: "Limited",
+        category: "Limited Edition",
         image: "/images/products/product_8.jpeg",
         images: ["/images/products/product_8.jpeg", "/images/products/product_1.jpeg"],
         tag: "LIMITED",

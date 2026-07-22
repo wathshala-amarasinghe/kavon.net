@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { COLLECTION_NAV_LINKS } from '@/lib/catalog';
 import {
     Instagram,
     Twitter,
@@ -54,14 +55,7 @@ export function Footer() {
     ];
 
     // Archive Protocol Links
-    const archiveLinks = [
-        { name: 'Shop All', href: '/shop' },
-        { name: 'New Drops', href: '/shop?isNewDrop=true' },
-        { name: 'Oversized', href: '/shop?category=Oversized' },
-        { name: 'Essentials', href: '/shop?category=Essentials' },
-        { name: 'Limited Edition', href: '/shop?category=Limited Edition' },
-        { name: 'Best Sellers', href: '/shop?isBestSeller=true' },
-    ];
+    const archiveLinks = COLLECTION_NAV_LINKS;
 
     // Support Protocol Links
     const supportLinks = [

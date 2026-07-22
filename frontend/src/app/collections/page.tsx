@@ -15,7 +15,8 @@ export default function CollectionsPage() {
     const [activeGender, setActiveGender] = useState("All");
     const [activeSizes, setActiveSizes] = useState<string[]>([]);
     const [activeColors, setActiveColors] = useState<string[]>([]);
-    const [priceMax, setPriceMax] = useState<number>(30000);
+    const [priceMax, setPriceMax] = useState<number>(100000);
+    const [priceFilterActive, setPriceFilterActive] = useState(false);
     const [sortOption, setSortOption] = useState("latest");
     const [inStockOnly, setInStockOnly] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -30,7 +31,7 @@ export default function CollectionsPage() {
         const fetchAll = async () => {
             try {
                 const { getProducts } = await import("@/lib/api");
-                const data = await getProducts();
+                const data = await getProducts({ limit: 1000 });
                 setAllProducts(data.products || []);
             } catch (error) {
                 console.error("Failed to fetch products:", error);
@@ -61,12 +62,13 @@ export default function CollectionsPage() {
         setActiveGender("All");
         setActiveSizes([]);
         setActiveColors([]);
-        setPriceMax(30000);
+        setPriceMax(100000);
+        setPriceFilterActive(false);
         setInStockOnly(false);
         setCurrentPage(1);
     };
 
-    const hasActiveFilters = activeCategory !== "All" || activeGender !== "All" || activeSizes.length > 0 || activeColors.length > 0 || inStockOnly || priceMax < 30000;
+    const hasActiveFilters = activeCategory !== "All" || activeGender !== "All" || activeSizes.length > 0 || activeColors.length > 0 || inStockOnly || priceFilterActive;
     const ITEMS_PER_PAGE = 15;
 
     // Filter and Sort Logic
@@ -76,7 +78,7 @@ export default function CollectionsPage() {
             const matchesGender = activeGender === "All" || product.gender === activeGender;
             const matchesSize = activeSizes.length === 0 || product.sizes?.some((s: { label: string }) => activeSizes.includes(s.label));
             const matchesColor = activeColors.length === 0 || product.colors?.some((c: { name: string }) => activeColors.includes(c.name));
-            const matchesPrice = product.price <= priceMax;
+            const matchesPrice = !priceFilterActive || product.price <= priceMax;
             const matchesStock = inStockOnly ? (product.stock ?? 0) > 0 : true;
             const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -90,7 +92,7 @@ export default function CollectionsPage() {
         }
 
         return result;
-    }, [activeCategory, activeSizes, activeColors, priceMax, sortOption, inStockOnly, searchQuery, allProducts]);
+    }, [activeCategory, activeGender, activeSizes, activeColors, priceMax, priceFilterActive, sortOption, inStockOnly, searchQuery, allProducts]);
 
     // Pagination Logic
     const totalPages = Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE);
@@ -158,7 +160,8 @@ export default function CollectionsPage() {
                         activeColors={activeColors}
                         toggleColor={toggleColor}
                         priceMax={priceMax}
-                        setPriceMax={(val: number) => { setPriceMax(val); setCurrentPage(1); }}
+                        priceFilterActive={priceFilterActive}
+                        setPriceMax={(val: number) => { setPriceMax(val); setPriceFilterActive(true); setCurrentPage(1); }}
                         inStockOnly={inStockOnly}
                         setInStockOnly={(val: boolean) => { setInStockOnly(val); setCurrentPage(1); }}
                         clearAll={clearAll}
@@ -261,7 +264,8 @@ export default function CollectionsPage() {
                                 activeColors={activeColors}
                                 toggleColor={toggleColor}
                                 priceMax={priceMax}
-                                setPriceMax={(val) => { setPriceMax(val); setCurrentPage(1); }}
+                                priceFilterActive={priceFilterActive}
+                                setPriceMax={(val) => { setPriceMax(val); setPriceFilterActive(true); setCurrentPage(1); }}
                                 inStockOnly={inStockOnly}
                                 setInStockOnly={(val) => { setInStockOnly(val); setCurrentPage(1); }}
                                 clearAll={clearAll}

@@ -30,12 +30,16 @@ function ShopContent() {
     const activeGender = searchParams.get("gender") || "All";
     const activeSizes = searchParams.get("sizes")?.split(",") || [];
     const activeColors = searchParams.get("colors")?.split(",") || [];
-    const priceMax = parseInt(searchParams.get("price") || "30000");
+    const priceParam = searchParams.get("price");
+    const priceMax = parseInt(priceParam || "100000");
+    const hasPriceFilter = priceParam !== null;
     const sortOption = searchParams.get("sort") || "latest";
     const viewMode = (searchParams.get("view") as "grid" | "list") || "grid";
     const inStockOnly = searchParams.get("stock") === "true";
     const searchQuery = searchParams.get("q") || "";
     const currentPage = parseInt(searchParams.get("page") || "1");
+    const isNewDrop = searchParams.get("isNewDrop") === "true";
+    const isBestSeller = searchParams.get("isBestSeller") === "true";
 
     useEffect(() => {
         const fetchFiltered = async () => {
@@ -46,11 +50,14 @@ function ShopContent() {
                     gender: activeGender,
                     sizes: activeSizes.join(","),
                     colors: activeColors.join(","),
-                    maxPrice: priceMax,
+                    maxPrice: hasPriceFilter ? priceMax : undefined,
                     sort: sortOption,
                     q: searchQuery,
                     page: currentPage,
-                    limit: ITEMS_PER_PAGE
+                    limit: ITEMS_PER_PAGE,
+                    isNewDrop: isNewDrop ? true : undefined,
+                    isBestSeller: isBestSeller ? true : undefined,
+                    inStock: inStockOnly ? true : undefined,
                 };
                 
                 const data = await getProducts(params);
@@ -69,7 +76,7 @@ function ShopContent() {
             }
         };
         fetchFiltered();
-    }, [activeCategory, activeGender, activeSizes.join(","), activeColors.join(","), priceMax, sortOption, searchQuery, currentPage, syncInventory]);
+    }, [activeCategory, activeGender, activeSizes.join(","), activeColors.join(","), priceMax, hasPriceFilter, sortOption, searchQuery, currentPage, isNewDrop, isBestSeller, inStockOnly, syncInventory]);
 
     // URL State Updater
     const updateUrl = useCallback((params: Record<string, string | null>) => {
@@ -114,6 +121,7 @@ function ShopContent() {
                                 updateUrl({ colors: next.join(","), page: "1" });
                             }}
                             priceMax={priceMax}
+                            priceFilterActive={hasPriceFilter}
                             setPriceMax={(val) => updateUrl({ price: val.toString(), page: "1" })}
                             inStockOnly={inStockOnly}
                             setInStockOnly={(val) => updateUrl({ stock: val.toString(), page: "1" })}
@@ -125,6 +133,8 @@ function ShopContent() {
                                     colors: null,
                                     price: null,
                                     stock: null,
+                                    isNewDrop: null,
+                                    isBestSeller: null,
                                     page: "1"
                                 });
                             }}
@@ -133,7 +143,9 @@ function ShopContent() {
                                 activeGender !== "All" ||
                                 activeSizes.length > 0 ||
                                 activeColors.length > 0 ||
-                                priceMax < 30000 ||
+                                hasPriceFilter ||
+                                isNewDrop ||
+                                isBestSeller ||
                                 inStockOnly
                             }
                         />
@@ -206,6 +218,7 @@ function ShopContent() {
                                         updateUrl({ colors: next.join(","), page: "1" });
                                     }}
                                     priceMax={priceMax}
+                                    priceFilterActive={hasPriceFilter}
                                     setPriceMax={(val) => updateUrl({ price: val.toString(), page: "1" })}
                                     inStockOnly={inStockOnly}
                                     setInStockOnly={(val) => updateUrl({ stock: val.toString(), page: "1" })}
@@ -217,6 +230,8 @@ function ShopContent() {
                                             colors: null,
                                             price: null,
                                             stock: null,
+                                            isNewDrop: null,
+                                            isBestSeller: null,
                                             page: "1"
                                         });
                                     }}
@@ -225,7 +240,9 @@ function ShopContent() {
                                         activeGender !== "All" ||
                                         activeSizes.length > 0 ||
                                         activeColors.length > 0 ||
-                                        priceMax < 30000 ||
+                                        hasPriceFilter ||
+                                        isNewDrop ||
+                                        isBestSeller ||
                                         inStockOnly
                                     }
                                 />

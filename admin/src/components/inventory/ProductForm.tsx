@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save, AlertCircle, UploadCloud } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { uploadImage } from '@/lib/api';
+import { PRODUCT_CATEGORIES } from '@/lib/catalog';
 import toast from 'react-hot-toast';
 
 interface ProductFormProps {
@@ -19,7 +20,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
         name: '',
         price: 0,
         stock: 0,
-        category: 'Hoodies',
+        category: '',
         gender: 'Unisex',
         description: '',
         images: [''],
@@ -53,7 +54,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                 name: '',
                 price: 0,
                 stock: 0,
-                category: 'Hoodies',
+                category: '',
                 gender: 'Unisex',
                 description: '',
                 images: [''],
@@ -217,16 +218,15 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                                 <div className="space-y-2">
                                     <label className="font-mono text-[9px] text-white/40 uppercase tracking-widest">Category_Sector</label>
                                     <select 
+                                        required
                                         value={formData.category}
                                         onChange={(e) => setFormData({...formData, category: e.target.value})}
                                         className="w-full bg-black/40 border border-white/5 p-4 font-mono text-xs uppercase focus:border-brand-volt outline-none transition-all appearance-none"
                                     >
-                                        <option value="Hoodies">Hoodies</option>
-                                        <option value="T-Shirts">T-Shirts</option>
-                                        <option value="Oversized">Oversized</option>
-                                        <option value="Essentials">Essentials</option>
-                                        <option value="Limited Edition">Limited Edition</option>
-                                        <option value="Accessories">Accessories</option>
+                                        <option value="" disabled>Select a category</option>
+                                        {PRODUCT_CATEGORIES.map((category) => (
+                                            <option key={category} value={category}>{category}</option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className="space-y-2">
@@ -381,7 +381,6 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                             </button>
                             <button 
                                 type="submit"
-                                onClick={handleFormSubmit}
                                 disabled={isSubmitting || isUploading}
                                 className="px-10 py-4 bg-brand-volt text-black font-black uppercase text-[11px] tracking-widest hover:brightness-110 transition-all flex items-center gap-3 disabled:opacity-50"
                             >
