@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Calendar, Type, FileText, Image as ImageIcon, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getProducts } from '@/lib/api';
+import { getAllProducts } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 interface CampaignFormProps {
     isOpen: boolean;
@@ -35,7 +36,9 @@ export default function CampaignForm({ isOpen, onClose, onSubmit, initialData, t
                 endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().slice(0, 16) : '',
                 status: initialData.status || 'Scheduled',
                 bannerImage: initialData.bannerImage || '',
-                products: initialData.products || []
+                products: Array.isArray(initialData.products)
+                    ? initialData.products.map((product: any) => typeof product === 'string' ? product : product._id).filter(Boolean)
+                    : []
             });
         } else {
             setFormData({
@@ -52,14 +55,29 @@ export default function CampaignForm({ isOpen, onClose, onSubmit, initialData, t
 
     useEffect(() => {
         const fetchProducts = async () => {
-            const data = await getProducts();
-            setAvailableProducts(data.products);
+            try {
+                const data = await getAllProducts();
+                setAvailableProducts(data.products);
+            } catch (error: unknown) {
+                toast.error(error instanceof Error ? error.message : 'PRODUCT_SYNC_FAILED');
+            }
         };
         if (isOpen) fetchProducts();
     }, [isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting) return;
+
+        if (new Date(formData.endDate) <= new Date(formData.startDate)) {
+            alert('Deployment end must be later than deployment start.');
+            return;
+        }
+
+        if (formData.products.length === 0) {
+            alert('Select at least one product for this campaign.');
+            return;
+        }
         setIsSubmitting(true);
         try {
             await onSubmit(formData);

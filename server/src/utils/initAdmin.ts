@@ -6,9 +6,18 @@ dotenv.config({ path: '.env.local' });
 
 const initAdmin = async () => {
     try {
-        await mongoose.connect(process.env.MONGODB_URI!);
+        const mongoUri = process.env.MONGODB_URI;
+        const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        const adminName = process.env.ADMIN_NAME?.trim() || "Command Center";
 
-        const adminEmail = "admin@kavon.net";
+        if (!mongoUri || !adminEmail || !adminPassword || adminPassword.length < 12) {
+            throw new Error(
+                "MONGODB_URI, ADMIN_EMAIL, and an ADMIN_PASSWORD of at least 12 characters are required"
+            );
+        }
+
+        await mongoose.connect(mongoUri);
         const existingAdmin = await User.findOne({ email: adminEmail });
 
         if (existingAdmin) {
@@ -17,9 +26,9 @@ const initAdmin = async () => {
             console.log("✅ Existing account updated to Administrative clearance.");
         } else {
             const admin = new User({
-                name: "Command Center",
+                name: adminName,
                 email: adminEmail,
-                password: "admin123password",
+                password: adminPassword,
                 role: 'admin'
             });
             await admin.save();

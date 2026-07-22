@@ -12,7 +12,7 @@ export interface ICampaign extends Document {
 
 const CampaignSchema: Schema = new Schema(
     {
-        name: { type: String, required: true },
+        name: { type: String, required: true, trim: true },
         description: { type: String },
         startDate: { type: Date, required: true },
         endDate: { type: Date, required: true },
@@ -25,9 +25,9 @@ const CampaignSchema: Schema = new Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Product'
         }],
-        bannerImage: { type: String }
+        bannerImage: { type: String, trim: true }
     },
     { timestamps: true }
 );
 
-export default mongoose.model<ICampaign>('Campaign', CampaignSchema);
+export default mongoose.models.Campaign || mongoose.model<ICampaign>('Campaign', CampaignSchema);

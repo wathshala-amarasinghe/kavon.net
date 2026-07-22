@@ -4,45 +4,50 @@ import React, { useState } from 'react';
 import { ArrowRight, Ticket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-import { useInventory } from '@/context/InventoryContext';
 import { useAuth, Order } from '@/context/AuthContext';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import { createOrder } from '@/lib/api';
 
 import { useCheckout } from '@/context/CheckoutContext';
+import { DeliverySector } from '@/lib/logistics';
 
 export function OrderSummary({ 
     selectedDeliveryPrice = 0, 
+    deliveryMethod = 'standard',
+    deliverySector = 'COLOMBO',
     isFinalStep = false 
 }: { 
     selectedDeliveryPrice?: number;
+    deliveryMethod?: string;
+    deliverySector?: DeliverySector;
     isFinalStep?: boolean;
 }) {
     const router = useRouter();
-    const { cart, subtotal: cartSubtotal, discount: cartDiscount, applyCoupon, activeCoupon, clearCart, isPointsRedeemed, setIsPointsRedeemed, pointsDiscount: cartPointsDiscount } = useCart();
-    const { activeCheckoutItem } = useCheckout();
-    const { decrementStock } = useInventory();
+    const { cart, subtotal: cartSubtotal, discount: cartDiscount, applyCoupon, activeCoupon, couponError, getCouponDiscount, clearCart, isPointsRedeemed, setIsPointsRedeemed, pointsDiscount: cartPointsDiscount } = useCart();
+    const { activeCheckoutItem, clearBuyNowItem, shippingAddress, paymentMethod } = useCheckout();
     const { addOrderToHistory, loyaltyPoints, deductPoints } = useAuth();
     const [couponInput, setCouponInput] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
     // 1. Determine the Active Manifest (Buy Now vs Cart)
     const activeItems = activeCheckoutItem ? [activeCheckoutItem] : cart;
     const subtotal = (activeCheckoutItem ? (activeCheckoutItem.price * activeCheckoutItem.quantity) : cartSubtotal) || 0;
     
     // Apply discount logic to the active subtotal
-    const discount = (activeCheckoutItem ? (activeCoupon === "KAVON10" ? subtotal * 0.1 : 0) : cartDiscount) || 0;
+    const discount = (activeCheckoutItem ? getCouponDiscount(subtotal) : cartDiscount) || 0;
     const pointsDiscount = (activeCheckoutItem ? (isPointsRedeemed ? (subtotal - discount) * 0.05 : 0) : cartPointsDiscount) || 0;
 
     // Calculate final total with dynamic shipping
     const finalPayable = Math.max(0, (subtotal - discount - pointsDiscount) + (selectedDeliveryPrice || 0));
 
-    const handleApply = () => {
-        if (applyCoupon(couponInput)) {
+    const handleApply = async () => {
+        if (!couponInput.trim() || isApplyingCoupon) return;
+        setIsApplyingCoupon(true);
+        if (await applyCoupon(couponInput, subtotal)) {
             setCouponInput("");
-        } else {
-            alert("INVALID_PROTOCOL_CODE");
         }
+        setIsApplyingCoupon(false);
     };
 
     const handleConfirm = async () => {
@@ -50,6 +55,16 @@ export function OrderSummary({
         if (!token) {
             alert("AUTH_REQUIRED: Please sign in to proceed with deployment.");
             router.push('/login');
+            return;
+        }
+
+        if (!shippingAddress) {
+            alert('SHIPPING_REQUIRED: Please complete your delivery address.');
+            return;
+        }
+
+        if (paymentMethod !== 'cod') {
+            alert('PAYMENT_UNAVAILABLE: Card payments are not active yet.');
             return;
         }
 
@@ -64,21 +79,23 @@ export function OrderSummary({
                     image: item.image,
                     price: item.price,
                     size: item.size,
-                    color: item.color || "Default"
+                    color: item.color || "Default",
+                    isBundle: Boolean(item.isBundle),
                 })),
                 shippingAddress: {
-                    address: "Tactical Sector 1", // Mocked for now, should come from CheckoutContext
-                    city: "Neo-Tokyo",
-                    postalCode: "10101",
-                    country: "Japan",
-                    phone: "+81-123-456-789"
+                    fullName: shippingAddress.fullName,
+                    address: shippingAddress.address,
+                    city: shippingAddress.city,
+                    postalCode: shippingAddress.postalCode,
+                    country: shippingAddress.country,
+                    phone: shippingAddress.phone,
+                    secondaryPhone: shippingAddress.secondaryPhone || '',
                 },
-                paymentMethod: "card", // Should come from checkout state
-                itemsPrice: subtotal,
-                shippingPrice: selectedDeliveryPrice,
-                discountPrice: discount + pointsDiscount,
-                totalPrice: finalPayable,
-                pointsUsed: isPointsRedeemed ? 1000 : 0
+                paymentMethod,
+                deliveryMethod,
+                deliverySector,
+                couponCode: activeCoupon,
+                pointsUsed: isPointsRedeemed ? 1000 : 0,
             };
 
             // 2. Transmit to Backend
@@ -104,6 +121,8 @@ export function OrderSummary({
             // Only clear cart if it was a cart checkout
             if (!activeCheckoutItem) {
                 clearCart();
+            } else {
+                clearBuyNowItem();
             }
             
             setTimeout(() => {
@@ -155,9 +174,14 @@ export function OrderSummary({
                 <div className="flex gap-2">
                     <input type="text" value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder="ENTER CODE" className="flex-1 bg-white/5 border border-white/10 p-3 font-mono text-[10px] focus:border-brand-volt outline-none text-white" />
                     <button onClick={handleApply} className="px-4 border border-brand-volt text-brand-volt hover:bg-brand-volt hover:text-black transition-all">
-                        <Ticket size={16} />
+                        {isApplyingCoupon ? <span className="text-[9px] font-mono">...</span> : <Ticket size={16} />}
                     </button>
                 </div>
+                {couponError && (
+                    <p role="alert" className="text-[10px] font-mono text-red-400 uppercase tracking-wide">
+                        {couponError}
+                    </p>
+                )}
 
                 {/* Points Redemption Section */}
                 {loyaltyPoints >= 1000 && (

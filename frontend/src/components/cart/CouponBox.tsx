@@ -3,18 +3,25 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tag, Check, AlertCircle } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
 
 export function CouponBox() {
+    const { applyCoupon, subtotal, couponError } = useCart();
     const [coupon, setCoupon] = useState('');
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-    const handleApply = () => {
-        if (coupon.toUpperCase() === 'KAVON10') {
+    const [isApplying, setIsApplying] = useState(false);
+
+    const handleApply = async () => {
+        if (!coupon.trim() || isApplying) return;
+        setIsApplying(true);
+        if (await applyCoupon(coupon, subtotal)) {
             setStatus('success');
         } else {
             setStatus('error');
             setTimeout(() => setStatus('idle'), 3000);
         }
+        setIsApplying(false);
     };
 
     return (
@@ -39,9 +46,10 @@ export function CouponBox() {
 
                 <button
                     onClick={handleApply}
+                    disabled={isApplying || !coupon.trim()}
                     className="px-6 bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
                 >
-                    Apply
+                    {isApplying ? 'Checking...' : 'Apply'}
                 </button>
             </div>
 
@@ -63,7 +71,7 @@ export function CouponBox() {
                         exit={{ opacity: 0 }}
                         className="mt-4 flex items-center gap-3 text-red-500 font-mono text-[9px] tracking-widest uppercase"
                     >
-                        <AlertCircle size={12} /> Invalid_Protocol_Code
+                        <AlertCircle size={12} /> {couponError || 'Invalid promotion code'}
                     </motion.div>
                 )}
             </AnimatePresence>

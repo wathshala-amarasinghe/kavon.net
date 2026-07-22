@@ -19,6 +19,7 @@ import {
   Tag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAdminSession } from '@/lib/api';
 
 const NAV_ITEMS = [
   { label: 'OVERVIEW', href: '/', icon: <LayoutDashboard size={18} /> },
@@ -31,6 +32,58 @@ const NAV_ITEMS = [
   { label: 'SETTINGS', href: '/settings', icon: <Settings size={18} /> },
 ];
 
+function SidebarContent({ pathname, onLogout }: { pathname: string; onLogout: () => void }) {
+  return (
+    <>
+      <div className="p-8 border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-brand-volt rounded-sm flex items-center justify-center text-black">
+            <ShieldAlert size={20} />
+          </div>
+          <span className="font-black italic tracking-tighter text-xl text-white">KAVON<span className="text-brand-volt">_ADMIN</span></span>
+        </div>
+        <div className="mt-4 flex items-center gap-2 text-[11px] font-mono text-brand-volt/40 uppercase tracking-widest">
+          <div className="w-1.5 h-1.5 bg-brand-volt rounded-full animate-pulse" />
+          System_Operational
+        </div>
+      </div>
+
+      <nav className="flex-1 p-4 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
+        {NAV_ITEMS.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center justify-between p-4 transition-all group ${isActive ? 'bg-white/5 text-brand-volt border-l-2 border-brand-volt' : 'text-white/40 hover:text-white hover:bg-white/[0.02]'}`}
+            >
+              <div className="flex items-center gap-4">
+                {item.icon}
+                <span className="font-mono text-[11px] uppercase tracking-widest">{item.label}</span>
+              </div>
+              {isActive && (
+                <motion.div layoutId="nav-indicator">
+                  <ChevronRight size={14} />
+                </motion.div>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="p-4 border-t border-white/5">
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-4 p-4 text-white/20 hover:text-red-500 transition-colors font-mono text-[11px] uppercase tracking-widest"
+        >
+          <LogOut size={18} />
+          Termination
+        </button>
+      </div>
+    </>
+  );
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -40,10 +93,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const token = localStorage.getItem('kavon-admin-token');
     if (!token) {
-      router.push('/login');
-    } else {
-      setIsAuthLoading(false);
+      router.replace('/login');
+      return;
     }
+
+    let isActive = true;
+    getAdminSession(token)
+      .then((user) => {
+        if (!isActive) return;
+        localStorage.setItem('kavon-admin-user', JSON.stringify(user));
+        setIsAuthLoading(false);
+      })
+      .catch(() => {
+        localStorage.removeItem('kavon-admin-token');
+        localStorage.removeItem('kavon-admin-user');
+        router.replace('/login');
+      });
+
+    return () => {
+      isActive = false;
+    };
   }, [router]);
 
   // Close mobile menu on route change
@@ -68,61 +137,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const SidebarContent = () => (
-    <>
-      <div className="p-8 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-brand-volt rounded-sm flex items-center justify-center text-black">
-            <ShieldAlert size={20} />
-          </div>
-          <span className="font-black italic tracking-tighter text-xl text-white">KAVON<span className="text-brand-volt">_ADMIN</span></span>
-        </div>
-        <div className="mt-4 flex items-center gap-2 text-[11px] font-mono text-brand-volt/40 uppercase tracking-widest">
-          <div className="w-1.5 h-1.5 bg-brand-volt rounded-full animate-pulse" />
-          System_Operational
-        </div>
-      </div>
-
-      <nav className="flex-1 p-4 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
-        {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link 
-              key={item.href} 
-              href={item.href}
-              className={`flex items-center justify-between p-4 transition-all group ${isActive ? 'bg-white/5 text-brand-volt border-l-2 border-brand-volt' : 'text-white/40 hover:text-white hover:bg-white/[0.02]'}`}
-            >
-              <div className="flex items-center gap-4">
-                {item.icon}
-                <span className="font-mono text-[11px] uppercase tracking-widest">{item.label}</span>
-              </div>
-              {isActive && (
-                <motion.div layoutId="nav-indicator">
-                  <ChevronRight size={14} />
-                </motion.div>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="p-4 border-t border-white/5">
-        <button 
-          onClick={handleLogout}
-          className="w-full flex items-center gap-4 p-4 text-white/20 hover:text-red-500 transition-colors font-mono text-[11px] uppercase tracking-widest"
-        >
-          <LogOut size={18} />
-          Termination
-        </button>
-      </div>
-    </>
-  );
-
   return (
     <div className="flex min-h-screen bg-black text-white">
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-64 border-r border-white/5 flex-col fixed inset-y-0 z-50 bg-black">
-        <SidebarContent />
+        <SidebarContent pathname={pathname} onLogout={handleLogout} />
       </aside>
 
       {/* Mobile Header */}
@@ -157,7 +176,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="fixed inset-y-0 left-0 w-72 bg-black border-r border-white/5 z-[70] lg:hidden flex flex-col shadow-2xl"
             >
-              <SidebarContent />
+              <SidebarContent pathname={pathname} onLogout={handleLogout} />
             </motion.aside>
           </>
         )}

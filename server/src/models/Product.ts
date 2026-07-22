@@ -12,15 +12,17 @@ export interface IProduct extends Document {
     stock: number;
     isNewDrop: boolean;
     salesCount: number;
+    rating: number;
+    numReviews: number;
     createdAt: Date;
     updatedAt: Date;
 }
 
 const ProductSchema: Schema = new Schema(
     {
-        name: { type: String, required: true },
-        description: { type: String, required: true },
-        price: { type: Number, required: true },
+        name: { type: String, required: true, trim: true },
+        description: { type: String, required: true, trim: true },
+        price: { type: Number, required: true, min: 0.01 },
         category: {
             type: String,
             required: true,
@@ -28,12 +30,21 @@ const ProductSchema: Schema = new Schema(
             trim: true,
         },
         gender: { type: String, enum: ['Men', 'Women', 'Child', 'Unisex'], default: 'Unisex' },
-        images: { type: [String], required: true },
+        images: {
+            type: [String],
+            required: true,
+            validate: {
+                validator: (images: string[]) => Array.isArray(images) && images.length > 0,
+                message: 'At least one product image is required',
+            },
+        },
         colors: { type: [{ name: String, hex: String, img: String }], default: [] },
-        sizes: { type: [{ label: String, stock: Number }], default: [] },
-        stock: { type: Number, required: true, default: 0 },
+        sizes: { type: [{ label: String, stock: { type: Number, min: 0, default: 0 } }], default: [] },
+        stock: { type: Number, required: true, min: 0, default: 0 },
         isNewDrop: { type: Boolean, default: true },
-        salesCount: { type: Number, default: 0 },
+        salesCount: { type: Number, min: 0, default: 0 },
+        rating: { type: Number, min: 0, max: 5, default: 0 },
+        numReviews: { type: Number, min: 0, default: 0 },
     },
     {
         timestamps: true,

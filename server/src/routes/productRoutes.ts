@@ -1,15 +1,50 @@
 import express from "express";
+import mongoose from "mongoose";
 import Product from "../models/Product";
 import { protect, admin } from "../middleware/authMiddleware";
 
 const router = express.Router();
+
+const normalizeProductPayload = (body: any) => {
+    const sizes = Array.isArray(body.sizes)
+        ? body.sizes.map((size: any) => ({
+            label: String(size.label || '').trim().toUpperCase(),
+            stock: Math.max(0, Number(size.stock) || 0),
+        })).filter((size: any) => size.label)
+        : [];
+    const images = Array.isArray(body.images)
+        ? body.images.map((image: any) => String(image || '').trim()).filter(Boolean)
+        : [];
+    const colors = Array.isArray(body.colors)
+        ? body.colors.map((color: any) => ({
+            name: String(color.name || '').trim() || 'Default',
+            hex: String(color.hex || '').trim() || '#000000',
+            img: String(color.img || '').trim(),
+        }))
+        : [];
+
+    return {
+        name: String(body.name || '').trim(),
+        description: String(body.description || '').trim(),
+        price: Number(body.price),
+        category: String(body.category || '').trim(),
+        gender: String(body.gender || 'Unisex'),
+        images,
+        colors,
+        sizes,
+        stock: sizes.reduce((total: number, size: any) => total + size.stock, 0),
+        isNewDrop: body.isNewDrop !== false,
+    };
+};
+
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // @desc    Create a product
 // @route   POST /api/products
 // @access  Private/Admin
 router.post("/", protect, admin, async (req, res) => {
     try {
-        const product = await Product.create(req.body);
+        const product = await Product.create(normalizeProductPayload(req.body));
         res.status(201).json(product);
     } catch (error: any) {
         console.error("Product creation failed:", error);
@@ -39,7 +74,10 @@ router.post("/", protect, admin, async (req, res) => {
 // @access  Private/Admin
 router.put("/:id", protect, admin, async (req, res) => {
     try {
-        const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: "Invalid product ID" });
+        }
+        const product = await Product.findByIdAndUpdate(req.params.id, normalizeProductPayload(req.body), {
             new: true,
             runValidators: true,
         });
@@ -71,6 +109,9 @@ router.put("/:id", protect, admin, async (req, res) => {
 // @access  Private/Admin
 router.delete("/:id", protect, admin, async (req, res) => {
     try {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: "Invalid product ID" });
+        }
         const product = await Product.findByIdAndDelete(req.params.id);
         if (product) {
             res.json({ message: "Product removed from manifest" });
@@ -106,7 +147,7 @@ router.get("/", async (req, res) => {
 
         // 1. Search Logic
         if (q) {
-            query.name = { $regex: q, $options: "i" };
+            query.name = { $regex: escapeRegex(String(q).slice(0, 100)), $options: "i" };
         }
 
         // 2. Category Filter
@@ -122,8 +163,11 @@ router.get("/", async (req, res) => {
         // 3. Price Filter
         if (minPrice || maxPrice) {
             query.price = {};
-            if (minPrice) query.price.$gte = Number(minPrice);
-            if (maxPrice) query.price.$lte = Number(maxPrice);
+            const parsedMinPrice = Number(minPrice);
+            const parsedMaxPrice = Number(maxPrice);
+            if (minPrice && Number.isFinite(parsedMinPrice)) query.price.$gte = Math.max(0, parsedMinPrice);
+            if (maxPrice && Number.isFinite(parsedMaxPrice)) query.price.$lte = Math.max(0, parsedMaxPrice);
+            if (Object.keys(query.price).length === 0) delete query.price;
         }
 
         // 4. Attribute Filtering (Sizes & Colors)
@@ -156,20 +200,22 @@ router.get("/", async (req, res) => {
         else if (sort === "popular") sortQuery = { rating: -1 };
 
         // 5. Execution with Pagination
-        const skip = (Number(page) - 1) * Number(limit);
+        const parsedPage = Math.max(1, Number(page) || 1);
+        const parsedLimit = Math.min(100, Math.max(1, Number(limit) || 15));
+        const skip = (parsedPage - 1) * parsedLimit;
         
         const products = await Product.find(query)
             .sort(sortQuery)
             .skip(skip)
-            .limit(Number(limit));
+            .limit(parsedLimit);
 
         const total = await Product.countDocuments(query);
 
         res.json({
             products,
             total,
-            page: Number(page),
-            pages: Math.ceil(total / Number(limit))
+            page: parsedPage,
+            pages: Math.ceil(total / parsedLimit)
         });
     } catch (error) {
         console.error("Database fetch error:", error);
@@ -184,6 +230,9 @@ router.get("/", async (req, res) => {
 // @route   GET /api/products/:id
 router.get("/:id", async (req, res) => {
     try {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: "Invalid product ID" });
+        }
         const product = await Product.findById(req.params.id);
         if (product) {
             res.json(product);

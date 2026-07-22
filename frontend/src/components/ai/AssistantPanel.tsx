@@ -7,12 +7,12 @@ import { useAIAssistant } from '@/hooks/useAIAssistant';
 import { AIAssistantCard } from './AIAssistantCard';
 import { ChatBubble } from './ChatBubble';
 
-import { Product } from '@/data/products';
+import { CatalogProduct } from '@/types/product';
 
 interface Message {
     role: 'user' | 'assistant';
     content: string;
-    products?: Product[];
+    products?: CatalogProduct[];
 }
 
 export function AssistantPanel() {
@@ -28,16 +28,15 @@ export function AssistantPanel() {
         if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, [messages]);
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!input.trim()) return;
 
         const userMsg: Message = { role: 'user', content: input.toUpperCase() };
         setMessages(prev => [...prev, userMsg]);
 
         // Processing
-        const response = analyzeAndSearch(input);
-
-        setTimeout(() => {
+        try {
+            const response = await analyzeAndSearch(input);
             let botMsg: Message;
 
             if (response.type === 'faq') {
@@ -56,7 +55,13 @@ export function AssistantPanel() {
             }
 
             setMessages(prev => [...prev, botMsg]);
-        }, 800);
+        } catch (error) {
+            console.error('ASSISTANT_SYNC_FAILURE:', error);
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: "I couldn't reach the live catalog. Please try again shortly.",
+            }]);
+        }
 
         setInput("");
     };
@@ -85,7 +90,7 @@ export function AssistantPanel() {
                             {messages.map((m, i) => (
                                 <ChatBubble key={i} role={m.role} content={m.content}>
                                     {m.products && m.products.map(p => (
-                                        <AIAssistantCard key={p.id} product={p} closeChat={() => setIsOpen(false)} />
+                                        <AIAssistantCard key={p._id || p.id} product={p} closeChat={() => setIsOpen(false)} />
                                     ))}
                                 </ChatBubble>
                             ))}
@@ -101,8 +106,8 @@ export function AssistantPanel() {
                                     placeholder="TYPE_QUERY..."
                                     className="flex-1 bg-transparent p-3 text-[12px] font-mono outline-none text-white uppercase placeholder:text-white/20"
                                 />
-                                <button 
-                                    onClick={handleSend} 
+                                <button
+                                    onClick={handleSend}
                                     className="px-4 bg-brand-volt text-black hover:bg-white transition-colors"
                                 >
                                     <Send size={14} />
@@ -121,4 +126,4 @@ export function AssistantPanel() {
             </button>
         </div>
     );
-}
+}

@@ -23,6 +23,7 @@ function ShopContent() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+    const [catalogError, setCatalogError] = useState<string | null>(null);
     const { syncInventory } = useInventory();
 
     // URL State Extractors
@@ -44,6 +45,7 @@ function ShopContent() {
     useEffect(() => {
         const fetchFiltered = async () => {
             setIsLoading(true);
+            setCatalogError(null);
             try {
                 const params = {
                     category: activeCategory,
@@ -69,8 +71,12 @@ function ShopContent() {
                 setTotalPages(safePages);
                 setTotalItems(safeTotal);
                 syncInventory(safeProducts);
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error("CATALOG_SYNC_FAILURE:", error);
+                setProducts([]);
+                setTotalPages(0);
+                setTotalItems(0);
+                setCatalogError(error instanceof Error ? error.message : 'Catalog could not be loaded');
             } finally {
                 setIsLoading(false);
             }
@@ -157,6 +163,14 @@ function ShopContent() {
                                 {Array.from({ length: 6 }).map((_, i) => (
                                     <SkeletonProduct key={i} />
                                 ))}
+                            </div>
+                        ) : catalogError ? (
+                            <div role="alert" className="border border-red-500/20 bg-red-500/5 p-8 text-center font-mono text-xs uppercase tracking-widest text-red-300">
+                                {catalogError}
+                            </div>
+                        ) : products.length === 0 ? (
+                            <div className="border border-white/5 bg-white/[0.02] p-12 text-center font-mono text-xs uppercase tracking-widest text-white/30">
+                                No products match the selected filters.
                             </div>
                         ) : (
                             <ProductGrid products={products} viewMode={viewMode} />

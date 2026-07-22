@@ -1,9 +1,13 @@
 "use client";
 
-import { products } from "@/data/products";
+import { getProducts } from '@/lib/api';
+import { useSystemSettings } from '@/context/SystemSettingsContext';
+import { CatalogProduct } from '@/types/product';
 
 export function useAIAssistant() {
-    const analyzeAndSearch = (input: string) => {
+    const { settings } = useSystemSettings();
+
+    const analyzeAndSearch = async (input: string) => {
         const query = input.toLowerCase();
 
         // 1. INTENT DETECTION (FAQ)
@@ -17,7 +21,7 @@ export function useAIAssistant() {
         if (query.includes("return") || query.includes("exchange") || query.includes("refund")) {
             return {
                 type: 'faq',
-                content: "You can return or exchange any unworn items within 14 days of purchase. Just contact us at support@kavon.com to start the process.",
+                content: `You can return or exchange any unworn items within 14 days of purchase. Contact us at ${settings?.contactEmail || 'hq@kavon.net'} to start the process.`,
                 found: true
             };
         }
@@ -38,8 +42,21 @@ export function useAIAssistant() {
         const priceMatch = query.match(/(?:under|below|less than|max|budget)\s?(\d+)/);
         const maxPrice = priceMatch ? parseInt(priceMatch[1]) : null;
 
-        // 3. FILTER ENGINE (Fixed Logic)
-        const results = products.filter(p => {
+        // 3. FILTER ENGINE using the live catalog, including products created in Admin.
+        const firstPage = await getProducts({ limit: 100, page: 1 });
+        const remainingPageCount = Math.max(0, Number(firstPage.pages || 0) - 1);
+        const remainingPages = remainingPageCount > 0
+            ? await Promise.all(
+                Array.from({ length: remainingPageCount }, (_, index) =>
+                    getProducts({ limit: 100, page: index + 2 })
+                )
+            )
+            : [];
+        const liveProducts: CatalogProduct[] = [
+            ...(firstPage.products || []),
+            ...remainingPages.flatMap((page) => page.products || []),
+        ];
+        const results = liveProducts.filter(p => {
             const matchColor = detectedColor ? p.colors.some(c => c.name.toLowerCase().includes(detectedColor)) : true;
             const matchCategory = detectedCategory ? p.category.toLowerCase().includes(detectedCategory) : true;
             const matchPrice = maxPrice ? p.price <= maxPrice : true;
@@ -47,7 +64,11 @@ export function useAIAssistant() {
             // Search by name logic: 
             // If we didn't detect a specific category, check if the query matches the product name or tags
             // We exclude detected colors from the name search to avoid redundant matches
-            const nameSearchTerm = query.replace(detectedColor || "", "").trim();
+            const nameSearchTerm = query
+                .replace(detectedColor || "", "")
+                .replace(detectedCategory || "", "")
+                .replace(priceMatch?.[0] || "", "")
+                .trim();
             const matchName = nameSearchTerm ? (
                 p.name.toLowerCase().includes(nameSearchTerm) || 
                 p.category.toLowerCase().includes(nameSearchTerm) ||

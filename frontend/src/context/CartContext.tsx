@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Product } from '@/data/products';
 import { useWishlist, WishlistItem } from './WishlistContext';
+import { validateCoupon } from '@/lib/api';
 
 export interface CartItem {
     id: string;
@@ -21,7 +21,7 @@ interface CartContextType {
     removeFromCart: (id: string, size: string, isBundle?: boolean) => void;
     updateQuantity: (id: string, size: string, delta: number, isBundle?: boolean) => void;
     moveToWishlist: (id: string, size: string, isBundle?: boolean) => void;
-    applyCoupon: (code: string) => boolean;
+    applyCoupon: (code: string, amount?: number) => Promise<boolean>;
     subtotal: number;
     discount: number;
     shippingFee: number;
@@ -29,6 +29,8 @@ interface CartContextType {
     cartCount: number;
     isLoaded: boolean;
     activeCoupon: string | null;
+    couponError: string | null;
+    getCouponDiscount: (amount: number) => number;
     clearCart: () => void;
     moveWishlistToCart: (item: WishlistItem) => void;
     isPointsRedeemed: boolean;
@@ -42,6 +44,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
     const [activeCoupon, setActiveCoupon] = useState<string | null>(null);
+    const [couponData, setCouponData] = useState<{
+        discountType: 'Percentage' | 'Fixed';
+        discountValue: number;
+        minOrderAmount: number;
+    } | null>(null);
+    const [couponError, setCouponError] = useState<string | null>(null);
     const [isPointsRedeemed, setIsPointsRedeemed] = useState(false);
     const { toggleWishlist } = useWishlist();
 
@@ -59,7 +67,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             try { 
                 const parsed = JSON.parse(savedCart);
                 setTimeout(() => setCart(parsed), 0);
-            } catch (e) { console.error("CORRUPTION"); }
+            } catch {
+                localStorage.removeItem('kavon-manifest-v1');
+            }
         }
         setTimeout(() => setIsLoaded(true), 0);
 
@@ -112,16 +122,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const applyCoupon = (code: string) => {
-        if (code.toUpperCase() === "KAVON10") {
-            setActiveCoupon("KAVON10");
+    const applyCoupon = async (code: string, amount = subtotal) => {
+        setCouponError(null);
+        try {
+            const coupon = await validateCoupon(code, amount);
+            setActiveCoupon(coupon.code);
+            setCouponData({
+                discountType: coupon.discountType,
+                discountValue: Number(coupon.discountValue) || 0,
+                minOrderAmount: Number(coupon.minOrderAmount) || 0,
+            });
             return true;
+        } catch (error) {
+            setActiveCoupon(null);
+            setCouponData(null);
+            setCouponError(error instanceof Error ? error.message : 'Invalid promotion code');
+            return false;
         }
-        return false;
     };
 
     const subtotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
-    const discount = activeCoupon === "KAVON10" ? subtotal * 0.1 : 0;
+    const getCouponDiscount = (amount: number) => {
+        if (!couponData || amount < couponData.minOrderAmount) return 0;
+        return couponData.discountType === 'Percentage'
+            ? amount * Math.min(100, Math.max(0, couponData.discountValue)) / 100
+            : Math.min(amount, Math.max(0, couponData.discountValue));
+    };
+    const discount = getCouponDiscount(subtotal);
     const pointsDiscount = isPointsRedeemed ? (subtotal - discount) * 0.05 : 0;
     const shippingFee = subtotal >= 10000 || subtotal === 0 ? 0 : 500;
     const total = subtotal - discount - pointsDiscount + shippingFee;
@@ -130,6 +157,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const clearCart = () => {
         setCart([]);
         setActiveCoupon(null);
+        setCouponData(null);
+        setCouponError(null);
         localStorage.removeItem('kavon-manifest-v1');
     };
 
@@ -144,7 +173,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return (
         <CartContext.Provider value={{
             cart, addToCart, removeFromCart, updateQuantity, moveToWishlist,
-            applyCoupon, subtotal, discount, shippingFee, total, cartCount, isLoaded, activeCoupon,
+            applyCoupon, subtotal, discount, shippingFee, total, cartCount, isLoaded, activeCoupon, couponError, getCouponDiscount,
             clearCart, moveWishlistToCart,
             isPointsRedeemed, setIsPointsRedeemed, pointsDiscount
         }}>

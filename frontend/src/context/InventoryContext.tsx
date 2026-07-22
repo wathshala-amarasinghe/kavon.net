@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { products } from '@/data/products';
 
 interface InventoryState {
     [productId: string]: {
@@ -39,7 +38,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const checkStock = useCallback((id: string, size: string) => {
-        return inventory[id]?.[size] ?? 10; // Default to 10 if not synced yet to avoid flicker
+        return inventory[id]?.[size] ?? 0;
     }, [inventory]);
 
     const decrementStock = useCallback((id: string, size: string, qty: number) => {

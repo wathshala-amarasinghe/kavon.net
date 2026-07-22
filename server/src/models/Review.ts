@@ -7,6 +7,7 @@ export interface IReview extends Document {
     rating: number;
     comment: string;
     image?: string;
+    verifiedPurchase: boolean;
     createdAt: Date;
 }
 
@@ -39,10 +40,16 @@ const ReviewSchema: Schema = new Schema(
         image: {
             type: String,
         },
+        verifiedPurchase: {
+            type: Boolean,
+            default: true,
+        },
     },
     {
         timestamps: true,
     }
 );
+
+ReviewSchema.index({ user: 1, product: 1 }, { unique: true });
 
 export default mongoose.models.Review || mongoose.model<IReview>("Review", ReviewSchema);

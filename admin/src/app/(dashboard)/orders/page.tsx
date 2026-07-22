@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getOrders, updateOrderToPaid, updateOrderToDelivered, updateOrderStatus } from '@/lib/api';
+import { getOrders, updateOrderStatus } from '@/lib/api';
 import { ShoppingCart, Clock, CheckCircle2, Truck, MoreVertical, ExternalLink, ShieldCheck, Eye, Calendar, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import OrderDetails from '@/components/orders/OrderDetails';
@@ -12,7 +12,7 @@ export default function OrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState("");
 
     const fetchOrders = async () => {
         setIsLoading(true);
@@ -20,8 +20,8 @@ export default function OrdersPage() {
             const token = localStorage.getItem('kavon-admin-token') || "";
             const data = await getOrders(token);
             setOrders(data);
-        } catch (e) {
-            toast.error("LOGISTICS_SYNC_FAILURE");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "LOGISTICS_SYNC_FAILURE");
         } finally {
             setIsLoading(false);
         }
@@ -38,20 +38,20 @@ export default function OrdersPage() {
             toast.success(`STATUS_UPDATED: ${newStatus.toUpperCase()}`);
             fetchOrders();
         } catch (e) {
-            toast.error("MODIFICATION_FAILED");
+            toast.error(e instanceof Error ? e.message : "MODIFICATION_FAILED");
         }
     };
 
-    const STATUS_OPTIONS = [
-        'Authorized', 
-        'Processing', 
-        'Shipped', 
-        'Out for Delivery', 
-        'Ready for Pickup', 
-        'Delivered', 
-        'Cancelled', 
-        'Refunded'
-    ];
+    const STATUS_TRANSITIONS: Record<string, string[]> = {
+        Authorized: ['Processing', 'Cancelled'],
+        Processing: ['Shipped', 'Ready for Pickup', 'Cancelled'],
+        Shipped: ['Out for Delivery', 'Delivered', 'Cancelled'],
+        'Out for Delivery': ['Delivered', 'Cancelled'],
+        'Ready for Pickup': ['Delivered', 'Cancelled'],
+        Delivered: ['Refunded'],
+        Cancelled: [],
+        Refunded: [],
+    };
 
     return (
         <div className="space-y-10">
@@ -93,7 +93,7 @@ export default function OrdersPage() {
                     </div>
                     <div className="px-6 py-4 tactical-glass flex items-center gap-3">
                         <Clock size={16} className="text-brand-volt" />
-                        <span className="font-mono text-[13px] uppercase tracking-widest text-white/60">Active_Operations: {orders.filter(o => o.status !== 'Delivered').length}</span>
+                        <span className="font-mono text-[13px] uppercase tracking-widest text-white/60">Active_Operations: {orders.filter(o => !['Delivered', 'Cancelled', 'Refunded'].includes(o.status)).length}</span>
                     </div>
                 </div>
             </header>
@@ -171,7 +171,7 @@ export default function OrdersPage() {
                                                 onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
                                                 className="bg-black/40 border border-white/10 px-4 py-2 font-mono text-[11px] uppercase tracking-widest text-white outline-none focus:border-brand-volt cursor-pointer appearance-none pr-8"
                                             >
-                                                {STATUS_OPTIONS.map(opt => (
+                                                {[order.status, ...(STATUS_TRANSITIONS[order.status] || [])].map(opt => (
                                                     <option key={opt} value={opt} className="bg-brand-black">{opt}</option>
                                                 ))}
                                             </select>
@@ -195,6 +195,7 @@ export default function OrdersPage() {
             </div>
 
             <OrderDetails 
+                key={selectedOrder?._id || 'no-order'}
                 isOpen={isDetailsOpen}
                 onClose={() => setIsDetailsOpen(false)}
                 order={selectedOrder}

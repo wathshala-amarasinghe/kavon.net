@@ -50,6 +50,7 @@ export default function CouponForm({ isOpen, onClose, onSubmit, initialData, tit
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting) return;
         setIsSubmitting(true);
         try {
             await onSubmit(formData);
@@ -133,6 +134,9 @@ export default function CouponForm({ isOpen, onClose, onSubmit, initialData, tit
                                 <input 
                                     required
                                     type="number" 
+                                    min="0.01"
+                                    max={formData.discountType === 'Percentage' ? 100 : undefined}
+                                    step="0.01"
                                     value={formData.discountValue}
                                     onChange={(e) => setFormData({...formData, discountValue: Number(e.target.value)})}
                                     className="w-full bg-black/40 border border-white/5 p-4 font-mono text-xs focus:border-brand-volt outline-none"
@@ -156,6 +160,8 @@ export default function CouponForm({ isOpen, onClose, onSubmit, initialData, tit
                                 <label className="font-mono text-[10px] text-white/40 uppercase tracking-widest">Global_Quota (Usage Limit)</label>
                                 <input 
                                     type="number" 
+                                    min="0"
+                                    step="1"
                                     value={formData.usageLimit}
                                     onChange={(e) => setFormData({...formData, usageLimit: Number(e.target.value)})}
                                     className="w-full bg-black/40 border border-white/5 p-4 font-mono text-xs focus:border-brand-volt outline-none"
@@ -167,6 +173,8 @@ export default function CouponForm({ isOpen, onClose, onSubmit, initialData, tit
                                 <label className="font-mono text-[10px] text-white/40 uppercase tracking-widest">Minimum_Order_Valuation</label>
                                 <input 
                                     type="number" 
+                                    min="0"
+                                    step="0.01"
                                     value={formData.minOrderAmount}
                                     onChange={(e) => setFormData({...formData, minOrderAmount: Number(e.target.value)})}
                                     className="w-full bg-black/40 border border-white/5 p-4 font-mono text-xs focus:border-brand-volt outline-none"

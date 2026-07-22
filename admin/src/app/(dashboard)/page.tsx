@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Activity, DollarSign, Package, Users, ArrowUpRight, ShieldCheck, RefreshCcw, Zap } from 'lucide-react';
 import Link from 'next/link';
 import DeploymentHeatmap from '@/components/dashboard/DeploymentHeatmap';
-import { getOrders, getProducts } from '@/lib/api';
+import { getCampaigns, getOrders, getUsers } from '@/lib/api';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
 
 export default function OverviewPage() {
@@ -13,14 +13,21 @@ export default function OverviewPage() {
   const [loading, setLoading] = useState(true);
   const [heatmapData, setHeatmapData] = useState<number[][]>([]);
   const [activeDrop, setActiveDrop] = useState<any>(null);
+  const [userCount, setUserCount] = useState(0);
+  const [syncError, setSyncError] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem('kavon-admin-token');
         if (token) {
-          const data = await getOrders(token);
+          const [data, users, campaigns] = await Promise.all([
+            getOrders(token),
+            getUsers(token),
+            getCampaigns(),
+          ]);
           setOrders(data);
+          setUserCount(Array.isArray(users) ? users.length : 0);
 
 
           const matrix = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
@@ -35,11 +42,18 @@ export default function OverviewPage() {
           setHeatmapData(matrix);
 
 
-          const prodData = await getProducts({ isTacticalDrop: true, limit: 1 });
-          setActiveDrop(prodData.products?.[0] || null);
+          const now = Date.now();
+          const activeCampaign = (Array.isArray(campaigns) ? campaigns : []).find((campaign: any) =>
+            campaign.status === 'Active' &&
+            new Date(campaign.startDate).getTime() <= now &&
+            new Date(campaign.endDate).getTime() >= now
+          );
+          const campaignProduct = activeCampaign?.products?.[0];
+          setActiveDrop(campaignProduct ? { ...campaignProduct, campaignName: activeCampaign.name } : null);
         }
       } catch (err) {
         console.error("Dashboard sync failure:", err);
+        setSyncError(true);
       } finally {
         setLoading(false);
       }
@@ -51,27 +65,29 @@ export default function OverviewPage() {
   const stats = [
     {
       label: 'GROSS_REVENUE',
-      value: orders.reduce((sum, o) => sum + o.totalPrice, 0),
+      value: orders
+        .filter((order) => !['Cancelled', 'Refunded'].includes(order.status))
+        .reduce((sum, order) => sum + Number(order.totalPrice || 0), 0),
       isPrice: true,
-      change: '+12.5%',
+      change: 'LIVE',
       icon: <DollarSign className="text-brand-volt" />
     },
     {
       label: 'ACTIVE_ORDERS',
       value: orders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled').length,
-      change: '+3',
+      change: 'LIVE',
       icon: <Package className="text-brand-volt" />
     },
     {
       label: 'OPERATOR_COUNT',
-      value: '1,204',
-      change: '+48',
+      value: userCount,
+      change: 'LIVE',
       icon: <Users className="text-brand-volt" />
     },
     {
-      label: 'SYSTEM_UPTIME',
-      value: '99.9%',
-      change: 'STABLE',
+      label: 'API_CONNECTION',
+      value: syncError ? 'DEGRADED' : 'ONLINE',
+      change: syncError ? 'CHECK' : 'STABLE',
       icon: <Activity className="text-brand-volt" />
     },
   ];
@@ -110,7 +126,7 @@ export default function OverviewPage() {
               <div className="p-3 bg-white/5 rounded-sm group-hover:bg-brand-volt/10 transition-colors">
                 {stat.icon}
               </div>
-              <span className={`font-mono text-[12px] ${stat.change.startsWith('+') ? 'text-brand-volt' : 'text-white/40'}`}>
+              <span className={`font-mono text-[12px] ${stat.change === 'LIVE' || stat.change === 'STABLE' ? 'text-brand-volt' : 'text-white/40'}`}>
                 {stat.change}
               </span>
             </div>
@@ -164,15 +180,11 @@ export default function OverviewPage() {
                   <img src={activeDrop.images?.[0]} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all" alt="" />
                 </div>
                 <div className="space-y-1">
+                  <p className="font-mono text-[9px] text-white/30 uppercase tracking-widest">{activeDrop.campaignName}</p>
                   <p className="font-bold text-xs uppercase tracking-wider">{activeDrop.name}</p>
-                  <div className="flex items-center gap-2">
-                    <p className="font-mono text-[10px] text-brand-volt uppercase font-bold">
-                      LKR {(activeDrop.price * (1 - (activeDrop.tacticalDropDiscount || 0) / 100)).toLocaleString()}
-                    </p>
-                    <p className="font-mono text-[9px] text-white/20 line-through">
-                      LKR {activeDrop.price.toLocaleString()}
-                    </p>
-                  </div>
+                  <p className="font-mono text-[10px] text-brand-volt uppercase font-bold">
+                    LKR {Number(activeDrop.price || 0).toLocaleString()}
+                  </p>
                 </div>
                 <Link
                   href="/inventory"

@@ -8,19 +8,25 @@ export interface IOrderItem {
     price: number;
     size: string;
     color: string;
+    isBundle?: boolean;
 }
 
 export interface IOrder extends Document {
     user: mongoose.Types.ObjectId;
     orderItems: IOrderItem[];
     shippingAddress: {
+        fullName: string;
         address: string;
         city: string;
         postalCode: string;
         country: string;
         phone: string;
+        secondaryPhone?: string;
     };
     paymentMethod: string;
+    deliveryMethod: 'standard' | 'express' | 'same-day';
+    deliverySector: 'COLOMBO' | 'OUTSTATION';
+    couponCode?: string;
     paymentResult?: {
         id: string;
         status: string;
@@ -57,6 +63,7 @@ const OrderSchema: Schema = new Schema(
                 price: { type: Number, required: true },
                 size: { type: String, required: true },
                 color: { type: String, required: true },
+                isBundle: { type: Boolean, default: false },
                 product: {
                     type: mongoose.Schema.Types.ObjectId,
                     required: true,
@@ -65,16 +72,34 @@ const OrderSchema: Schema = new Schema(
             },
         ],
         shippingAddress: {
+            fullName: { type: String, default: 'Customer' },
             address: { type: String, required: true },
             city: { type: String, required: true },
             postalCode: { type: String, required: true },
             country: { type: String, required: true },
             phone: { type: String, required: true },
+            secondaryPhone: { type: String },
         },
         paymentMethod: {
             type: String,
+            // Keep legacy card orders editable; new card orders are rejected by the controller
+            // until a real payment gateway is connected.
+            enum: ['cod', 'card'],
             required: true,
         },
+        deliveryMethod: {
+            type: String,
+            enum: ['standard', 'express', 'same-day'],
+            required: true,
+            default: 'standard',
+        },
+        deliverySector: {
+            type: String,
+            enum: ['COLOMBO', 'OUTSTATION'],
+            required: true,
+            default: 'OUTSTATION',
+        },
+        couponCode: { type: String, uppercase: true, trim: true },
         paymentResult: {
             id: { type: String },
             status: { type: String },

@@ -136,7 +136,7 @@ function TrackingContent() {
                                     type="text"
                                     value={orderId}
                                     onChange={(e) => setOrderId(e.target.value)}
-                                    placeholder="KAVON-XXXXX"
+                                    placeholder="PASTE YOUR ORDER ID"
                                     className="w-full bg-white/5 border border-white/10 p-6 font-mono text-sm tracking-[0.1em] focus:border-brand-volt outline-none text-white uppercase placeholder:opacity-20"
                                 />
                             </div>

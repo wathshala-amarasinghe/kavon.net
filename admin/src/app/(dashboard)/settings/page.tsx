@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getSettings, updateSettings } from '@/lib/api';
+import { getSettings, updateSettings, uploadImage } from '@/lib/api';
 import { Settings as SettingsIcon, Save, Bell, Shield, Radio, Layout, Mail, Phone, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -16,8 +16,8 @@ export default function SettingsPage() {
             try {
                 const data = await getSettings();
                 setSettings(data);
-            } catch (e) {
-                toast.error("SETTINGS_SYNC_FAILURE");
+            } catch (error: unknown) {
+                toast.error(error instanceof Error ? error.message : "SETTINGS_SYNC_FAILURE");
             } finally {
                 setIsLoading(false);
             }
@@ -32,8 +32,8 @@ export default function SettingsPage() {
             const token = localStorage.getItem('kavon-admin-token') || "";
             await updateSettings(settings, token);
             toast.success("SYSTEM_CONFIG_UPDATED");
-        } catch (e) {
-            toast.error("MODIFICATION_FAILED");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "MODIFICATION_FAILED");
         } finally {
             setIsSaving(false);
         }
@@ -265,25 +265,18 @@ export default function SettingsPage() {
                                                                     if (file) {
                                                                         const uploadToast = toast.loading("UPLOADING_VIDEO_ASSET...");
                                                                         try {
+                                                                            if (file.size > 4 * 1024 * 1024) {
+                                                                                throw new Error('Video is too large. Maximum upload size is 4 MB');
+                                                                            }
                                                                             const token = localStorage.getItem('kavon-admin-token') || "";
-                                                                            const formData = new FormData();
-                                                                            formData.append('image', file); // API expects 'image' fieldname even for videos
-                                                                            
-                                                                            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"}/upload`, {
-                                                                                method: 'POST',
-                                                                                headers: { 'Authorization': `Bearer ${token}` },
-                                                                                body: formData
-                                                                            });
-                                                                            
-                                                                            if (!res.ok) throw new Error("Upload failed");
-                                                                            const data = await res.json();
+                                                                            const data = await uploadImage(file, token);
                                                                             
                                                                             const newSlides = [...settings.heroSlides];
                                                                             newSlides[idx].video = data.url;
                                                                             setSettings({...settings, heroSlides: newSlides});
                                                                             toast.success("VIDEO_ASSET_SYNCHRONIZED", { id: uploadToast });
                                                                         } catch (err) {
-                                                                            toast.error("UPLOAD_FAILURE", { id: uploadToast });
+                                                                            toast.error(err instanceof Error ? err.message : "UPLOAD_FAILURE", { id: uploadToast });
                                                                         }
                                                                     }
                                                                 }}

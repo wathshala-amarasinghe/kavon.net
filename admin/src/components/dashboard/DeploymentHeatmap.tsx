@@ -8,10 +8,9 @@ interface DeploymentHeatmapProps {
 }
 
 export default function DeploymentHeatmap({ data }: DeploymentHeatmapProps) {
-  // If no data, generate some realistic mock data
-  const heatmapData = data || Array.from({ length: 7 }, () => 
-    Array.from({ length: 24 }, () => Math.floor(Math.random() * 10))
-  );
+  const heatmapData = data?.length === 7
+    ? data
+    : Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
 
   const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
   

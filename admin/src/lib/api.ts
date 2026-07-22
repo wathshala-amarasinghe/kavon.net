@@ -26,8 +26,28 @@ export async function getProducts(params: any = {}) {
     cache: "no-store",
   });
 
-  if (!res.ok) throw new Error("Catalog fetch failed");
+  if (!res.ok) throw await apiError(res, "Catalog fetch failed");
   return res.json();
+}
+
+export async function getAllProducts(params: Record<string, unknown> = {}) {
+  const firstPage = await getProducts({ ...params, page: 1, limit: 100 });
+  const pageCount = Math.max(1, Number(firstPage.pages || 1));
+  const remaining = pageCount > 1
+    ? await Promise.all(
+        Array.from({ length: pageCount - 1 }, (_, index) =>
+          getProducts({ ...params, page: index + 2, limit: 100 })
+        )
+      )
+    : [];
+
+  return {
+    ...firstPage,
+    products: [
+      ...(Array.isArray(firstPage.products) ? firstPage.products : []),
+      ...remaining.flatMap((page) => Array.isArray(page.products) ? page.products : []),
+    ],
+  };
 }
 
 export async function createProduct(productData: any, token: string) {
@@ -64,7 +84,7 @@ export async function deleteProduct(id: string, token: string) {
     headers: { 'Authorization': `Bearer ${token}` },
   });
 
-  if (!res.ok) throw new Error("Asset termination failed");
+  if (!res.ok) throw await apiError(res, "Asset termination failed");
   return res.json();
 }
 
@@ -76,7 +96,7 @@ export async function getOrders(token: string) {
     cache: "no-store"
   });
 
-  if (!res.ok) throw new Error("Logistics sync failed");
+  if (!res.ok) throw await apiError(res, "Logistics sync failed");
   return res.json();
 }
 
@@ -86,7 +106,7 @@ export async function updateOrderToPaid(id: string, token: string) {
     headers: { 'Authorization': `Bearer ${token}` },
   });
 
-  if (!res.ok) throw new Error("Transaction verification failed");
+  if (!res.ok) throw await apiError(res, "Transaction verification failed");
   return res.json();
 }
 
@@ -96,7 +116,7 @@ export async function updateOrderToDelivered(id: string, token: string) {
     headers: { 'Authorization': `Bearer ${token}` },
   });
 
-  if (!res.ok) throw new Error("Deployment finalization failed");
+  if (!res.ok) throw await apiError(res, "Deployment finalization failed");
   return res.json();
 }
 
@@ -110,7 +130,7 @@ export async function updateOrderStatus(id: string, status: string, token: strin
     body: JSON.stringify({ status }),
   });
 
-  if (!res.ok) throw new Error("Status update failed");
+  if (!res.ok) throw await apiError(res, "Status update failed");
   return res.json();
 }
 
@@ -124,7 +144,7 @@ export async function updateOrderTracking(id: string, trackingData: any, token: 
     body: JSON.stringify(trackingData),
   });
 
-  if (!res.ok) throw new Error("Tracking update failed");
+  if (!res.ok) throw await apiError(res, "Tracking update failed");
   return res.json();
 }
 
@@ -136,7 +156,7 @@ export async function getUsers(token: string) {
     cache: "no-store"
   });
 
-  if (!res.ok) throw new Error("Personnel database sync failed");
+  if (!res.ok) throw await apiError(res, "Personnel database sync failed");
   return res.json();
 }
 
@@ -146,7 +166,7 @@ export async function deleteUser(id: string, token: string) {
     headers: { 'Authorization': `Bearer ${token}` },
   });
 
-  if (!res.ok) throw new Error("Personnel termination failed");
+  if (!res.ok) throw await apiError(res, "Personnel termination failed");
   return res.json();
 }
 
@@ -160,7 +180,7 @@ export async function updateUserRole(id: string, role: string, token: string) {
     body: JSON.stringify({ role }),
   });
 
-  if (!res.ok) throw new Error("Clearance update failed");
+  if (!res.ok) throw await apiError(res, "Clearance update failed");
   return res.json();
 }
 
@@ -168,7 +188,7 @@ export async function updateUserRole(id: string, role: string, token: string) {
 
 export async function getCampaigns() {
   const res = await fetch(`${API_URL}/campaigns`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Campaign sync failed");
+  if (!res.ok) throw await apiError(res, "Campaign sync failed");
   return res.json();
 }
 
@@ -178,7 +198,7 @@ export async function createCampaign(campaignData: any, token: string) {
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(campaignData),
   });
-  if (!res.ok) throw new Error("Campaign initialization failed");
+  if (!res.ok) throw await apiError(res, "Campaign initialization failed");
   return res.json();
 }
 
@@ -188,7 +208,7 @@ export async function updateCampaign(id: string, campaignData: any, token: strin
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(campaignData),
   });
-  if (!res.ok) throw new Error("Campaign modification failed");
+  if (!res.ok) throw await apiError(res, "Campaign modification failed");
   return res.json();
 }
 
@@ -197,7 +217,7 @@ export async function deleteCampaign(id: string, token: string) {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Campaign termination failed");
+  if (!res.ok) throw await apiError(res, "Campaign termination failed");
   return res.json();
 }
 
@@ -208,7 +228,7 @@ export async function getCoupons(token: string) {
     headers: { 'Authorization': `Bearer ${token}` },
     cache: "no-store"
   });
-  if (!res.ok) throw new Error("Coupon database sync failed");
+  if (!res.ok) throw await apiError(res, "Coupon database sync failed");
   return res.json();
 }
 
@@ -218,7 +238,7 @@ export async function createCoupon(couponData: any, token: string) {
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(couponData),
   });
-  if (!res.ok) throw new Error("Incentive generation failed");
+  if (!res.ok) throw await apiError(res, "Incentive generation failed");
   return res.json();
 }
 
@@ -228,7 +248,7 @@ export async function updateCoupon(id: string, couponData: any, token: string) {
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(couponData),
   });
-  if (!res.ok) throw new Error("Incentive modification failed");
+  if (!res.ok) throw await apiError(res, "Incentive modification failed");
   return res.json();
 }
 
@@ -237,7 +257,7 @@ export async function deleteCoupon(id: string, token: string) {
     method: 'DELETE',
     headers: { 'Authorization': `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Incentive termination failed");
+  if (!res.ok) throw await apiError(res, "Incentive termination failed");
   return res.json();
 }
 
@@ -248,7 +268,7 @@ export async function getSettings() {
     cache: "no-store",
   });
 
-  if (!res.ok) throw new Error("Settings sync failed");
+  if (!res.ok) throw await apiError(res, "Settings sync failed");
   return res.json();
 }
 
@@ -262,7 +282,7 @@ export async function updateSettings(settingsData: any, token: string) {
     body: JSON.stringify(settingsData),
   });
 
-  if (!res.ok) throw new Error("Settings modification failed");
+  if (!res.ok) throw await apiError(res, "Settings modification failed");
   return res.json();
 }
 
@@ -288,6 +308,18 @@ export async function login(credentials: any) {
   }
 
   return data;
+}
+
+export async function getAdminSession(token: string) {
+  const res = await fetch(`${API_URL}/auth/me`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+    cache: 'no-store',
+  });
+
+  if (!res.ok) throw await apiError(res, 'Administrative session expired');
+  const user = await res.json();
+  if (user.role !== 'admin') throw new Error('Administrative access is required');
+  return user;
 }
 
 // --- FILE UPLOAD ---

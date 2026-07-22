@@ -3,40 +3,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MessageSquare, Mail, MapPin, Clock } from 'lucide-react';
-
-const OPTIONS = [
-    {
-        icon: MessageSquare,
-        title: 'WhatsApp',
-        detail: 'Instant Chat Support',
-        action: 'Open WhatsApp',
-        href: 'https://wa.me/94112345678'
-    },
-    {
-        icon: Mail,
-        title: 'Email',
-        detail: 'support@kavon.com',
-        action: 'Send Message',
-        href: 'mailto:support@kavon.com'
-    },
-    {
-        icon: MapPin,
-        title: 'Location',
-        detail: 'No. 45, KAVON Tower, Colombo 07',
-        action: 'Open Google Maps',
-        href: 'https://maps.app.goo.gl/bwyx8KdSKH5uycap6'
-    },
-    {
-        icon: Clock,
-        title: 'Operation',
-        detail: 'Mon–Sat | 9AM–8PM',
-        action: 'Current Status',
-        href: '#status'
-    }
-];
+import { useSystemSettings } from '@/context/SystemSettingsContext';
 
 export function ContactOptions() {
     const [isOpen, setIsOpen] = useState(false);
+    const { settings } = useSystemSettings();
+    const email = settings?.contactEmail || 'hq@kavon.net';
+    const phone = settings?.contactPhone || '+94 77 123 4567';
+    const whatsappNumber = phone.replace(/\D/g, '');
+    const options = [
+        { icon: MessageSquare, title: 'WhatsApp', detail: phone, action: 'Open WhatsApp', href: `https://wa.me/${whatsappNumber}` },
+        { icon: Mail, title: 'Email', detail: email, action: 'Send Message', href: `mailto:${email}` },
+        { icon: MapPin, title: 'Location', detail: 'Colombo, Sri Lanka', action: 'Open Google Maps', href: 'https://www.google.com/maps/search/?api=1&query=Colombo%2C%20Sri%20Lanka' },
+        { icon: Clock, title: 'Operation', detail: 'Mon–Sat | 9AM–8PM', action: 'Current Status', href: '#status' },
+    ];
 
     useEffect(() => {
         const checkStatus = () => {
@@ -57,7 +37,7 @@ export function ContactOptions() {
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {OPTIONS.map((opt, i) => (
+            {options.map((opt, i) => (
                 <motion.a
                     key={i}
                     href={opt.href}

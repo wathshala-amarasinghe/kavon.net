@@ -28,8 +28,8 @@ export default function OrderDetails({ isOpen, onClose, order, onUpdate }: Order
             await updateOrderTracking(order._id, { trackingNumber, carrier }, token);
             toast.success("TRACKING_METADATA_UPDATED");
             if (onUpdate) onUpdate();
-        } catch (e) {
-            toast.error("UPDATE_FAILURE");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "UPDATE_FAILURE");
         } finally {
             setIsUpdating(false);
         }

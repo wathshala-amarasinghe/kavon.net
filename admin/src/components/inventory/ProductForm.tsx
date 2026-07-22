@@ -35,6 +35,10 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const totalSizeStock = formData.sizes.reduce(
+        (total: number, size: { stock?: number | string }) => total + (Number(size.stock) || 0),
+        0
+    );
 
     useEffect(() => {
         if (initialData) {
@@ -73,6 +77,23 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
     const handleFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (isSubmitting || isUploading) return;
+
+        if (!formData.name?.trim()) {
+            toast.error("DATA_INCOMPLETE: Product name is required.");
+            return;
+        }
+
+        if (!formData.category) {
+            toast.error("DATA_INCOMPLETE: Select a product category.");
+            return;
+        }
+
+        if (!Number.isFinite(Number(formData.price)) || Number(formData.price) <= 0) {
+            toast.error("DATA_INVALID: Product price must be greater than zero.");
+            return;
+        }
+
         const cleanedImages = formData.images.filter((url: string) => url && url.trim() !== '');
         
         if (cleanedImages.length === 0) {
@@ -80,16 +101,18 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
             return;
         }
 
-        if (!formData.description.trim()) {
+        if (!formData.description?.trim()) {
             toast.error("DATA_INCOMPLETE: Asset description is required.");
             return;
         }
 
         const finalData = {
             ...formData,
+            name: formData.name.trim(),
+            description: formData.description.trim(),
             images: cleanedImages,
-            price: Number(formData.price) || 0,
-            stock: Number(formData.stock) || 0,
+            price: Number(formData.price),
+            stock: totalSizeStock,
             sizes: formData.sizes.map((s: any) => ({ ...s, stock: Number(s.stock) || 0 }))
         };
 
@@ -178,7 +201,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                     </div>
 
                     {/* Form Body */}
-                    <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+                    <form id="product-form" onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Basic Info */}
                             <div className="space-y-6">
@@ -199,6 +222,8 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                                         <input 
                                             type="number" 
                                             required
+                                            min="0.01"
+                                            step="0.01"
                                             value={formData.price}
                                             onChange={(e) => setFormData({...formData, price: e.target.value === '' ? '' : Number(e.target.value)})}
                                             className="w-full bg-black/40 border border-white/5 p-4 font-mono text-xs focus:border-brand-volt outline-none transition-all"
@@ -208,10 +233,10 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                                         <label className="font-mono text-[9px] text-white/40 uppercase tracking-widest">Global_Stock</label>
                                         <input 
                                             type="number" 
-                                            required
-                                            value={formData.stock}
-                                            onChange={(e) => setFormData({...formData, stock: e.target.value === '' ? '' : Number(e.target.value)})}
-                                            className="w-full bg-black/40 border border-white/5 p-4 font-mono text-xs focus:border-brand-volt outline-none transition-all"
+                                            readOnly
+                                            value={totalSizeStock}
+                                            className="w-full bg-black/40 border border-white/5 p-4 font-mono text-xs text-white/50 cursor-not-allowed"
+                                            title="Automatically calculated from size inventory"
                                         />
                                     </div>
                                 </div>
@@ -325,11 +350,19 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                                                 <span className="font-mono text-[10px] text-brand-volt w-6">{s.label}</span>
                                                 <input 
                                                     type="number"
+                                                    min="0"
                                                     value={s.stock}
                                                     onChange={(e) => {
                                                         const newSizes = [...formData.sizes];
-                                                        newSizes[index].stock = e.target.value === '' ? '' : Number(e.target.value);
-                                                        setFormData({...formData, sizes: newSizes});
+                                                        newSizes[index] = {
+                                                            ...newSizes[index],
+                                                            stock: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)),
+                                                        };
+                                                        setFormData({
+                                                            ...formData,
+                                                            sizes: newSizes,
+                                                            stock: newSizes.reduce((total: number, size: any) => total + (Number(size.stock) || 0), 0),
+                                                        });
                                                     }}
                                                     className="flex-1 bg-transparent font-mono text-[10px] outline-none text-right"
                                                 />
@@ -381,6 +414,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                             </button>
                             <button 
                                 type="submit"
+                                form="product-form"
                                 disabled={isSubmitting || isUploading}
                                 className="px-10 py-4 bg-brand-volt text-black font-black uppercase text-[11px] tracking-widest hover:brightness-110 transition-all flex items-center gap-3 disabled:opacity-50"
                             >

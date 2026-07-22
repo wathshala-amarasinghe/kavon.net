@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { CreditCard, Banknote, ShieldCheck, Lock, Plus, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { CreditCard, Banknote, ShieldCheck } from 'lucide-react';
 
 interface PaymentProtocolProps {
     selectedMethod: string;
@@ -10,22 +9,22 @@ interface PaymentProtocolProps {
 }
 
 export function PaymentProtocol({ selectedMethod, onMethodChange }: PaymentProtocolProps) {
-    const [isSaving, setIsSaving] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
-
     const methods = [
-        { id: 'card', name: 'Credit_Debit_Card', icon: <CreditCard size={18} />, desc: 'Visa, Mastercard, Amex via Secure Gateway' },
-        { id: 'cod', name: 'Cash_On_Delivery', icon: <Banknote size={18} />, desc: 'Pay upon tactical delivery fulfillment' }
+        {
+            id: 'cod',
+            name: 'Cash_On_Delivery',
+            icon: <Banknote size={18} />,
+            desc: 'Pay when your order is delivered',
+            disabled: false,
+        },
+        {
+            id: 'card',
+            name: 'Credit_Debit_Card',
+            icon: <CreditCard size={18} />,
+            desc: 'Coming soon — secure payment gateway is not active yet',
+            disabled: true,
+        },
     ];
-
-    const handleSaveCard = () => {
-        setIsSaving(true);
-        // Simulate tactical encryption/saving process
-        setTimeout(() => {
-            setIsSaving(false);
-            setIsSaved(true);
-        }, 1500);
-    };
 
     return (
         <section className="space-y-8 pb-10">
@@ -42,8 +41,9 @@ export function PaymentProtocol({ selectedMethod, onMethodChange }: PaymentProto
                     <div key={method.id} className="space-y-4">
                         <button
                             type="button"
-                            onClick={() => onMethodChange(method.id)}
-                            className={`w-full p-6 border transition-all text-left flex items-center gap-6 group ${selectedMethod === method.id
+                            disabled={method.disabled}
+                            onClick={() => !method.disabled && onMethodChange(method.id)}
+                            className={`w-full p-6 border transition-all text-left flex items-center gap-6 group ${method.disabled ? 'opacity-40 cursor-not-allowed' : ''} ${selectedMethod === method.id
                                     ? 'bg-brand-volt/5 border-brand-volt'
                                     : 'bg-white/[0.02] border-white/10 hover:border-white/30'
                                 }`}
@@ -65,79 +65,6 @@ export function PaymentProtocol({ selectedMethod, onMethodChange }: PaymentProto
                             </div>
                         </button>
 
-                        {/* EXPANDABLE CARD SECURE ENTRY */}
-                        <AnimatePresence>
-                            {selectedMethod === 'card' && method.id === 'card' && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    className="overflow-hidden"
-                                >
-                                    <div className="p-6 bg-white/[0.03] border border-white/10 space-y-6">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-mono text-white uppercase tracking-widest">Name_On_Card</label>
-                                            <input
-                                                type="text"
-                                                placeholder="OPERATOR NAME"
-                                                className="w-full bg-black/40 border border-white/10 p-4 font-mono text-sm focus:border-brand-volt outline-none text-white placeholder:text-white/10 uppercase"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-mono text-white uppercase tracking-widest">Card_Number</label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    placeholder="XXXX XXXX XXXX XXXX"
-                                                    className="w-full bg-black/40 border border-white/10 p-4 font-mono text-sm focus:border-brand-volt outline-none text-white placeholder:text-white/10"
-                                                />
-                                                <Lock size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20" />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-mono text-white uppercase tracking-widest">Expiry_Date</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="MM / YY"
-                                                    className="w-full bg-black/40 border border-white/10 p-4 font-mono text-sm focus:border-brand-volt outline-none text-white placeholder:text-white/10"
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-mono text-white uppercase tracking-widest">CVV_Code</label>
-                                                <input
-                                                    type="password"
-                                                    placeholder="XXX"
-                                                    maxLength={3}
-                                                    className="w-full bg-black/40 border border-white/10 p-4 font-mono text-sm focus:border-brand-volt outline-none text-white placeholder:text-white/10"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* TACTICAL ADD CARD BUTTON */}
-                                        <button
-                                            type="button"
-                                            onClick={handleSaveCard}
-                                            disabled={isSaved || isSaving}
-                                            className={`w-full py-4 flex items-center justify-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] transition-all border ${isSaved
-                                                    ? 'border-brand-volt text-brand-volt bg-brand-volt/5'
-                                                    : 'border-white/20 text-white hover:border-brand-volt hover:text-brand-volt'
-                                                }`}
-                                        >
-                                            {isSaving ? (
-                                                <span className="animate-pulse">Encrypting_Asset...</span>
-                                            ) : isSaved ? (
-                                                <>Asset_Linked <Check size={14} /></>
-                                            ) : (
-                                                <>Save_Card_Node <Plus size={14} /></>
-                                            )}
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
                     </div>
                 ))}
             </div>

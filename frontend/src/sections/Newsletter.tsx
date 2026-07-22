@@ -51,7 +51,7 @@ export function Newsletter() {
     };
 
     return (
-        <section className="py-32 px-6 max-w-[1400px] mx-auto bg-brand-black">
+        <section id="newsletter" className="py-32 px-6 max-w-[1400px] mx-auto bg-brand-black scroll-mt-32">
             <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}

@@ -53,14 +53,17 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
     useEffect(() => {
         const fetchRelated = async () => {
-            const response = await getProducts();
-            const allProducts = response.products || [];
-            const related = allProducts
-                .filter((p: CatalogProduct) => p.category === product.category && p._id !== product._id)
-                .slice(0, 4);
-            setRelatedProducts(related);
-            syncInventory(related);
-            syncInventory([product]);
+            try {
+                const response = await getProducts({ category: product.category, limit: 5 });
+                const related = (response.products || [])
+                    .filter((candidate: CatalogProduct) => candidate._id !== product._id)
+                    .slice(0, 4);
+                setRelatedProducts(related);
+                syncInventory(related);
+                syncInventory([product]);
+            } catch (error) {
+                console.error('RELATED_PRODUCTS_SYNC_FAILURE:', error);
+            }
         };
         fetchRelated();
     }, [product, syncInventory]);

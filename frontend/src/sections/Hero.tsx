@@ -93,10 +93,6 @@ export default function HeroSection() {
         return () => clearInterval(timer);
     }, [nextSlide]);
 
-    useEffect(() => {
-        setHasVideoError(false);
-    }, [currentSlide?.video]);
-
     const handleShopNavigation = () => {
         router.push('/shop');
     };
@@ -135,6 +131,7 @@ export default function HeroSection() {
                                 src={currentSlide.video}
                                 poster={currentSlide.poster}
                                 onError={() => setHasVideoError(true)}
+                                onLoadedData={() => setHasVideoError(false)}
                             />
                         )}
                     </motion.div>

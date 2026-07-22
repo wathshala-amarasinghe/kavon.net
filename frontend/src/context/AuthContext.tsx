@@ -48,6 +48,13 @@ export interface AuthUser {
     email: string;
     role: "user" | "admin";
     loyaltyPoints: number;
+    shippingAddress?: {
+        address: string;
+        city: string;
+        postalCode: string;
+        country: string;
+        phone: string;
+    };
 }
 
 interface AuthContextType {
@@ -76,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const initAuth = async () => {
             const token = localStorage.getItem('kavon-token-v1');
+            let loadedBackendOrders = false;
             if (token) {
                 try {
                     const userData = await getMe(token);
@@ -86,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         // Fetch real order history from backend
                         const backendOrders = await getMyOrders(token);
                         setOrderHistory(backendOrders);
+                        loadedBackendOrders = true;
                     } else {
                         localStorage.removeItem('kavon-token-v1');
                     }
@@ -98,7 +107,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (savedIntel) {
                 try {
                     const parsed = JSON.parse(savedIntel);
-                    setOrderHistory(parsed.history || []);
+                    if (!loadedBackendOrders) {
+                        setOrderHistory(Array.isArray(parsed.history) ? parsed.history : []);
+                    }
                     setTransmissions(parsed.transmissions || []);
                 } catch (e) { localStorage.removeItem('kavon-user-intel-v1'); }
             }
@@ -153,12 +164,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         const orderWithPoints = { ...order, pointsEarned: earnedPoints };
         setOrderHistory(prev => [orderWithPoints, ...prev]);
-        setLoyaltyPoints(prev => prev + earnedPoints);
 
         const newTransmission: Transmission = {
             id: `MSG-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
             subject: `DEPLOYMENT_CONFIRMED // ${id}`,
-            body: `Your order ${id} has been authorized. You earned ${earnedPoints} Division Credits. Total Balance: ${loyaltyPoints + earnedPoints} CRD.`,
+            body: `Your order ${id} has been authorized. ${earnedPoints} Division Credits will be added after delivery.`,
             date: new Date().toISOString(),
             priority: 'High'
         };

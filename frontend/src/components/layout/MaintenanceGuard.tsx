@@ -9,8 +9,13 @@ export function MaintenanceGuard({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const checkStatus = async () => {
-            const data = await getSettings();
-            setIsMaintenance(data?.maintenanceMode || false);
+            try {
+                const data = await getSettings();
+                setIsMaintenance(data?.maintenanceMode || false);
+            } catch (error) {
+                console.error('MAINTENANCE_STATUS_SYNC_FAILURE:', error);
+                setIsMaintenance(false);
+            }
         };
         checkStatus();
     }, []);
@@ -51,6 +56,6 @@ export function MaintenanceGuard({ children }: { children: React.ReactNode }) {
         );
     }
 
-    // Still loading or maintenance is false
+    // Configuration failures fail open so a temporary API outage does not hide the storefront.
     return <>{children}</>;
 }

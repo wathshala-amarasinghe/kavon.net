@@ -75,6 +75,16 @@ const couponLimiter = rateLimit({
 
 app.use("/api/coupons/validate", couponLimiter);
 
+const passwordRecoveryLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { message: "Too many recovery attempts. Please try again later" },
+});
+
+app.use("/api/auth/password", passwordRecoveryLimiter);
+
 const requireDatabase = async (
     _req: Request,
     res: Response,

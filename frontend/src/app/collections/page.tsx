@@ -22,6 +22,7 @@ export default function CollectionsPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [allProducts, setAllProducts] = useState<CatalogProduct[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [catalogError, setCatalogError] = useState<string | null>(null);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -31,10 +32,22 @@ export default function CollectionsPage() {
         const fetchAll = async () => {
             try {
                 const { getProducts } = await import("@/lib/api");
-                const data = await getProducts({ limit: 1000 });
-                setAllProducts(data.products || []);
-            } catch (error) {
+                const firstPage = await getProducts({ limit: 100, page: 1 });
+                const remainingPages = Math.max(0, Number(firstPage.pages || 0) - 1);
+                const remaining = remainingPages > 0
+                    ? await Promise.all(
+                        Array.from({ length: remainingPages }, (_, index) =>
+                            getProducts({ limit: 100, page: index + 2 })
+                        )
+                    )
+                    : [];
+                setAllProducts([
+                    ...(firstPage.products || []),
+                    ...remaining.flatMap((page) => page.products || []),
+                ]);
+            } catch (error: unknown) {
                 console.error("Failed to fetch products:", error);
+                setCatalogError(error instanceof Error ? error.message : 'Catalog could not be loaded');
             } finally {
                 setIsLoading(false);
             }
@@ -170,6 +183,13 @@ export default function CollectionsPage() {
                 </aside>
 
                 <section className="flex-1">
+                    {catalogError ? (
+                        <div role="alert" className="border border-red-500/20 bg-red-500/5 p-8 text-center font-mono text-xs uppercase tracking-widest text-red-300">
+                            {catalogError}
+                        </div>
+                    ) : isLoading ? (
+                        <div className="py-20 text-center font-mono text-xs uppercase tracking-widest text-brand-volt">Loading catalog...</div>
+                    ) : (
                     <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 relative">
                         <AnimatePresence mode="popLayout">
                             {paginatedProducts.map((product, i: number) => (
@@ -177,8 +197,9 @@ export default function CollectionsPage() {
                             ))}
                         </AnimatePresence>
                     </motion.div>
+                    )}
 
-                    {filteredAndSortedProducts.length === 0 && (
+                    {!isLoading && !catalogError && filteredAndSortedProducts.length === 0 && (
                         <div className="py-20 text-center border border-white/5 bg-white/5">
                             <p className="text-white/20 font-mono text-[10px] uppercase tracking-[0.4em]">
                                 No_Assets_Found_In_This_Sector

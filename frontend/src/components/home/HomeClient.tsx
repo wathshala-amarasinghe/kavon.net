@@ -35,7 +35,12 @@ export default function HomeClient() {
         setBestSellers(bestData.products || []);
         setNewDrops(newData.products || []);
         
-        const active = campaignData.find((c: Campaign) => c.status === 'Active');
+        const now = Date.now();
+        const active = campaignData.find((campaign: Campaign) =>
+          campaign.status === 'Active' &&
+          new Date(campaign.startDate).getTime() <= now &&
+          new Date(campaign.endDate).getTime() >= now
+        );
         setActiveCampaign(active || null);
       } catch (error) {
         console.error("Failed to sync home sectors:", error);

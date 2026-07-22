@@ -20,6 +20,8 @@ export interface SystemSettings {
         enabled: boolean;
         text: string;
     };
+    contactEmail?: string;
+    contactPhone?: string;
 }
 
 interface SystemSettingsContextType {
@@ -39,8 +41,7 @@ export function SystemSettingsProvider({ children }: { children: React.ReactNode
             const data = await getSettings();
             setSettings(data);
         } catch (error) {
-            // Silently handle configuration sync failures to prevent console clutter
-            // The application will fallback to default states
+            console.error('SYSTEM_SETTINGS_SYNC_FAILURE:', error);
         } finally {
             setIsLoading(false);
         }

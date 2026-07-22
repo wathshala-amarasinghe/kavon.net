@@ -4,7 +4,6 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, ShoppingBag, ArrowLeft, Trash2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { Product } from '@/data/products';
 import { useWishlist, WishlistItem } from '@/context/WishlistContext';
 import { useCart } from '@/context/CartContext';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';

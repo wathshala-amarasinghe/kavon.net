@@ -5,9 +5,9 @@ import { useCart } from "@/context/CartContext";
 import { ShoppingBag, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from 'next/navigation';
-import { Product } from '@/data/products';
+import { CatalogProduct } from '@/types/product';
 
-export function AIAssistantCard({ product, closeChat }: { product: Product, closeChat: () => void }) {
+export function AIAssistantCard({ product, closeChat }: { product: CatalogProduct, closeChat: () => void }) {
     const { addToCart } = useCart();
     const router = useRouter();
 
@@ -18,10 +18,12 @@ export function AIAssistantCard({ product, closeChat }: { product: Product, clos
             : "M";
 
         addToCart({
-            ...product,
+            id: product._id || product.id || '',
+            name: product.name,
+            price: product.price,
             quantity: 1,
             size: defaultSize,
-            image: product.image
+            image: product.images?.[0] || product.image || '',
         });
         toast.success(`${product.name} ADDED TO ARCHIVE`);
     };
@@ -35,7 +37,7 @@ export function AIAssistantCard({ product, closeChat }: { product: Product, clos
         <div className="bg-white/5 border border-white/10 p-3 flex gap-4 my-3 group transition-all hover:border-brand-volt/50 rounded-sm">
             <div className="w-20 h-24 bg-black shrink-0 overflow-hidden rounded-sm">
                 { }
-<img src={product.image} className="w-full h-full object-cover grayscale group-hover:grayscale-0" alt="" />
+<img src={product.images?.[0] || product.image || ''} className="w-full h-full object-cover grayscale group-hover:grayscale-0" alt={product.name} />
             </div>
             <div className="flex-1 flex flex-col justify-between py-0.5">
                 <div>
@@ -59,4 +61,4 @@ export function AIAssistantCard({ product, closeChat }: { product: Product, clos
             </div>
         </div>
     );
-}
+}

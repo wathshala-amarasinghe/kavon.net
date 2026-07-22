@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { getProducts, deleteProduct, createProduct, updateProduct } from '@/lib/api';
+import { getAllProducts, deleteProduct, createProduct, updateProduct } from '@/lib/api';
 import { Plus, Search, Filter, MoreVertical, Trash2, Edit3, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ProductForm from '@/components/inventory/ProductForm';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { PRODUCT_CATEGORIES } from '@/lib/catalog';
 
 export default function InventoryPage() {
     const [products, setProducts] = useState<any[]>([]);
@@ -13,16 +14,17 @@ export default function InventoryPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("");
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
     const fetch = async () => {
         setIsLoading(true);
         try {
-            const data = await getProducts();
+            const data = await getAllProducts();
             setProducts(data.products);
-        } catch (e) {
-            toast.error("CATALOG_SYNC_FAILURE");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "CATALOG_SYNC_FAILURE");
         } finally {
             setIsLoading(false);
         }
@@ -62,12 +64,17 @@ export default function InventoryPage() {
             await deleteProduct(productToDelete, token);
             setProducts(products.filter(p => p._id !== productToDelete));
             toast.success("ASSET_TERMINATED");
-        } catch (e) {
-            toast.error("TERMINATION_FAILED");
+        } catch (error: unknown) {
+            toast.error(error instanceof Error ? error.message : "TERMINATION_FAILED");
         } finally {
             setProductToDelete(null);
         }
     };
+
+    const filteredProducts = products.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        (!categoryFilter || product.category === categoryFilter)
+    );
 
     return (
         <div className="space-y-10">
@@ -96,9 +103,20 @@ export default function InventoryPage() {
                         className="w-full bg-black/40 border border-white/5 p-4 pl-12 font-mono text-xs uppercase focus:border-brand-volt outline-none transition-all"
                     />
                 </div>
-                <button className="px-6 border border-white/5 flex items-center gap-2 font-mono text-[12px] text-white/40 uppercase hover:text-white transition-all">
-                    <Filter size={16} /> Filter
-                </button>
+                <label className="px-4 border border-white/5 flex items-center gap-2 font-mono text-[12px] text-white/40 uppercase focus-within:text-white focus-within:border-brand-volt transition-all">
+                    <Filter size={16} />
+                    <select
+                        aria-label="Filter products by category"
+                        value={categoryFilter}
+                        onChange={(event) => setCategoryFilter(event.target.value)}
+                        className="bg-black py-4 outline-none uppercase"
+                    >
+                        <option value="">All categories</option>
+                        {PRODUCT_CATEGORIES.map((category) => (
+                            <option key={category} value={category}>{category}</option>
+                        ))}
+                    </select>
+                </label>
             </div>
 
             {/* Product Table */}
@@ -120,13 +138,13 @@ export default function InventoryPage() {
                                     <td colSpan={5} className="p-8 h-20 bg-white/[0.01]" />
                                 </tr>
                             ))
-                        ) : products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
+                        ) : filteredProducts.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="p-20 text-center text-white/20 font-mono text-xs uppercase tracking-[0.5em]">
                                     NO_ASSETS_MATCHING_CRITERIA
                                 </td>
                             </tr>
-                        ) : products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map((product) => (
+                        ) : filteredProducts.map((product) => (
                             <tr key={product._id} className="hover:bg-white/[0.02] transition-colors group">
                                 <td className="p-6">
                                     <div className="flex items-center gap-4">

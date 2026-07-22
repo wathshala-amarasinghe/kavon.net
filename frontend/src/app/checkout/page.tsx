@@ -15,13 +15,17 @@ import { useSettings } from "@/context/UserSettingsContext";
 import { calculateTacticalShipping } from "@/lib/logistics";
 
 export default function CheckoutPage() {
-    const { activeCheckoutItem } = useCheckout();
+    const {
+        activeCheckoutItem,
+        setShippingAddress,
+        paymentMethod,
+        setPaymentMethod,
+    } = useCheckout();
     const { cart, subtotal } = useCart();
     const { user, loading } = useAuth();
     const router = useRouter();
     const { location } = useSettings();
     const [step, setStep] = useState(1);
-    const [paymentMethod, setPaymentMethod] = useState('card');
     const [deliveryMethod, setDeliveryMethod] = useState({ 
         id: 'standard', 
         price: calculateTacticalShipping(subtotal, location) 
@@ -97,7 +101,10 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
                     <div className="lg:col-span-7 space-y-20">
                         {step === 1 && (
-                            <CheckoutForm onNext={nextStep} />
+                            <CheckoutForm onNext={(address) => {
+                                setShippingAddress(address);
+                                nextStep();
+                            }} />
                         )}
 
                         {step === 2 && (
@@ -118,7 +125,7 @@ export default function CheckoutPage() {
                             <div className="space-y-12">
                                 <PaymentProtocol
                                     selectedMethod={paymentMethod}
-                                    onMethodChange={setPaymentMethod}
+                                    onMethodChange={(method) => setPaymentMethod(method as 'cod' | 'card')}
                                 />
                                 <button onClick={prevStep} className="w-full py-5 border border-white/10 font-mono text-[13px] uppercase tracking-widest hover:bg-white/5 font-bold">Back to Delivery</button>
                             </div>
@@ -128,6 +135,8 @@ export default function CheckoutPage() {
                     <div className="lg:col-span-5">
                         <OrderSummary 
                             selectedDeliveryPrice={effectiveDeliveryPrice} 
+                            deliveryMethod={deliveryMethod.id}
+                            deliverySector={location}
                             isFinalStep={step === 3}
                         />
                     </div>

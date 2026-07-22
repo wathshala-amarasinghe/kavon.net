@@ -55,7 +55,12 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
                 // Fallback to local storage if not logged in
                 const savedWishlist = localStorage.getItem('kavon_wishlist_v4');
                 if (savedWishlist) {
-                    try { setWishlist(JSON.parse(savedWishlist)); } catch (e) {}
+                    try {
+                        const parsed = JSON.parse(savedWishlist);
+                        setWishlist(Array.isArray(parsed) ? parsed : []);
+                    } catch {
+                        localStorage.removeItem('kavon_wishlist_v4');
+                    }
                 }
             }
             setIsInitialLoad(false);
@@ -73,6 +78,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     const toggleWishlist = async (product: WishlistItem) => {
         const productId = product._id || product.id;
         const token = localStorage.getItem('kavon-token-v1');
+        const previousWishlist = wishlist;
 
         // Optimistic UI Update
         const isExist = wishlist.find(item => (item._id || item.id) === productId);
@@ -104,7 +110,8 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
                 }
             } catch (error: unknown) {
                 console.error("BACKEND_TOGGLE_FAILURE:", error instanceof Error ? error.message : error);
-                // Revert on failure could be added here
+                setWishlist(previousWishlist);
+                toast.error('WISHLIST_SYNC_FAILED');
             }
         }
     };

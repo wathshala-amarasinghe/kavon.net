@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
-import { products as ALL_PRODUCTS } from '@/data/products';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';

@@ -5,11 +5,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import toast from 'react-hot-toast';
-import emailjs from '@emailjs/browser';
-
-const SERVICE_ID = 'service_8m8xecf';
-const TEMPLATE_ID = 'template_vdoyytn';
-const PUBLIC_KEY = 'iwawzuJjOqQ-hGU2_';
+import { requestPasswordReset } from '@/lib/api';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -20,14 +16,10 @@ export default function ForgotPassword() {
         e.preventDefault();
         setLoading(true);
 
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-        sessionStorage.setItem('kavon_recovery_code', verificationCode);
-
         try {
-            await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-                to_email: email,
-                verification_code: verificationCode
-            }, PUBLIC_KEY);
+            const normalizedEmail = email.trim().toLowerCase();
+            await requestPasswordReset(normalizedEmail);
+            sessionStorage.setItem('kavon_recovery_email', normalizedEmail);
 
             toast.success('TRANSMISSION_SENT: CHECK_INBOX', {
                 style: { borderRadius: '0px', background: '#000', color: '#df0715', border: '1px solid #df0715', fontFamily: 'monospace' }

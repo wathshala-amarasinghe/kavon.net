@@ -3,35 +3,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProductCard } from '@/components/collections/productCard';
-import { SlidersHorizontal, ChevronDown, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Product } from '@/data/products';
-
-// Expanded dataset to demonstrate pagination (25 items)
-const PROMO_PRODUCTS: Product[] = Array.from({ length: 25 }).map((_, i) => ({
-    id: `PROMO-${i + 1}`,
-    name: `${i % 2 === 0 ? 'SHADOW' : 'VOID'} ${i % 3 === 0 ? 'HOODIE' : 'TEE'} // V${i}`,
-    price: 3500 + (i * 500),
-    image: `/images/products/product_${(i % 4) + 1}.jpeg`,
-    images: [`/images/products/product_${(i % 4) + 1}.jpeg`],
-    tag: i % 5 === 0 ? "SOLD_OUT" : "PROMO",
-    inStock: i % 5 !== 0,
-    createdAt: "2026-05-01",
-    rating: 4.5,
-    sizes: [
-        { label: "S", stock: 10 },
-        { label: "M", stock: 15 },
-        { label: "L", stock: 5 },
-        { label: "XL", stock: 2 }
-    ],
-    colors: [
-        { name: "Phantom Black", hex: "#000000", img: `/images/products/product_${(i % 4) + 1}.jpeg`, stock: 20 }
-    ],
-    category: i % 3 === 0 ? "Outerwear" : i % 3 === 1 ? "Tops" : "Bottoms"
-}));
+import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CatalogProduct } from '@/types/product';
+import { getCampaigns, getProducts } from '@/lib/api';
+import { PRODUCT_CATEGORIES } from '@/lib/catalog';
 
 const ITEMS_PER_PAGE = 20;
 
 export default function PromotionsPage() {
+    const [promoProducts, setPromoProducts] = useState<CatalogProduct[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [activePriceRange, setActivePriceRange] = useState<string | null>(null);
@@ -39,10 +20,55 @@ export default function PromotionsPage() {
     const [activeStockStatus, setActiveStockStatus] = useState<string | null>(null);
     const [sortBy, setSortBy] = useState("Latest");
     const [currentPage, setCurrentPage] = useState(1);
+    const [loadError, setLoadError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isActive = true;
+
+        const loadPromotions = async () => {
+            setIsLoading(true);
+            setLoadError(null);
+            try {
+                const campaigns = await getCampaigns();
+                const now = Date.now();
+                const campaignProducts = (Array.isArray(campaigns) ? campaigns : [])
+                    .filter((campaign) =>
+                        campaign.status === 'Active' &&
+                        new Date(campaign.startDate).getTime() <= now &&
+                        new Date(campaign.endDate).getTime() >= now
+                    )
+                    .flatMap((campaign) => Array.isArray(campaign.products) ? campaign.products : []);
+
+                let products = campaignProducts;
+                if (products.length === 0) {
+                    const response = await getProducts({ isNewDrop: true, limit: 100 });
+                    products = response.products;
+                }
+
+                const uniqueProducts = Array.from(
+                    new Map(products.map((product: CatalogProduct) => [product._id || product.id, product])).values()
+                ).filter((product): product is CatalogProduct => Boolean(product));
+
+                if (isActive) setPromoProducts(uniqueProducts);
+            } catch (error: unknown) {
+                if (isActive) {
+                    setPromoProducts([]);
+                    setLoadError(error instanceof Error ? error.message : 'Promotions could not be loaded');
+                }
+            } finally {
+                if (isActive) setIsLoading(false);
+            }
+        };
+
+        loadPromotions();
+        return () => {
+            isActive = false;
+        };
+    }, []);
 
     // Filter Logic
     const filteredProducts = useMemo(() => {
-        let result = [...PROMO_PRODUCTS];
+        let result = [...promoProducts];
 
         if (activeCategory) result = result.filter(p => p.category === activeCategory);
 
@@ -55,15 +81,19 @@ export default function PromotionsPage() {
         if (activeSize) result = result.filter(p => p.sizes.some(s => s.label === activeSize));
 
         if (activeStockStatus) {
-            if (activeStockStatus === "In Stock") result = result.filter(p => p.inStock === true);
-            if (activeStockStatus === "Sold Out") result = result.filter(p => p.inStock === false);
+            const availableStock = (product: CatalogProduct) =>
+                Number.isFinite(Number(product.stock))
+                    ? Number(product.stock)
+                    : product.sizes.reduce((total, size) => total + Number(size.stock || 0), 0);
+            if (activeStockStatus === "In Stock") result = result.filter(p => availableStock(p) > 0);
+            if (activeStockStatus === "Sold Out") result = result.filter(p => availableStock(p) <= 0);
         }
 
         if (sortBy === "Price: Low to High") result.sort((a, b) => a.price - b.price);
         if (sortBy === "Price: High to Low") result.sort((a, b) => b.price - a.price);
 
         return result;
-    }, [activeCategory, activePriceRange, activeSize, activeStockStatus, sortBy]);
+    }, [promoProducts, activeCategory, activePriceRange, activeSize, activeStockStatus, sortBy]);
 
     // Pagination Logic
     const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
@@ -149,7 +179,7 @@ export default function PromotionsPage() {
                                 <div className="space-y-6">
                                     <h4 className="font-mono text-[12px] text-brand-volt uppercase tracking-[0.3em] font-bold">Category</h4>
                                     <div className="flex flex-col gap-3">
-                                        {["Outerwear", "Tops", "Bottoms", "Accessories"].map(cat => (
+                                        {PRODUCT_CATEGORIES.map(cat => (
                                             <button key={cat} onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} className={`text-left font-mono text-[12px] uppercase tracking-[0.15em] transition-colors ${activeCategory === cat ? 'text-brand-volt' : 'text-white/40 hover:text-white'}`}>{cat}</button>
                                         ))}
                                     </div>
@@ -184,6 +214,13 @@ export default function PromotionsPage() {
                 </AnimatePresence>
 
                 {/* Products Grid */}
+                {isLoading ? (
+                    <div className="py-24 text-center font-mono text-brand-volt uppercase tracking-[0.3em]">Loading promotions...</div>
+                ) : loadError ? (
+                    <div role="alert" className="border border-red-500/20 bg-red-500/5 p-8 text-center font-mono text-xs uppercase tracking-widest text-red-300">
+                        {loadError}
+                    </div>
+                ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
                     <AnimatePresence mode="popLayout">
                         {currentItems.map((product, index) => (
@@ -200,6 +237,7 @@ export default function PromotionsPage() {
                         ))}
                     </AnimatePresence>
                 </div>
+                )}
 
                 {/* Tactical Pagination */}
                 {totalPages > 1 && (
@@ -242,7 +280,7 @@ export default function PromotionsPage() {
                     </div>
                 )}
 
-                {filteredProducts.length === 0 && (
+                {!isLoading && !loadError && filteredProducts.length === 0 && (
                     <div className="py-20 text-center border border-white/5 bg-white/[0.01]">
                         <p className="font-mono text-[12px] uppercase tracking-[0.3em] text-white/20">No products found. Try adjusting your filters.</p>
                     </div>

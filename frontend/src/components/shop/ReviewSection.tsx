@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Star, Camera, X, Plus, ShieldCheck } from "lucide-react";
+import { Star, X, Plus, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProductReviews, createReview } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -12,6 +12,7 @@ interface Review {
     rating: number;
     comment: string;
     image?: string;
+    verifiedPurchase?: boolean;
     createdAt: string;
 }
 
@@ -20,7 +21,7 @@ export function ReviewSection({ productId }: { productId: string }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [newReview, setNewReview] = useState({ rating: 5, comment: "", image: null as string | null });
+    const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
 
     useEffect(() => {
         const fetchReviews = async () => {
@@ -51,13 +52,12 @@ export function ReviewSection({ productId }: { productId: string }) {
                 productId,
                 rating: newReview.rating,
                 comment: newReview.comment,
-                image: newReview.image
             };
             
             const createdReview = await createReview(reviewData, token);
             setReviews(prev => [createdReview, ...prev]);
             setIsModalOpen(false);
-            setNewReview({ rating: 5, comment: "", image: null });
+            setNewReview({ rating: 5, comment: "" });
             toast.success("Review submitted! Thank you.");
         } catch (error: unknown) {
             toast.error(error instanceof Error ? error.message : "Error");
@@ -119,7 +119,9 @@ export function ReviewSection({ productId }: { productId: string }) {
                             <span className="text-[11px] font-mono text-white/20 uppercase tracking-widest">
                                 {new Date(rev.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                             </span>
-                            <span className="text-[11px] font-mono text-brand-volt/40 uppercase">Verified Purchase</span>
+                            <span className="text-[11px] font-mono text-brand-volt/40 uppercase">
+                                {rev.verifiedPurchase ? 'Verified Purchase' : 'Customer Review'}
+                            </span>
                         </div>
                     </div>
                 ))}
@@ -177,39 +179,6 @@ export function ReviewSection({ productId }: { productId: string }) {
                                         className="w-full bg-white/5 border border-white/10 p-5 font-mono text-sm focus:border-brand-volt outline-none text-white min-h-[120px] placeholder:text-white/10 uppercase"
                                         placeholder="SHARE YOUR THOUGHTS..."
                                     />
-                                </div>
-
-                                <div className="space-y-3">
-                                    <label className="text-[12px] font-mono text-white/40 uppercase tracking-widest">Photo (Optional)</label>
-                                    <div className="flex gap-4">
-                                        <div className="w-24 h-24 border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-2 text-white/20 hover:border-brand-volt hover:text-brand-volt cursor-pointer transition-all relative">
-                                            <input 
-                                                type="file" 
-                                                className="absolute inset-0 opacity-0 cursor-pointer" 
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        const url = URL.createObjectURL(file);
-                                                        setNewReview({...newReview, image: url});
-                                                    }
-                                                }}
-                                            />
-                                            <Camera size={24} />
-                                            <span className="text-[11px] font-mono uppercase tracking-tighter">Attach</span>
-                                        </div>
-                                        {newReview.image && (
-                                            <div className="w-24 h-24 border border-brand-volt relative group">
-                                                <img src={newReview.image} className="w-full h-full object-cover" alt="" />
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => setNewReview({...newReview, image: null})}
-                                                    className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                                >
-                                                    <X size={10} />
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
                                 </div>
 
                                 <button 

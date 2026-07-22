@@ -91,7 +91,7 @@ export function HomePopup() {
                         </div>
 
                         <div className="pt-4">
-                            <Link href={settings.buttonLink || '#'}>
+                            <Link href={settings.buttonLink || '/shop'}>
                                 <button 
                                     onClick={() => setIsOpen(false)}
                                     className="w-full bg-white text-black py-5 font-black uppercase text-[12px] tracking-[0.3em] flex items-center justify-center gap-4 hover:bg-brand-volt transition-all"

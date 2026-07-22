@@ -5,55 +5,9 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { COLLECTION_NAV_LINKS } from '@/lib/catalog';
-import {
-    Instagram,
-    Twitter,
-    Facebook,
-    Mail,
-    ChevronRight
-} from 'lucide-react';
-
-const PinterestIcon = ({ size = 18 }: { size?: number }) => (
-    <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-    >
-        <line x1="8" y1="22" x2="14" y2="3" />
-        <path d="M9 14.9c-2.8-1.5-4-5.2-2.7-8.3C7.6 3.5 11 2 14.1 2.9c3.1.9 4.6 4.3 3.6 7.4-.9 2.5-3.3 4-5.7 4" />
-        <path d="M12 11c1.5 1.5 3 2.5 3 4.5 0 2-1.5 3.5-3 3.5s-3-1.5-3-3.5" />
-    </svg>
-);
-
-const TikTokIcon = ({ size = 18 }: { size?: number }) => (
-    <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-    >
-        <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
-    </svg>
-);
+import { ChevronRight } from 'lucide-react';
 
 export function Footer() {
-    const socialLinks = [
-        { icon: Instagram, href: '#' },
-        { icon: Facebook, href: '#' },
-        { icon: Twitter, href: '#' },
-        { icon: TikTokIcon, href: '#' },
-        { icon: PinterestIcon, href: '#' }
-    ];
-
     // Archive Protocol Links
     const archiveLinks = COLLECTION_NAV_LINKS;
 
@@ -90,18 +44,6 @@ export function Footer() {
                         <p className="text-white/60 text-[12px] font-mono leading-relaxed mb-8 max-w-xs uppercase tracking-wide">
                             High-performance streetwear engineered for the modern nomad. Designed in Sri Lanka, deployed globally.
                         </p>
-                        <div className="flex gap-3">
-                            {socialLinks.map((social, i) => (
-                                <motion.a
-                                    key={i}
-                                    href={social.href}
-                                    whileHover={{ scale: 1.1, color: '#df0715ff', borderColor: '#df0715ff' }}
-                                    className="w-10 h-10 border border-white/10 flex items-center justify-center text-white transition-all duration-300"
-                                >
-                                    <social.icon size={16} />
-                                </motion.a>
-                            ))}
-                        </div>
                     </motion.div>
 
                     {/* Archive Section */}
@@ -154,16 +96,9 @@ export function Footer() {
                         <p className="text-white/60 text-[12px] font-mono mb-6 uppercase tracking-wide leading-relaxed">
                             Join our community for early access to new collections.
                         </p>
-                        <div className="relative group">
-                            <input
-                                type="email"
-                                placeholder="ENTER YOUR EMAIL"
-                                className="w-full bg-brand-surface border border-white/10 px-4 py-4 text-[12px] font-mono text-white outline-none focus:border-brand-volt transition-colors placeholder:text-white/20 tracking-wide"
-                            />
-                            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-volt hover:text-white transition-colors">
-                                <Mail size={16} />
-                            </button>
-                        </div>
+                        <Link href="/#newsletter" className="inline-flex border border-brand-volt px-6 py-4 font-mono text-[11px] uppercase tracking-widest text-brand-volt hover:bg-brand-volt hover:text-black transition-colors">
+                            Open newsletter signup
+                        </Link>
                     </motion.div>
                 </div>
 

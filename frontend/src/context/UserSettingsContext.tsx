@@ -19,19 +19,21 @@ export function UserSettingsProvider({ children }: { children: React.ReactNode }
     useEffect(() => {
         const saved = localStorage.getItem('kavon-intel-v1');
         if (saved) {
-            const parsed = JSON.parse(saved);
-            setTimeout(() => {
-                setRecentlyViewed(parsed.viewed || []);
-                setLocation(parsed.location || "COLOMBO");
-            }, 0);
+            try {
+                const parsed = JSON.parse(saved);
+                setTimeout(() => {
+                    setRecentlyViewed(Array.isArray(parsed.viewed) ? parsed.viewed : []);
+                    setLocation(parsed.location === 'OUTSTATION' ? 'OUTSTATION' : 'COLOMBO');
+                }, 0);
+            } catch {
+                localStorage.removeItem('kavon-intel-v1');
+            }
         }
     }, []);
 
     // Unified Storage Protocol
     useEffect(() => {
-        if (recentlyViewed.length > 0) {
-            localStorage.setItem('kavon-intel-v1', JSON.stringify({ viewed: recentlyViewed, location }));
-        }
+        localStorage.setItem('kavon-intel-v1', JSON.stringify({ viewed: recentlyViewed, location }));
     }, [recentlyViewed, location]);
 
     const trackView = useCallback((id: string) => {

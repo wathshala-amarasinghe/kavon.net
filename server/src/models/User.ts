@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 export interface IUser extends Document {
     name: string;
     email: string;
-    password?: string;
+    password: string;
     role: 'user' | 'admin';
     loyaltyPoints: number;
     shippingAddress?: {
@@ -15,13 +15,17 @@ export interface IUser extends Document {
         phone: string;
     };
     comparePassword: (password: string) => Promise<boolean>;
+    passwordResetCodeHash?: string;
+    passwordResetExpires?: Date;
+    passwordResetAttempts?: number;
+    passwordResetTokenHash?: string;
 }
 
 const UserSchema: Schema = new Schema(
     {
-        name: { type: String, required: true },
+        name: { type: String, required: true, trim: true },
         email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-        password: { type: String },
+        password: { type: String, required: true, minlength: 8, select: false },
         role: { type: String, enum: ['user', 'admin'], default: 'user' },
         loyaltyPoints: { type: Number, default: 0 },
         shippingAddress: {
@@ -31,6 +35,10 @@ const UserSchema: Schema = new Schema(
             country: { type: String },
             phone: { type: String },
         },
+        passwordResetCodeHash: { type: String, select: false },
+        passwordResetExpires: { type: Date, select: false },
+        passwordResetAttempts: { type: Number, default: 0, select: false },
+        passwordResetTokenHash: { type: String, select: false },
     },
     { timestamps: true }
 );
@@ -48,4 +56,4 @@ UserSchema.methods.comparePassword = async function (password: string) {
     return await bcrypt.compare(password, this.password);
 };
 
-export default mongoose.model<IUser>('User', UserSchema);
+export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

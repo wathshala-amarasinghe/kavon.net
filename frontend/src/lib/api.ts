@@ -1,54 +1,50 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-const EMPTY_PRODUCT_RESPONSE = {
-  products: [],
-  total: 0,
-  page: 1,
-  pages: 0,
-  // Keep the legacy names too so every existing caller receives safe values.
-  totalPages: 0,
-  currentPage: 1,
-};
+async function apiError(response: Response, fallback: string): Promise<Error> {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    const data = await response.json().catch(() => null);
+    return new Error(data?.message || fallback);
+  }
+
+  const message = (await response.text().catch(() => '')).trim();
+  return new Error(message || fallback);
+}
 
 export async function getProducts(params: Record<string, unknown> = {}) {
-  try {
-    const query = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "") {
-        query.append(key, value as string);
-      }
-    });
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.append(key, value as string);
+    }
+  });
 
-    const res = await fetch(`${API_URL}/products?${query.toString()}`, {
-      cache: "no-store",
-    });
+  const res = await fetch(`${API_URL}/products?${query.toString()}`, {
+    cache: "no-store",
+  });
 
-    if (!res.ok) return EMPTY_PRODUCT_RESPONSE;
+  if (!res.ok) throw await apiError(res, 'Catalog could not be loaded');
 
-    const raw = await res.json();
-    const data = raw && typeof raw === "object" ? raw : {};
-    const products = Array.isArray(data.products) ? data.products : [];
-    const total = Number.isFinite(Number(data.total)) ? Number(data.total) : products.length;
-    const page = Number.isFinite(Number(data.page ?? data.currentPage))
-      ? Number(data.page ?? data.currentPage)
-      : 1;
-    const pages = Number.isFinite(Number(data.pages ?? data.totalPages))
-      ? Number(data.pages ?? data.totalPages)
-      : 0;
+  const raw = await res.json();
+  const data = raw && typeof raw === "object" ? raw : {};
+  const products = Array.isArray(data.products) ? data.products : [];
+  const total = Number.isFinite(Number(data.total)) ? Number(data.total) : products.length;
+  const page = Number.isFinite(Number(data.page ?? data.currentPage))
+    ? Number(data.page ?? data.currentPage)
+    : 1;
+  const pages = Number.isFinite(Number(data.pages ?? data.totalPages))
+    ? Number(data.pages ?? data.totalPages)
+    : 0;
 
-    return {
-      ...data,
-      products,
-      total,
-      page,
-      pages,
-      totalPages: pages,
-      currentPage: page,
-    };
-  } catch (error) {
-    console.warn("API_FETCH_ERROR [getProducts]:", error);
-    return EMPTY_PRODUCT_RESPONSE;
-  }
+  return {
+    ...data,
+    products,
+    total,
+    page,
+    pages,
+    totalPages: pages,
+    currentPage: page,
+  };
 }
 
 export async function getProductById(id: string) {
@@ -95,6 +91,39 @@ export async function register(userData: Record<string, unknown>) {
   return res.json();
 }
 
+export async function requestPasswordReset(email: string) {
+  const res = await fetch(`${API_URL}/auth/password/forgot`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!res.ok) throw await apiError(res, 'Could not send recovery code');
+  return res.json();
+}
+
+export async function verifyPasswordResetCode(email: string, code: string) {
+  const res = await fetch(`${API_URL}/auth/password/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, code }),
+  });
+
+  if (!res.ok) throw await apiError(res, 'Recovery code is invalid or expired');
+  return res.json();
+}
+
+export async function resetPassword(email: string, token: string, password: string) {
+  const res = await fetch(`${API_URL}/auth/password/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, token, password }),
+  });
+
+  if (!res.ok) throw await apiError(res, 'Password reset failed');
+  return res.json();
+}
+
 export async function getMe(token: string) {
   const res = await fetch(`${API_URL}/auth/me`, {
     headers: { 'Authorization': `Bearer ${token}` },
@@ -114,11 +143,19 @@ export async function createOrder(orderData: Record<string, unknown>, token: str
     body: JSON.stringify(orderData),
   });
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || 'Order creation failed');
-  }
+  if (!res.ok) throw await apiError(res, 'Order creation failed');
 
+  return res.json();
+}
+
+export async function validateCoupon(code: string, amount: number) {
+  const res = await fetch(`${API_URL}/coupons/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: code.trim().toUpperCase(), amount }),
+  });
+
+  if (!res.ok) throw await apiError(res, 'Invalid promotion code');
   return res.json();
 }
 
@@ -220,10 +257,7 @@ export async function createReview(reviewData: Record<string, unknown>, token: s
     body: JSON.stringify(reviewData),
   });
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || 'Review submission failed');
-  }
+  if (!res.ok) throw await apiError(res, 'Review submission failed');
 
   return res.json();
 }
@@ -242,28 +276,19 @@ export async function trackOrder(orderId: string, phone: string) {
 }
 
 export async function getSettings() {
-  try {
-    const res = await fetch(`${API_URL}/settings`, {
-      cache: "no-store",
-    });
+  const res = await fetch(`${API_URL}/settings`, {
+    cache: "no-store",
+  });
 
-    if (!res.ok) return null;
-    return res.json();
-  } catch (error) {
-    // Gracefully handle network errors without throwing
-    return null;
-  }
+  if (!res.ok) throw await apiError(res, 'Site settings could not be loaded');
+  return res.json();
 }
 
 export async function getCampaigns() {
-  try {
-    const res = await fetch(`${API_URL}/campaigns`, {
-      cache: "no-store",
-    });
+  const res = await fetch(`${API_URL}/campaigns`, {
+    cache: "no-store",
+  });
 
-    if (!res.ok) return [];
-    return res.json();
-  } catch (error) {
-    return [];
-  }
+  if (!res.ok) throw await apiError(res, 'Campaigns could not be loaded');
+  return res.json();
 }

@@ -8,14 +8,18 @@ import { ArrowRight, Ticket } from "lucide-react";
 import { FormattedPrice } from "@/components/ui/FormattedPrice";
 
 export function OrderSummary() {
-    const { subtotal, discount, shippingFee, total, applyCoupon, activeCoupon } = useCart();
+    const { subtotal, discount, shippingFee, total, applyCoupon, activeCoupon, couponError } = useCart();
     const { user } = useAuth();
     const [couponInput, setCouponInput] = useState("");
+    const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const router = useRouter();
 
-    const handleApply = () => {
-        const success = applyCoupon(couponInput);
+    const handleApply = async () => {
+        if (!couponInput.trim() || isApplyingCoupon) return;
+        setIsApplyingCoupon(true);
+        const success = await applyCoupon(couponInput, subtotal);
         if (success) setCouponInput("");
+        setIsApplyingCoupon(false);
     };
 
     const handleCheckout = () => {
@@ -66,11 +70,17 @@ export function OrderSummary() {
                     />
                     <button
                         onClick={handleApply}
+                        disabled={isApplyingCoupon || !couponInput.trim()}
                         className="px-4 border border-white/20 text-[10px] font-black uppercase hover:bg-white hover:text-black transition-all"
                     >
-                        Apply
+                        {isApplyingCoupon ? 'Checking...' : 'Apply'}
                     </button>
                 </div>
+                {couponError && (
+                    <p role="alert" className="text-[10px] font-mono text-red-400 uppercase tracking-wide">
+                        {couponError}
+                    </p>
+                )}
             </div>
 
             <button

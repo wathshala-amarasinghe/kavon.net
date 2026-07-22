@@ -1,12 +1,50 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { SocialAuth } from '@/components/auth/SocialAuth';
+import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterPage() {
+    const router = useRouter();
+    const { register } = useAuth();
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formError, setFormError] = useState('');
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (isSubmitting) return;
+
+        setFormError('');
+
+        if (password.length < 8) {
+            setFormError('Password must contain at least 8 characters.');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setFormError('Passwords do not match.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await register({ name: name.trim(), email: email.trim(), password });
+            router.push('/dashboard');
+        } catch (error) {
+            setFormError(error instanceof Error ? error.message : 'Account creation failed.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <div className="bg-brand-black min-h-screen text-white selection:bg-[#df0715ff] selection:text-black">
             <Navbar />
@@ -27,7 +65,7 @@ export default function RegisterPage() {
                         </p>
                     </div>
 
-                    <form className="space-y-6 mb-10">
+                    <form onSubmit={handleSubmit} className="space-y-6 mb-10">
                         <div className="space-y-2">
                             <label className="text-[12px] font-mono uppercase text-white/80 font-bold tracking-[0.2em]">
                                 Full Name
@@ -35,6 +73,9 @@ export default function RegisterPage() {
                             <input
                                 type="text"
                                 required
+                                autoComplete="name"
+                                value={name}
+                                onChange={(event) => setName(event.target.value)}
                                 className="w-full bg-black/60 border border-white/20 px-4 py-4 text-[12px] font-mono text-white focus:border-[#df0715ff] focus:bg-black/80 outline-none transition-all placeholder:text-white/30"
                                 placeholder="ENTER NAME"
                             />
@@ -46,6 +87,9 @@ export default function RegisterPage() {
                             <input
                                 type="email"
                                 required
+                                autoComplete="email"
+                                value={email}
+                                onChange={(event) => setEmail(event.target.value)}
                                 className="w-full bg-black/60 border border-white/20 px-4 py-4 text-[12px] font-mono text-white focus:border-[#df0715ff] focus:bg-black/80 outline-none transition-all placeholder:text-white/30"
                                 placeholder="OPERATOR@KAVON.COM"
                             />
@@ -57,12 +101,40 @@ export default function RegisterPage() {
                             <input
                                 type="password"
                                 required
+                                minLength={8}
+                                autoComplete="new-password"
+                                value={password}
+                                onChange={(event) => setPassword(event.target.value)}
                                 className="w-full bg-black/60 border border-white/20 px-4 py-4 text-[12px] font-mono text-white focus:border-[#df0715ff] focus:bg-black/80 outline-none transition-all placeholder:text-white/30"
                                 placeholder="••••••••"
                             />
                         </div>
-                        <button className="w-full py-5 bg-[#f5f5f5] text-black font-black uppercase text-[13px] tracking-[0.3em] hover:bg-[#3fff75ff] transition-all duration-300 active:scale-[0.98]">
-                            Create Account
+                        <div className="space-y-2">
+                            <label className="text-[12px] font-mono uppercase text-white/80 font-bold tracking-[0.2em]">
+                                Confirm Password
+                            </label>
+                            <input
+                                type="password"
+                                required
+                                minLength={8}
+                                autoComplete="new-password"
+                                value={confirmPassword}
+                                onChange={(event) => setConfirmPassword(event.target.value)}
+                                className="w-full bg-black/60 border border-white/20 px-4 py-4 text-[12px] font-mono text-white focus:border-[#df0715ff] focus:bg-black/80 outline-none transition-all placeholder:text-white/30"
+                                placeholder="••••••••"
+                            />
+                        </div>
+                        {formError && (
+                            <p role="alert" className="border border-red-500/30 bg-red-500/10 p-3 text-[11px] font-mono text-red-400 uppercase tracking-wide">
+                                {formError}
+                            </p>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="w-full py-5 bg-[#f5f5f5] text-black font-black uppercase text-[13px] tracking-[0.3em] hover:bg-[#3fff75ff] transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? 'Creating Account...' : 'Create Account'}
                         </button>
                     </form>
 

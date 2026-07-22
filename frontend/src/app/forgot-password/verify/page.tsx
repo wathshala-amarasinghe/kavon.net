@@ -5,9 +5,11 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import toast from 'react-hot-toast';
+import { verifyPasswordResetCode } from '@/lib/api';
 
 export default function VerifyCode() {
     const [code, setCode] = useState(['', '', '', '', '', '']);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
     const router = useRouter();
 
@@ -18,19 +20,29 @@ export default function VerifyCode() {
         if (value && index < 5) inputRefs.current[index + 1]?.focus();
     };
 
-    const handleVerify = (e: React.FormEvent) => {
+    const handleVerify = async (e: React.FormEvent) => {
         e.preventDefault();
         const inputCode = code.join('');
-        const storedCode = sessionStorage.getItem('kavon_recovery_code');
+        const email = sessionStorage.getItem('kavon_recovery_email');
 
-        // BYPASS LOGIC: Accepts real code OR dummy code '123456'
-        if (inputCode === storedCode || inputCode === '123456') {
+        if (!email) {
+            toast.error('REQUEST_A_NEW_RECOVERY_CODE');
+            router.push('/forgot-password');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const data = await verifyPasswordResetCode(email, inputCode);
+            sessionStorage.setItem('kavon_reset_token', data.resetToken);
             toast.success('IDENTITY_CONFIRMED');
             router.push('/forgot-password/reset');
-        } else {
-            toast.error('INVALID_PROTOCOL', {
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'INVALID_PROTOCOL', {
                 style: { borderRadius: '0px', background: '#000', color: '#ff4b4b', border: '1px solid #ff4b4b' }
             });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -44,10 +56,10 @@ export default function VerifyCode() {
                     <form onSubmit={handleVerify} className="space-y-8">
                         <div className="flex justify-between gap-2">
                             {code.map((digit, i) => (
-                                <input key={i} ref={(el) => { inputRefs.current[i] = el; }} type="text" maxLength={1} value={digit} onChange={(e) => handleChange(i, e.target.value)} className="w-full h-14 bg-white/5 border border-white/10 text-center font-mono text-xl focus:border-[#df0715] outline-none" />
+                                <input key={i} ref={(el) => { inputRefs.current[i] = el; }} type="text" inputMode="numeric" pattern="[0-9]" maxLength={1} value={digit} onChange={(e) => handleChange(i, e.target.value.replace(/\D/g, ''))} className="w-full h-14 bg-white/5 border border-white/10 text-center font-mono text-xl focus:border-[#df0715] outline-none" />
                             ))}
                         </div>
-                        <button className="w-full py-5 bg-[#df0715] text-black font-black uppercase text-[10px] tracking-widest hover:bg-white transition-all">Confirm_Identity</button>
+                        <button disabled={isSubmitting || code.some((digit) => !digit)} className="w-full py-5 bg-[#df0715] text-black font-black uppercase text-[10px] tracking-widest hover:bg-white transition-all disabled:opacity-50">{isSubmitting ? 'VERIFYING...' : 'Confirm_Identity'}</button>
                     </form>
                 </motion.div>
             </main>

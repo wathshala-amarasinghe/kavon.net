@@ -45,5 +45,5 @@ const settingsSchema = new mongoose.Schema({
   heroCountdown: { type: Date, default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }
 }, { timestamps: true });
 
-const Settings = mongoose.model('Settings', settingsSchema);
+const Settings = mongoose.models.Settings || mongoose.model('Settings', settingsSchema);
 export default Settings;

@@ -8,7 +8,9 @@ import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCurrency } from '@/context/CurrencyContext';
-import { products } from '@/data/products';
+import { useSystemSettings } from '@/context/SystemSettingsContext';
+import { getProducts } from '@/lib/api';
+import { CatalogProduct } from '@/types/product';
 import { SearchDropdown } from './SearchDropdown';
 import { MiniCart } from './MiniCart';
 import { COLLECTION_NAV_LINKS } from '@/lib/catalog';
@@ -19,9 +21,6 @@ import {
     User,
     Menu,
     X,
-    Instagram,
-    Twitter,
-    Facebook,
     Mail,
     Phone,
     Heart,
@@ -29,20 +28,6 @@ import {
     ShieldCheck,
     ChevronRight
 } from 'lucide-react';
-
-const TikTokIcon = ({ size = 12 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
-    </svg>
-);
-
-const PinterestIcon = ({ size = 12 }: { size?: number }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="8" y1="22" x2="14" y2="3" />
-        <path d="M9 14.9c-2.8-1.5-4-5.2-2.7-8.3C7.6 3.5 11 2 14.1 2.9c3.1.9 4.6 4.3 3.6 7.4-.9 2.5-3.3 4-5.7 4" />
-        <path d="M12 11c1.5 1.5 3 2.5 3 4.5 0 2-1.5 3.5-3 3.5s-3-1.5-3-3.5" />
-    </svg>
-);
 
 export function Navbar() {
     const { cartCount } = useCart();
@@ -54,6 +39,8 @@ export function Navbar() {
     const [hidden, setHidden] = useState(false);
     const [isCartHovered, setIsCartHovered] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<CatalogProduct[]>([]);
+    const [searchResultQuery, setSearchResultQuery] = useState("");
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     const { scrollY } = useScroll();
@@ -80,13 +67,33 @@ export function Navbar() {
         }
     }, [isSearchOpen]);
 
-    // Live Search Logic updated for better filtering
-    const searchResults = searchQuery.trim().length > 1 
-        ? products.filter(p =>
-            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.category.toLowerCase().includes(searchQuery.toLowerCase())
-        ).slice(0, 5)
-        : [];
+    useEffect(() => {
+        const query = searchQuery.trim();
+        if (query.length < 2) {
+            return;
+        }
+
+        let isActive = true;
+        const timer = window.setTimeout(async () => {
+            try {
+                const response = await getProducts({ q: query, limit: 5 });
+                if (isActive) {
+                    setSearchResults(response.products || []);
+                    setSearchResultQuery(query);
+                }
+            } catch (error) {
+                console.error('SEARCH_SYNC_FAILURE:', error);
+                if (isActive) setSearchResults([]);
+            }
+        }, 250);
+
+        return () => {
+            isActive = false;
+            window.clearTimeout(timer);
+        };
+    }, [searchQuery]);
+
+    const visibleSearchResults = searchResultQuery === searchQuery.trim() ? searchResults : [];
 
     const handleLogout = () => {
         logout();
@@ -103,6 +110,10 @@ export function Navbar() {
     };
 
     const { currency, setCurrency } = useCurrency();
+    const { settings } = useSystemSettings();
+    const contactEmail = settings?.contactEmail || 'hq@kavon.net';
+    const contactPhone = settings?.contactPhone || '+94 77 123 4567';
+    const contactPhoneHref = contactPhone.replace(/[^+\d]/g, '');
 
     const [isCollectionsOpen, setIsCollectionsOpen] = useState(false);
 
@@ -115,14 +126,6 @@ export function Navbar() {
         },
         { name: 'Tracking', href: '/order-track' },
         { name: 'About', href: '/about' },
-    ];
-
-    const socialLinks = [
-        { icon: Instagram, href: '#' },
-        { icon: Facebook, href: '#' },
-        { icon: Twitter, href: '#' },
-        { icon: TikTokIcon, href: '#' },
-        { icon: PinterestIcon, href: '#' }
     ];
 
     return (
@@ -151,24 +154,13 @@ export function Navbar() {
                             ))}
                         </div>
                         <div className="w-px h-3 bg-white/10 mx-2" />
-                        <a href="mailto:info@kavon.com" className="flex items-center gap-2 text-[12px] font-bold text-white uppercase tracking-widest hover:text-[#df0715ff] transition-all">
-                            <Mail size={12} strokeWidth={2.5} /> info@kavon.com
+                        <a href={`mailto:${contactEmail}`} className="flex items-center gap-2 text-[12px] font-bold text-white uppercase tracking-widest hover:text-[#df0715ff] transition-all">
+                            <Mail size={12} strokeWidth={2.5} /> {contactEmail}
                         </a>
                         <div className="w-px h-3 bg-white/10 mx-2" />
-                        <a href="tel:+94112345678" className="flex items-center gap-2 text-[12px] font-bold text-white uppercase tracking-widest hover:text-[#df0715ff] transition-all">
-                            <Phone size={12} strokeWidth={2.5} /> +94 11 234 5678
+                        <a href={`tel:${contactPhoneHref}`} className="flex items-center gap-2 text-[12px] font-bold text-white uppercase tracking-widest hover:text-[#df0715ff] transition-all">
+                            <Phone size={12} strokeWidth={2.5} /> {contactPhone}
                         </a>
-                    </div>
-                    
-                    <div className="flex items-center gap-5">
-                        {socialLinks.map((social, i) => {
-                            const Icon = social.icon;
-                            return (
-                                <a key={i} href={social.href} className="text-white hover:opacity-70 transition-opacity">
-                                    <Icon size={12} />
-                                </a>
-                            );
-                        })}
                     </div>
                 </div>
             </div>
@@ -314,7 +306,7 @@ export function Navbar() {
                             </form>
                             <SearchDropdown
                                 query={searchQuery}
-                                results={searchResults}
+                                results={visibleSearchResults}
                                 close={() => { setIsSearchOpen(false); setSearchQuery(""); }}
                             />
                         </motion.div>

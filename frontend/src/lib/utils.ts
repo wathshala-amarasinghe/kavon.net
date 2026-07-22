@@ -32,7 +32,12 @@ export function getImageUrl(url: string | undefined | null) {
     if (!url) return "/img/Logo-1.jpeg";
     if (url.startsWith('http')) return url;
     
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+    const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const backendUrl = (
+        process.env.NEXT_PUBLIC_BACKEND_URL ||
+        configuredApiUrl?.replace(/\/api\/?$/, '') ||
+        "http://localhost:5000"
+    ).replace(/\/$/, '');
     
     if (url.startsWith('/uploads')) {
         return `${backendUrl}${url}`;

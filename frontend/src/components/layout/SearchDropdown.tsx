@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { getHighlightedParts } from '@/lib/utils';
-import { Product } from "@/data/products";
+import { CatalogProduct } from "@/types/product";
 
 import { FormattedPrice } from '../ui/FormattedPrice';
 
@@ -25,7 +25,7 @@ const Highlight = ({ text, query }: { text: string; query: string }) => {
     );
 };
 
-export function SearchDropdown({ query, results, close }: { query: string, results: Product[], close: () => void }) {
+export function SearchDropdown({ query, results, close }: { query: string, results: CatalogProduct[], close: () => void }) {
     if (!query) return null;
 
     return (

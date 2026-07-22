@@ -1,25 +1,38 @@
 "use client";
 
 import React, { useState } from 'react';
+import { ShippingAddress } from '@/context/CheckoutContext';
+import { useAuth } from '@/context/AuthContext';
 
-export function CheckoutForm({ onNext }: { onNext: () => void }) {
-    // Simulated Auto-fill Logic
-    const [address, setAddress] = useState("");
-    const [suggestions, setSuggestions] = useState<string[]>([]);
+export function CheckoutForm({ onNext }: { onNext: (address: ShippingAddress) => void }) {
+    const { user } = useAuth();
+    const savedAddress = user?.shippingAddress;
+    const [formData, setFormData] = useState<ShippingAddress>({
+        fullName: user?.name || '',
+        phone: savedAddress?.phone || '',
+        secondaryPhone: '',
+        address: savedAddress?.address || '',
+        city: savedAddress?.city || '',
+        postalCode: savedAddress?.postalCode || '',
+        country: savedAddress?.country || 'Sri Lanka',
+    });
 
-    const handleAddressChange = (val: string) => {
-        setAddress(val);
-        if (val.length > 5) {
-            // Simulated local dataset for Sri Lanka
-            setSuggestions(["45/A Shadow Lane, Colombo 07", "12 Tactical Blvd, Kandy", "Unit 9, Galle Fort"]);
-        } else {
-            setSuggestions([]);
-        }
+    const updateField = (field: keyof ShippingAddress, value: string) => {
+        setFormData((current) => ({ ...current, [field]: value }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onNext();
+        onNext({
+            ...formData,
+            fullName: formData.fullName.trim(),
+            phone: formData.phone.trim(),
+            secondaryPhone: formData.secondaryPhone?.trim(),
+            address: formData.address.trim(),
+            city: formData.city.trim(),
+            postalCode: formData.postalCode.trim(),
+            country: formData.country.trim(),
+        });
     };
 
     return (
@@ -37,17 +50,17 @@ export function CheckoutForm({ onNext }: { onNext: () => void }) {
                         <label className="text-[14px] font-mono text-white uppercase tracking-widest flex items-center gap-1">
                             Full_Name <span className="text-brand-volt">*</span>
                         </label>
-                        <input type="text" required placeholder="OPERATOR NAME" className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white hover:bg-white/[0.05]" />
+                        <input type="text" required autoComplete="name" value={formData.fullName} onChange={(e) => updateField('fullName', e.target.value)} placeholder="YOUR FULL NAME" className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white hover:bg-white/[0.05]" />
                     </div>
 
                     <div className="space-y-3">
                         <label className="text-[14px] font-mono text-white uppercase tracking-widest flex items-center gap-1">Primary_Phone <span className="text-brand-volt">*</span></label>
-                        <input type="tel" required pattern="[0-9+ ]{10,15}" placeholder="+94 XX XXX XXXX" className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white" />
+                        <input type="tel" required autoComplete="tel" pattern="[0-9+() -]{9,20}" value={formData.phone} onChange={(e) => updateField('phone', e.target.value)} placeholder="+94 XX XXX XXXX" className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white" />
                     </div>
 
                     <div className="space-y-3">
                         <label className="text-[14px] font-mono text-white uppercase tracking-widest">Secondary_Backup_Phone</label>
-                        <input type="tel" placeholder="+94 XX XXX XXXX" className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white" />
+                        <input type="tel" pattern="[0-9+() -]{9,20}" value={formData.secondaryPhone || ''} onChange={(e) => updateField('secondaryPhone', e.target.value)} placeholder="+94 XX XXX XXXX" className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white" />
                     </div>
 
                     <div className="md:col-span-2 space-y-3 relative">
@@ -57,36 +70,22 @@ export function CheckoutForm({ onNext }: { onNext: () => void }) {
                         <input
                             type="text"
                             required
-                            value={address}
-                            onChange={(e) => handleAddressChange(e.target.value)}
+                            autoComplete="street-address"
+                            value={formData.address}
+                            onChange={(e) => updateField('address', e.target.value)}
                             placeholder="HOUSE NO / STREET NAME"
                             className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white"
                         />
-                        {/* Auto-fill Suggestions Dropdown */}
-                        {suggestions.length > 0 && (
-                            <div className="absolute left-0 right-0 top-full bg-brand-surface border border-brand-volt z-50 shadow-2xl">
-                                {suggestions.map((s, i) => (
-                                    <button
-                                        key={i}
-                                        type="button"
-                                        onClick={() => { setAddress(s); setSuggestions([]); }}
-                                        className="w-full text-left p-4 font-mono text-[12px] hover:bg-brand-volt hover:text-black border-b border-white/5 uppercase"
-                                    >
-                                        {s}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
                     </div>
 
                     <div className="space-y-3">
                         <label className="text-[14px] font-mono text-white uppercase tracking-widest flex items-center gap-1">City_Sector <span className="text-brand-volt">*</span></label>
-                        <input type="text" required placeholder="COLOMBO" className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white" />
+                        <input type="text" required autoComplete="address-level2" value={formData.city} onChange={(e) => updateField('city', e.target.value)} placeholder="COLOMBO" className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white" />
                     </div>
 
                     <div className="space-y-3">
                         <label className="text-[14px] font-mono text-white uppercase tracking-widest flex items-center gap-1">Postal_Zip_Code <span className="text-brand-volt">*</span></label>
-                        <input type="text" required placeholder="XXXXX" className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white" />
+                        <input type="text" required autoComplete="postal-code" value={formData.postalCode} onChange={(e) => updateField('postalCode', e.target.value)} placeholder="XXXXX" className="w-full bg-white/[0.03] border border-white/10 p-5 font-mono text-[14px] focus:border-brand-volt outline-none text-white" />
                     </div>
                 </div>
             </section>

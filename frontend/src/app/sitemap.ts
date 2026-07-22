@@ -27,8 +27,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Product routes
   try {
     // Note: This fetch will run during build time if using SSG or at request time for dynamic sitemaps
-    const response = await getProducts();
-    const products = response.products || [];
+    const firstPage = await getProducts({ limit: 100, page: 1 });
+    const remainingPages = Math.max(0, Number(firstPage.pages || 0) - 1);
+    const remaining = remainingPages > 0
+      ? await Promise.all(
+          Array.from({ length: remainingPages }, (_, index) =>
+            getProducts({ limit: 100, page: index + 2 })
+          )
+        )
+      : [];
+    const products = [
+      ...(firstPage.products || []),
+      ...remaining.flatMap((page) => page.products || []),
+    ];
     
     const productRoutes = products.map((product: CatalogProduct) => ({
       url: `${baseUrl}/products/${product._id || product.id}`,
