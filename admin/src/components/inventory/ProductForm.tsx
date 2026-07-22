@@ -113,7 +113,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
             
             const res = await uploadImage(file, token);
             // Append localhost if relative
-            const fullUrl = res.url.startsWith('/') ? `http://localhost:5000${res.url}` : res.url;
+            const fullUrl = res.url;
             
             const newImages = [...formData.images];
             newImages[index] = fullUrl;
