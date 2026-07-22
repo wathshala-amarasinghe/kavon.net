@@ -9,8 +9,9 @@ import { products as ALL_PRODUCTS } from '@/data/products';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
+import { CatalogProduct } from '@/types/product';
 
-export function BestSellers({ products = [] }: { products?: Record<string, unknown>[] }) {
+export function BestSellers({ products = [] }: { products?: CatalogProduct[] }) {
     const { addToCart } = useCart();
     
     // Select the best sellers (e.g., top 4 from backend)
@@ -41,7 +42,7 @@ export function BestSellers({ products = [] }: { products?: Record<string, unkno
                                     {product.tag || 'TRENDING'}
                                 </span>
                                 <span className="bg-black/60 backdrop-blur-md text-white/80 text-[12px] font-mono px-2 py-1 border border-white/20 uppercase tracking-widest">
-                                    REF: {(product._id || product.id).toString().slice(-8).toUpperCase()}
+                                    REF: {(product._id || product.id || "UNKNOWN").slice(-8).toUpperCase()}
                                 </span>
                             </div>
 
@@ -60,9 +61,9 @@ export function BestSellers({ products = [] }: { products?: Record<string, unkno
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     addToCart({
-                                        id: product._id || product.id,
+                                        id: product._id || product.id || "",
                                         name: product.name,
-                                        image: product.images?.[0] || product.image,
+                                        image: product.images?.[0] || product.image || "",
                                         price: product.price,
                                         quantity: 1,
                                         size: 'M'

@@ -3,19 +3,35 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Package, Truck, Navigation, CheckCircle2, AlertCircle } from 'lucide-react';
-import { TrackingTimeline } from "@/components/tracking/TrackingTimeline";
+import { Stage, TrackingTimeline } from "@/components/tracking/TrackingTimeline";
 import { trackOrder } from '@/lib/api';
 import { useSearchParams } from 'next/navigation';
+
+interface TrackedOrder {
+    _id: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    shippingAddress: { city: string };
+}
+
+interface TrackingResult {
+    id: string;
+    status: string;
+    destination: string;
+    estDelivery: string;
+    stages: Stage[];
+}
 
 function TrackingContent() {
     const searchParams = useSearchParams();
     const [orderId, setOrderId] = useState(searchParams.get('id') || "");
     const [phone, setPhone] = useState(searchParams.get('phone') || "");
     const [isSearching, setIsSearching] = useState(false);
-    const [trackingData, setTrackingData] = useState<Record<string, unknown>>(null);
+    const [trackingData, setTrackingData] = useState<TrackingResult | "NOT_FOUND" | null>(null);
 
-    const mapAndSetData = (data: Record<string, unknown>) => {
-        const stages = [
+    const mapAndSetData = (data: TrackedOrder) => {
+        const stages: Stage[] = [
             { 
                 id: '1', 
                 label: 'Order Confirmed', 
@@ -62,7 +78,7 @@ function TrackingContent() {
             const autoSearch = async () => {
                 setIsSearching(true);
                 try {
-                    const data = await trackOrder(id, ph);
+                    const data = await trackOrder(id, ph) as TrackedOrder;
                     mapAndSetData(data);
                 } catch (e) {
                     setTrackingData("NOT_FOUND");
@@ -80,9 +96,9 @@ function TrackingContent() {
         setTrackingData(null);
 
         try {
-            const data = await trackOrder(orderId.trim(), phone.trim());
+            const data = await trackOrder(orderId.trim(), phone.trim()) as TrackedOrder;
             mapAndSetData(data);
-        } catch (error: Record<string, unknown>) {
+        } catch (error: unknown) {
             setTrackingData("NOT_FOUND");
         } finally {
             setIsSearching(false);

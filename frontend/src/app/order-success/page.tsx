@@ -5,9 +5,10 @@ import { motion } from 'framer-motion';
 import { Navbar } from "@/components/layout/Navbar";
 import { CheckCircle2, Package, Truck, ArrowRight, ShieldCheck, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { Order } from '@/context/AuthContext';
 
 export default function OrderSuccessPage() {
-    const [order, setOrder] = useState<Record<string, unknown>>(null);
+    const [order, setOrder] = useState<Order | null>(null);
 
     useEffect(() => {
         const saved = localStorage.getItem('kavon_last_order');
@@ -58,18 +59,18 @@ export default function OrderSuccessPage() {
                         </div>
 
                         <div className="space-y-6">
-                            {(order.orderItems || order.items).map((item: Record<string, unknown>, idx: number) => (
+                            {(order.orderItems || order.items || []).map((item, idx: number) => (
                                 <div key={idx} className="flex gap-4">
                                     <div className="w-16 h-20 bg-brand-surface border border-white/10 shrink-0">
                                         { }
-<img src={item.image} className="w-full h-full object-cover" alt="" />
+<img src={item.image || ""} className="w-full h-full object-cover" alt="" />
                                     </div>
                                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                                         <h4 className="text-[11px] font-black uppercase truncate tracking-widest">{item.name}</h4>
                                         <p className="text-[9px] font-mono text-white/40 uppercase mt-1 tracking-widest">Size: {item.size} {"//"} Qty: {item.quantity}</p>
                                     </div>
                                     <div className="flex flex-col justify-center text-right">
-                                        <span className="text-xs font-mono font-bold tracking-widest">LKR {(item.price * item.quantity).toLocaleString()}</span>
+                                        <span className="text-xs font-mono font-bold tracking-widest">LKR {((item.price || 0) * (item.quantity || 0)).toLocaleString()}</span>
                                     </div>
                                 </div>
                             ))}
@@ -84,7 +85,7 @@ export default function OrderSuccessPage() {
                                 <span>Logistics_Fee</span>
                                 <span>LKR {(order.shippingPrice || order.totals?.shipping || 0).toLocaleString()}</span>
                             </div>
-                            {(order.discountPrice || order.totals?.discount > 0) && (
+                            {((order.discountPrice || order.totals?.discount || 0) > 0) && (
                                 <div className="flex justify-between text-brand-volt">
                                     <span>Discount</span>
                                     <span>-LKR {(order.discountPrice || order.totals?.discount || 0).toLocaleString()}</span>

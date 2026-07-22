@@ -15,11 +15,13 @@ import { CommunityUGC } from '@/sections/CommunityUGC';
 import { PromoBanner } from '@/components/home/PromoBanner';
 import { HomePopup } from '@/components/home/HomePopup';
 import { getProducts, getCampaigns } from '@/lib/api';
+import { CatalogProduct } from '@/types/product';
+import { Campaign } from '@/sections/ActiveCampaign';
 
 export default function HomeClient() {
-  const [bestSellers, setBestSellers] = useState<Record<string, unknown>[]>([]);
-  const [newDrops, setNewDrops] = useState<Record<string, unknown>[]>([]);
-  const [activeCampaign, setActiveCampaign] = useState<Record<string, unknown>>(null);
+  const [bestSellers, setBestSellers] = useState<CatalogProduct[]>([]);
+  const [newDrops, setNewDrops] = useState<CatalogProduct[]>([]);
+  const [activeCampaign, setActiveCampaign] = useState<Campaign | null>(null);
 
   useEffect(() => {
     const fetchHomeData = async () => {
@@ -33,8 +35,8 @@ export default function HomeClient() {
         setBestSellers(bestData.products || []);
         setNewDrops(newData.products || []);
         
-        const active = campaignData.find((c: Record<string, unknown>) => c.status === 'Active');
-        setActiveCampaign(active);
+        const active = campaignData.find((c: Campaign) => c.status === 'Active');
+        setActiveCampaign(active || null);
       } catch (error) {
         console.error("Failed to sync home sectors:", error);
       }

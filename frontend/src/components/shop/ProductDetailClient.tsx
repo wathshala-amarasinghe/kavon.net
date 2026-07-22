@@ -25,10 +25,11 @@ import { StockBadge } from "@/components/shared/StockBadge";
 import { getProducts } from "@/lib/api";
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
+import { CatalogProduct } from '@/types/product';
 
 const MotionImage = motion.create(Image);
 
-export default function ProductDetailClient({ product: initialProduct }: { product: Record<string, unknown> }) {
+export default function ProductDetailClient({ product: initialProduct }: { product: CatalogProduct }) {
     const params = useParams();
     const router = useRouter();
     const { addToCart } = useCart();
@@ -37,13 +38,13 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     const { trackView, location } = useSettings();
     const { checkStock, syncInventory } = useInventory();
 
-    const [product, setProduct] = useState<Record<string, unknown>>(initialProduct);
-    const [relatedProducts, setRelatedProducts] = useState<Record<string, unknown>[]>([]);
+    const [product] = useState<CatalogProduct>(initialProduct);
+    const [relatedProducts, setRelatedProducts] = useState<CatalogProduct[]>([]);
     const [loading, setLoading] = useState(false);
 
-    const [selectedColor, setSelectedColor] = useState<Record<string, unknown>>(product.colors?.[0] || { name: 'Standard', hex: '#000', img: product.images[0] });
+    const [selectedColor, setSelectedColor] = useState<CatalogProduct["colors"][number]>(product.colors?.[0] || { name: 'Standard', hex: '#000', img: product.images[0] });
     const [selectedImage, setSelectedImage] = useState(product.images[0]);
-    const [selectedSize, setSelectedSize] = useState<Record<string, unknown>>(product.sizes?.[1] || product.sizes?.[0] || { label: 'FREE' });
+    const [selectedSize, setSelectedSize] = useState<CatalogProduct["sizes"][number]>(product.sizes?.[1] || product.sizes?.[0] || { label: 'FREE', stock: 0 });
     const [quantity, setQuantity] = useState(1);
     const [modalContent, setModalContent] = useState<{ title: string; desc: string; link: string; highlight: string } | null>(null);
     const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
@@ -55,7 +56,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
             const response = await getProducts();
             const allProducts = response.products || [];
             const related = allProducts
-                .filter((p: Record<string, unknown>) => p.category === product.category && p._id !== product._id)
+                .filter((p: CatalogProduct) => p.category === product.category && p._id !== product._id)
                 .slice(0, 4);
             setRelatedProducts(related);
             syncInventory(related);
@@ -66,7 +67,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
     // Track View Protocol
     useEffect(() => {
-        if (product) trackView(product._id);
+        const productId = product._id || product.id;
+        if (productId) trackView(productId);
     }, [product, trackView]);
 
     const getDeliveryEstimate = () => {
@@ -90,8 +92,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     }, []);
 
     const handleWishlist = () => {
-        toggleWishlist({ ...product, image: selectedImage });
-        if (!isInWishlist(product._id)) {
+        const productId = product._id || product.id || "";
+        toggleWishlist({ id: productId, name: product.name, price: product.price, image: selectedImage });
+        if (!isInWishlist(productId)) {
             toast.success("ASSET_ADDED_TO_WISHLIST");
         } else {
             toast.error("ASSET_REMOVED_FROM_WISHLIST");
@@ -117,7 +120,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     };
 
     const handleBuyNow = () => {
-        setBuyNowItem({ ...product, id: product._id, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity: quantity });
+        setBuyNowItem({ id: product._id || product.id || "", name: product.name, price: product.price, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity });
         router.push('/checkout');
     };
 
@@ -158,7 +161,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                             </AnimatePresence>
 
                             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 md:hidden">
-                                {product.images.map((_: Record<string, unknown>, idx: number) => (
+                                {product.images.map((_, idx: number) => (
                                     <div
                                         key={idx}
                                         className={`w-1.5 h-1.5 rounded-full transition-all ${product.images.indexOf(selectedImage) === idx ? 'bg-brand-volt w-4' : 'bg-white/20'}`}
@@ -201,10 +204,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                         <div className="space-y-3">
                             <div className="flex justify-between items-end">
                                 <p className="text-[12px] font-mono text-white/40 uppercase tracking-widest">Color: <span className="text-white">{selectedColor.name}</span></p>
-                                <StockBadge productId={product._id} size={selectedSize.label} />
+                                <StockBadge productId={product._id || product.id || ""} size={selectedSize.label} />
                             </div>
                             <div className="flex gap-3">
-                                {product.colors?.map((c: Record<string, unknown>) => (
+                                {product.colors?.map((c) => (
                                     <button
                                         key={c.name}
                                         onClick={() => { setSelectedColor(c); setSelectedImage(c.img); }}
@@ -235,8 +238,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                 </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                {product.sizes?.map((s: Record<string, unknown>) => {
-                                    const currentStock = checkStock(product._id, s.label);
+                                {product.sizes?.map((s) => {
+                                    const currentStock = checkStock(product._id || product.id || "", s.label);
                                     return (
                                         <button
                                             key={s.label}
@@ -311,7 +314,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                 </button>
                                 <button
                                     onClick={() => {
-                                        addToCart({ id: product._id, name: product.name, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity: quantity, price: product.price });
+                                        addToCart({ id: product._id || product.id || "", name: product.name, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity: quantity, price: product.price });
                                         toast.success("MANIFEST_UPDATED: ASSET_LOCKED");
                                     }}
                                     className="w-full py-5 border border-white/20 text-white font-black uppercase text-[12px] tracking-widest hover:bg-white hover:text-black transition-all"
@@ -326,9 +329,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                 </button>
                                 <button
                                     onClick={handleWishlist}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-3 border border-white/5 text-[12px] font-mono uppercase transition-all ${isInWishlist(product._id) ? 'text-brand-volt border-brand-volt/30' : 'text-white/40 hover:text-brand-volt'}`}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-3 border border-white/5 text-[12px] font-mono uppercase transition-all ${isInWishlist(product._id || product.id || "") ? 'text-brand-volt border-brand-volt/30' : 'text-white/40 hover:text-brand-volt'}`}
                                 >
-                                    <Heart size={14} className={isInWishlist(product._id) ? 'fill-brand-volt' : ''} /> Wishlist
+                                    <Heart size={14} className={isInWishlist(product._id || product.id || "") ? 'fill-brand-volt' : ''} /> Wishlist
                                 </button>
                             </div>
                         </div>
@@ -393,7 +396,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     </header>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                         {relatedProducts.map((p, idx) => (
-                            <ProductCard key={p._id} product={p} index={idx} />
+                            <ProductCard key={p._id || p.id} product={p} index={idx} />
                         ))}
                     </div>
                 </div>
@@ -405,14 +408,14 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     />
                 )}
 
-                <div className="mt-32"><ReviewSection productId={product._id} /></div>
+                <div className="mt-32"><ReviewSection productId={product._id || product.id || ""} /></div>
 
                 <SizeGuide isOpen={isSizeGuideOpen} onClose={() => setIsSizeGuideOpen(false)} />
                 <FitFinder
                     isOpen={isFitFinderOpen}
                     onClose={() => setIsFitFinderOpen(false)}
                     onResult={(size) => {
-                        const found = product.sizes?.find((s: Record<string, unknown>) => s.label === size);
+                        const found = product.sizes?.find((s) => s.label === size);
                         if (found) setSelectedSize(found);
                     }}
                 />
@@ -420,7 +423,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     isVisible={isStickyVisible}
                     product={product}
                     onAdd={() => {
-                        addToCart({ id: product._id, name: product.name, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity: 1, price: product.price });
+                        addToCart({ id: product._id || product.id || "", name: product.name, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity: 1, price: product.price });
                         toast.success("MANIFEST_UPDATED");
                     }}
                 />

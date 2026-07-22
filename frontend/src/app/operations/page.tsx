@@ -6,11 +6,12 @@ import { Play, Shield, Radio, Target, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 
 import { getCampaigns } from '@/lib/api';
+import { Campaign } from '@/sections/ActiveCampaign';
 
 export default function OperationsPage() {
     const { scrollYProgress } = useScroll();
     const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-    const [operations, setOperations] = React.useState<Record<string, unknown>[]>([]);
+    const [operations, setOperations] = React.useState<Campaign[]>([]);
 
     React.useEffect(() => {
         const fetchOps = async () => {

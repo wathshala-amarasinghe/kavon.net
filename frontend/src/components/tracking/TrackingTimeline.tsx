@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Package, Truck, Navigation, CheckCircle2 } from 'lucide-react';
 
-interface Stage {
+export interface Stage {
     id: string;
     label: string;
     status: 'completed' | 'current' | 'pending';

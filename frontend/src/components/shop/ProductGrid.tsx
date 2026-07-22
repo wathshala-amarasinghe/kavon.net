@@ -4,10 +4,10 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProductCard } from "../collections/productCard";
 
-import { Product } from "@/data/products";
+import { CatalogProduct } from "@/types/product";
 
 interface ProductGridProps {
-    products: Product[];
+    products: CatalogProduct[];
     viewMode: "grid" | "list";
 }
 
@@ -23,7 +23,7 @@ export function ProductGrid({ products, viewMode }: ProductGridProps) {
             <AnimatePresence mode="popLayout">
                 {products.map((product, index) => (
                     <ProductCard
-                        key={product._id}
+                        key={product._id || product.id}
                         product={product}
                         index={index}
                         layout={viewMode}

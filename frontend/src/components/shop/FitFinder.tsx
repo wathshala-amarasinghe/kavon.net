@@ -126,7 +126,7 @@ export function FitFinder({ isOpen, onClose, onResult }: FitFinderProps) {
                                             {['Slim', 'Standard', 'Oversized'].map((pref) => (
                                                 <button
                                                     key={pref}
-                                                    onClick={() => setData({...data, preference: pref as Record<string, unknown>})}
+                                                    onClick={() => setData({...data, preference: pref as 'Slim' | 'Standard' | 'Oversized'})}
                                                     className={`p-6 border transition-all text-center ${data.preference === pref ? 'border-brand-volt bg-brand-volt/5 text-brand-volt' : 'border-white/10 text-white/30 hover:border-white/30'}`}
                                                 >
                                                     <span className="text-[10px] font-mono uppercase tracking-widest">{pref}</span>

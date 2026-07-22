@@ -6,8 +6,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getProductReviews, createReview } from '@/lib/api';
 import toast from 'react-hot-toast';
 
+interface Review {
+    _id: string;
+    userName: string;
+    rating: number;
+    comment: string;
+    image?: string;
+    createdAt: string;
+}
+
 export function ReviewSection({ productId }: { productId: string }) {
-    const [reviews, setReviews] = useState<Record<string, unknown>[]>([]);
+    const [reviews, setReviews] = useState<Review[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);

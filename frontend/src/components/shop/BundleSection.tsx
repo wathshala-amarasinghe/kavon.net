@@ -4,10 +4,12 @@ import React, { useState } from 'react';
 import { Plus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import toast from 'react-hot-toast';
+import { CatalogProduct } from '@/types/product';
+import { getImageUrl } from '@/lib/utils';
 
 interface BundleProps {
-    currentProduct: Record<string, unknown>;
-    bundleProduct: Record<string, unknown>; // The product to pair with (e.g., matching pants for a tee)
+    currentProduct: CatalogProduct;
+    bundleProduct: CatalogProduct; // The product to pair with (e.g., matching pants for a tee)
 }
 
 export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
@@ -21,8 +23,10 @@ export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
 
     const handleAddBundle = () => {
         // 1. Add current product with 10% discount
-        addToCart({ 
-            ...currentProduct, 
+        addToCart({
+            id: currentProduct._id || currentProduct.id || "",
+            name: currentProduct.name,
+            image: currentProduct.images[0] || currentProduct.image || "",
             quantity: 1, 
             size: "M", 
             price: currentProduct.price * 0.9, 
@@ -31,7 +35,9 @@ export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
 
         // 2. Add the bundle pairing with 10% discount
         addToCart({
-            ...bundleProduct,
+            id: bundleProduct._id || bundleProduct.id || "",
+            name: bundleProduct.name,
+            image: bundleProduct.images[0] || bundleProduct.image || "",
             quantity: 1,
             size: selectedBundleSize,
             price: bundleProduct.price * 0.9,
@@ -66,12 +72,12 @@ export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
                 <div className="flex items-center gap-4 shrink-0">
                     <div className="w-24 h-32 border border-white/10 bg-brand-surface overflow-hidden">
                         { }
-<img src={currentProduct.image} className="w-full h-full object-cover opacity-50" alt="" />
+<img src={getImageUrl(currentProduct.images[0] || currentProduct.image)} className="w-full h-full object-cover opacity-50" alt="" />
                     </div>
                     <Plus className="text-white/20" size={24} />
                     <div className="w-32 h-44 border-2 border-brand-volt bg-brand-surface overflow-hidden shadow-[0_0_30px_rgba(223, 7, 21,0.1)]">
                         { }
-<img src={bundleProduct.image} className="w-full h-full object-cover" alt="" />
+<img src={getImageUrl(bundleProduct.images[0] || bundleProduct.image)} className="w-full h-full object-cover" alt="" />
                     </div>
                 </div>
 
@@ -83,7 +89,7 @@ export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
                     </div>
 
                     <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                        {bundleProduct.sizes.map((s: Record<string, unknown>) => (
+                        {bundleProduct.sizes.map((s) => (
                             <button
                                 key={s.label}
                                 onClick={() => setSelectedBundleSize(s.label)}

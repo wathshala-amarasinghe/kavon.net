@@ -3,12 +3,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { Product, products as SHARED_PRODUCTS } from "@/data/products";
-
-
 import { ProductCard } from "@/components/collections/productCard";
 import { FilterBar } from "@/components/collections/filterBar";
 import { FiltersSidebar } from "@/components/collections/FiltersSidebar";
+import { CatalogProduct } from "@/types/product";
 
 // Seed data from Shared Products for Collections
 export default function CollectionsPage() {
@@ -21,7 +19,7 @@ export default function CollectionsPage() {
     const [sortOption, setSortOption] = useState("latest");
     const [inStockOnly, setInStockOnly] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [allProducts, setAllProducts] = useState<Record<string, unknown>[]>([]);
+    const [allProducts, setAllProducts] = useState<CatalogProduct[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     // Pagination State
@@ -73,13 +71,13 @@ export default function CollectionsPage() {
 
     // Filter and Sort Logic
     const filteredAndSortedProducts = useMemo(() => {
-        const result = allProducts.filter((product: Record<string, unknown>) => {
+        const result = allProducts.filter((product) => {
             const matchesCategory = activeCategory === "All" || product.category === activeCategory;
             const matchesGender = activeGender === "All" || product.gender === activeGender;
             const matchesSize = activeSizes.length === 0 || product.sizes?.some((s: { label: string }) => activeSizes.includes(s.label));
             const matchesColor = activeColors.length === 0 || product.colors?.some((c: { name: string }) => activeColors.includes(c.name));
             const matchesPrice = product.price <= priceMax;
-            const matchesStock = inStockOnly ? product.stock > 0 : true;
+            const matchesStock = inStockOnly ? (product.stock ?? 0) > 0 : true;
             const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
 
             return matchesCategory && matchesGender && matchesSize && matchesColor && matchesPrice && matchesStock && matchesSearch;
@@ -171,7 +169,7 @@ export default function CollectionsPage() {
                 <section className="flex-1">
                     <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 relative">
                         <AnimatePresence mode="popLayout">
-                            {paginatedProducts.map((product: Record<string, unknown>, i: number) => (
+                            {paginatedProducts.map((product, i: number) => (
                                 <ProductCard key={product._id || product.id} product={product} index={i} />
                             ))}
                         </AnimatePresence>

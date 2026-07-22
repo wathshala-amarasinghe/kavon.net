@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
+import { CatalogProduct } from '@/types/product';
 
 const products = [
     {
@@ -91,7 +92,7 @@ const CountdownTimer = ({ targetDate }: { targetDate: string }) => {
     );
 };
 
-export function NewDrops({ products }: { products: Record<string, unknown>[] }) {
+export function NewDrops({ products }: { products: CatalogProduct[] }) {
     const { addToCart } = useCart();
 
     const displayProducts = products?.length > 0 ? products : [];
@@ -117,7 +118,7 @@ export function NewDrops({ products }: { products: Record<string, unknown>[] }) 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {displayProducts.map((product, index) => (
                     <motion.div
-                        key={product._id}
+                        key={product._id || product.id}
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: '-50px' }}
@@ -130,7 +131,7 @@ export function NewDrops({ products }: { products: Record<string, unknown>[] }) 
                                     Pre-Order
                                 </span>
                                 <span className="bg-black/50 backdrop-blur-md text-white/50 text-[11px] font-mono px-2 py-0.5 border border-white/10 uppercase tracking-[0.2em]">
-                                    {product._id.toString().slice(-8).toUpperCase()}
+                                    {(product._id || product.id || "UNKNOWN").slice(-8).toUpperCase()}
                                 </span>
                             </div>
 
@@ -147,7 +148,7 @@ export function NewDrops({ products }: { products: Record<string, unknown>[] }) 
 
                             <button
                                 onClick={() => addToCart({
-                                    id: product._id,
+                                    id: product._id || product.id || "",
                                     name: product.name,
                                     image: product.images?.[0],
                                     price: product.price,

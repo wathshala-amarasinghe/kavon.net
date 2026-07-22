@@ -14,7 +14,7 @@ interface Product {
     category: string;
 }
 
-interface Campaign {
+export interface Campaign {
     _id: string;
     name: string;
     description: string;

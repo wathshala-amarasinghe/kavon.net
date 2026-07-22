@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { getProducts } from "@/lib/api";
+import { CatalogProduct } from '@/types/product';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,8 +30,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const response = await getProducts();
     const products = response.products || [];
     
-    const productRoutes = products.map((product: Record<string, unknown>) => ({
-      url: `${baseUrl}/products/${product._id}`,
+    const productRoutes = products.map((product: CatalogProduct) => ({
+      url: `${baseUrl}/products/${product._id || product.id}`,
       lastModified: new Date(product.updatedAt || new Date()),
       changeFrequency: 'weekly' as const,
       priority: 0.6,

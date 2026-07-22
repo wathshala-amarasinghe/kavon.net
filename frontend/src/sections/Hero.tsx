@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Globe, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { CountdownTimer } from '@/components/home/CountdownTimer';
-import { useSystemSettings } from '@/context/SystemSettingsContext';
+import { HeroSlide, useSystemSettings } from '@/context/SystemSettingsContext';
 
 const MainButton = ({ label, onClick }: { label: string; onClick: () => void }) => (
     <motion.button
@@ -32,7 +32,7 @@ export default function HeroSection() {
     const [containerElement, setContainerElement] = useState<HTMLElement | null>(null);
 
     const { scrollYProgress } = useScroll({
-        target: containerElement ? { current: containerElement } as React.RefObject<Record<string, unknown>> : undefined,
+        target: containerElement ? { current: containerElement } as React.RefObject<HTMLElement> : undefined,
         offset: ["start start", "end start"]
     });
 
@@ -42,7 +42,7 @@ export default function HeroSection() {
     const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
     // Default slides — always show at least these 3
-    const defaultSlides = [
+    const defaultSlides: HeroSlide[] = [
         {
             id: "01",
             video: "/videos/hero-1.mp4",
@@ -70,7 +70,10 @@ export default function HeroSection() {
     ];
 
     // If admin has configured 3+ slides use those, otherwise use the 3 local defaults
-    const activeSlides = (settings?.heroSlides?.length >= 3) ? settings.heroSlides : defaultSlides;
+    const configuredSlides = settings?.heroSlides;
+    const activeSlides: HeroSlide[] = configuredSlides && configuredSlides.length >= 3
+        ? configuredSlides
+        : defaultSlides;
 
     useEffect(() => {
         setTimeout(() => setIsMounted(true), 0);
@@ -198,7 +201,7 @@ export default function HeroSection() {
             {/* FOOTER NAV LAYER */}
             <div className="relative z-20 flex flex-col md:flex-row justify-between items-end gap-6 border-t border-white/10 pt-8 pb-4">
                 <div className="flex gap-4">
-                    {activeSlides.map((_: Record<string, unknown>, i: number) => (
+                    {activeSlides.map((_, i: number) => (
                         <button key={i} onClick={() => setIndex(i)} className="group flex flex-col gap-2">
                             <span className={`font-mono text-[12px] transition-colors ${i === index ? 'text-white' : 'text-white/20'}`}>
                                 0{i + 1}

@@ -7,9 +7,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getImageUrl } from '@/lib/utils';
 import { CountdownTimer } from '@/components/home/CountdownTimer';
+import { CatalogProduct } from '@/types/product';
 
 interface TacticalDropProps {
-    product: Record<string, unknown>;
+    product: CatalogProduct;
 }
 
 export function TacticalDrop({ product }: TacticalDropProps) {
@@ -93,7 +94,7 @@ export function TacticalDrop({ product }: TacticalDropProps) {
 
                         {/* Action */}
                         <Link 
-                            href={`/products/${product._id}`}
+                            href={`/products/${product._id || product.id || ""}`}
                             className="inline-flex items-center gap-6 bg-white text-black px-12 py-5 font-black uppercase text-[12px] tracking-[0.3em] hover:bg-brand-volt transition-all group shadow-[0_0_30px_rgba(255,255,255,0.05)] hover:shadow-[0_0_50px_rgba(223, 7, 21,0.2)]"
                         >
                             Shop Now

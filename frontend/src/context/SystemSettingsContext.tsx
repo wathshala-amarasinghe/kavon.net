@@ -3,8 +3,26 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getSettings } from '@/lib/api';
 
+export interface HeroSlide {
+    id: string;
+    video: string;
+    title: string;
+    tagline: string;
+    tag?: string;
+    desc: string;
+}
+
+export interface SystemSettings {
+    heroSlides?: HeroSlide[];
+    heroCountdown?: string;
+    promoBanner?: {
+        enabled: boolean;
+        text: string;
+    };
+}
+
 interface SystemSettingsContextType {
-    settings: Record<string, unknown>;
+    settings: SystemSettings | null;
     isLoading: boolean;
     refreshSettings: () => Promise<void>;
 }
@@ -12,7 +30,7 @@ interface SystemSettingsContextType {
 const SystemSettingsContext = createContext<SystemSettingsContextType | undefined>(undefined);
 
 export function SystemSettingsProvider({ children }: { children: React.ReactNode }) {
-    const [settings, setSettings] = useState<Record<string, unknown>>(null);
+    const [settings, setSettings] = useState<SystemSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const refreshSettings = async () => {

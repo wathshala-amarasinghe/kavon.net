@@ -109,9 +109,9 @@ export function OrderSummary({
             setTimeout(() => {
                 router.push('/order-success');
             }, 100);
-        } catch (error: Record<string, unknown>) {
+        } catch (error: unknown) {
             console.error('DEPLOYMENT_FAILURE:', error);
-            alert(`DEPLOYMENT_ERROR: ${error.message}`);
+            alert(`DEPLOYMENT_ERROR: ${error instanceof Error ? error.message : "Unknown error"}`);
         } finally {
             setIsProcessing(false);
         }

@@ -31,16 +31,16 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
             const token = localStorage.getItem('kavon-token-v1');
             if (token) {
                 try {
-                    const backendWishlist = await getWishlist(token);
+                    const backendWishlist = await getWishlist(token) as WishlistItem[];
                     
                     if (Array.isArray(backendWishlist)) {
                         // Map backend _id to id for frontend consistency and filter out nulls
                         const mapped = backendWishlist
-                            .filter((item: unknown) => item !== null)
-                            .map((item: Record<string, unknown>) => ({
+                            .filter((item): item is WishlistItem => item != null)
+                            .map((item) => ({
                                 ...item,
-                                id: item._id as string
-                            })) as WishlistItem[];
+                                id: item._id || item.id
+                            }));
                         setWishlist(mapped);
                     }
                 } catch (error: unknown) {
@@ -92,14 +92,14 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         // Backend Sync if logged in
         if (token) {
             try {
-                const updated = await toggleWishlistApi(productId, token);
+                const updated = await toggleWishlistApi(productId, token) as WishlistItem[];
                 if (Array.isArray(updated)) {
                     const mapped = updated
-                        .filter((item: unknown) => item !== null)
-                        .map((item: Record<string, unknown>) => ({
+                        .filter((item): item is WishlistItem => item != null)
+                        .map((item) => ({
                             ...item,
-                            id: item._id as string
-                        })) as WishlistItem[];
+                            id: item._id || item.id
+                        }));
                     setWishlist(mapped);
                 }
             } catch (error: unknown) {

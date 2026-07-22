@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag } from 'lucide-react';
+import { CatalogProduct } from '@/types/product';
+import { getImageUrl } from '@/lib/utils';
 
 interface StickyAddToCartProps {
-    product: Record<string, unknown>;
+    product: CatalogProduct;
     onAdd: () => void;
     isVisible: boolean;
 }
@@ -23,7 +25,7 @@ export function StickyAddToCart({ product, onAdd, isVisible }: StickyAddToCartPr
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-16 bg-brand-surface border border-white/10 shrink-0">
                             { }
-<img src={product.images[0]} className="w-full h-full object-cover" alt="" />
+<img src={getImageUrl(product.images[0] || product.image)} className="w-full h-full object-cover" alt="" />
                         </div>
                         <div className="flex-1 min-w-0">
                             <h4 className="text-[12px] font-black uppercase italic truncate">{product.name}</h4>

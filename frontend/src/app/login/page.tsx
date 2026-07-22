@@ -34,8 +34,8 @@ export default function LoginPage() {
             } else {
                 await register({ name, email, password });
             }
-        } catch (err: Record<string, unknown>) {
-            setError(err.message || 'Authentication failed');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Authentication failed');
         } finally {
             setIsSubmitting(false);
         }

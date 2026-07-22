@@ -4,11 +4,19 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getMe, login as apiLogin, register as apiRegister, updateProfile as apiUpdateProfile, getMyOrders } from '@/lib/api';
 import toast from 'react-hot-toast';
 
+export interface OrderItem {
+    image?: string;
+    name?: string;
+    price?: number;
+    quantity?: number;
+    size?: string;
+}
+
 export interface Order {
     _id?: string;
     id?: string; // Support legacy
-    orderItems?: Record<string, unknown>[];
-    items?: Record<string, unknown>[]; // Support legacy
+    orderItems?: OrderItem[];
+    items?: OrderItem[]; // Support legacy
     itemsPrice?: number;
     shippingPrice?: number;
     discountPrice?: number;
@@ -34,8 +42,16 @@ interface Transmission {
     priority: 'Low' | 'Medium' | 'High';
 }
 
+export interface AuthUser {
+    _id?: string;
+    name: string;
+    email: string;
+    role: "user" | "admin";
+    loyaltyPoints: number;
+}
+
 interface AuthContextType {
-    user: Record<string, unknown> | null;
+    user: AuthUser | null;
     loading: boolean;
     login: (credentials: Record<string, unknown>) => Promise<void>;
     register: (userData: Record<string, unknown>) => Promise<void>;
@@ -51,7 +67,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<Record<string, unknown> | null>(null);
+    const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
     const [loyaltyPoints, setLoyaltyPoints] = useState(0);
     const [orderHistory, setOrderHistory] = useState<Order[]>([]);

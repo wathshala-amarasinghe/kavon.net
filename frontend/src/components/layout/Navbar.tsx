@@ -149,7 +149,7 @@ export function Navbar() {
                             {['LKR', 'USD', 'EUR'].map((c) => (
                                 <button
                                     key={c}
-                                    onClick={() => setCurrency(c as Record<string, unknown>)}
+                                    onClick={() => setCurrency(c as 'LKR' | 'USD' | 'EUR')}
                                     className={`text-[12px] font-black tracking-widest transition-all px-2 py-0.5 border ${currency === c ? 'bg-brand-volt text-black border-brand-volt' : 'text-white/40 border-transparent hover:text-white'}`}
                                 >
                                     {c}

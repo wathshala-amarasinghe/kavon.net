@@ -181,7 +181,7 @@ export default function DashboardPage() {
 
                                                     {/* MINI_ITEM_PREVIEW */}
                                                     <div className="mt-6 pt-6 border-t border-white/5 flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                                                        {(order.items || order.orderItems || []).map((item: Record<string, unknown>, i: number) => (
+                                                        {(order.items || order.orderItems || []).map((item, i: number) => (
                                                             <div key={i} className="w-12 h-16 bg-black border border-white/10 shrink-0">
                                                                 <img src={item.image} alt="" className="w-full h-full object-cover opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all" />
                                                             </div>

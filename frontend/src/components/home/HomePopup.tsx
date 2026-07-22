@@ -6,9 +6,17 @@ import Link from 'next/link';
 import { X, ShieldCheck, ArrowRight } from 'lucide-react';
 import { getSettings } from '@/lib/api';
 
+interface PopupSettings {
+    enabled: boolean;
+    title: string;
+    text: string;
+    buttonLink?: string;
+    buttonText: string;
+}
+
 export function HomePopup() {
     const [isOpen, setIsOpen] = useState(false);
-    const [settings, setSettings] = useState<Record<string, unknown>>(null);
+    const [settings, setSettings] = useState<PopupSettings | null>(null);
 
     useEffect(() => {
         const fetchSettings = async () => {

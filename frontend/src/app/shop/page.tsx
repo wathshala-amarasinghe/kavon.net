@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SkeletonProduct } from "@/components/layout/SkeletonProduct";
 import { getProducts } from "@/lib/api";
 import { useInventory } from "@/context/InventoryContext";
+import { CatalogProduct } from "@/types/product";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -18,7 +19,7 @@ function ShopContent() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(true);
-    const [products, setProducts] = useState<Record<string, unknown>[]>([]);
+    const [products, setProducts] = useState<CatalogProduct[]>([]);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
