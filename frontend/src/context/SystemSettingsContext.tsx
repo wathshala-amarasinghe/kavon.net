@@ -6,6 +6,7 @@ import { getSettings } from '@/lib/api';
 export interface HeroSlide {
     id: string;
     video: string;
+    poster?: string;
     title: string;
     tagline: string;
     tag?: string;

@@ -29,6 +29,7 @@ export default function HeroSection() {
     const { settings } = useSystemSettings();
     const [index, setIndex] = useState(0);
     const [isMounted, setIsMounted] = useState(false);
+    const [hasVideoError, setHasVideoError] = useState(false);
     const [containerElement, setContainerElement] = useState<HTMLElement | null>(null);
 
     const { scrollYProgress } = useScroll({
@@ -46,6 +47,7 @@ export default function HeroSection() {
         {
             id: "01",
             video: "/videos/hero-1.mp4",
+            poster: "/images/hero/hero-1-poster.jpg",
             title: "KAVON",
             tagline: "WEAR POWER. WEAR KAVON.",
             tag: "NEW COLLECTION",
@@ -54,6 +56,7 @@ export default function HeroSection() {
         {
             id: "02",
             video: "/videos/hero-2.mp4",
+            poster: "/images/hero/hero-2-poster.jpg",
             title: "TACTICAL",
             tagline: "URBAN SURVIVAL GEAR.",
             tag: "LIMITED DROP",
@@ -62,6 +65,7 @@ export default function HeroSection() {
         {
             id: "03",
             video: "/videos/hero-3.mp4",
+            poster: "/images/hero/hero-3-poster.jpg",
             title: "CYBER",
             tagline: "FUTURE READY.",
             tag: "ESSENTIALS",
@@ -74,6 +78,7 @@ export default function HeroSection() {
     const activeSlides: HeroSlide[] = configuredSlides && configuredSlides.length >= 3
         ? configuredSlides
         : defaultSlides;
+    const currentSlide = activeSlides[index] || activeSlides[0];
 
     useEffect(() => {
         setTimeout(() => setIsMounted(true), 0);
@@ -88,11 +93,13 @@ export default function HeroSection() {
         return () => clearInterval(timer);
     }, [nextSlide]);
 
+    useEffect(() => {
+        setHasVideoError(false);
+    }, [currentSlide?.video]);
+
     const handleShopNavigation = () => {
         router.push('/shop');
     };
-
-    const currentSlide = activeSlides[index] || activeSlides[0];
 
     if (!isMounted || !currentSlide) return <div className="h-screen bg-brand-black" />;
 
@@ -110,16 +117,24 @@ export default function HeroSection() {
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 1.5, ease: [0.19, 1, 0.22, 1] }}
                         className="h-full w-full"
+                        style={currentSlide.poster ? {
+                            backgroundImage: `url(${currentSlide.poster})`,
+                            backgroundPosition: 'center',
+                            backgroundSize: 'cover'
+                        } : undefined}
                     >
-                        {currentSlide.video && (
+                        {currentSlide.video && !hasVideoError && (
                             <video
                                 autoPlay
                                 muted
                                 loop
                                 playsInline
+                                preload="metadata"
                                 key={currentSlide.video}
                                 className="h-full w-full object-cover grayscale opacity-60"
                                 src={currentSlide.video}
+                                poster={currentSlide.poster}
+                                onError={() => setHasVideoError(true)}
                             />
                         )}
                     </motion.div>
