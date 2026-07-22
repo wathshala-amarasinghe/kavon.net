@@ -1,5 +1,17 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+async function apiError(response: Response, fallback: string): Promise<Error> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    const data = await response.json().catch(() => null);
+    return new Error(data?.message || fallback);
+  }
+
+  const message = (await response.text().catch(() => "")).trim();
+  return new Error(message || fallback);
+}
+
 // --- PRODUCT MANAGEMENT ---
 
 export async function getProducts(params: any = {}) {
@@ -28,7 +40,7 @@ export async function createProduct(productData: any, token: string) {
     body: JSON.stringify(productData),
   });
 
-  if (!res.ok) throw new Error("Manifest authorization failed");
+  if (!res.ok) throw await apiError(res, "Product creation failed");
   return res.json();
 }
 
@@ -42,7 +54,7 @@ export async function updateProduct(id: string, productData: any, token: string)
     body: JSON.stringify(productData),
   });
 
-  if (!res.ok) throw new Error("Asset modification failed");
+  if (!res.ok) throw await apiError(res, "Product update failed");
   return res.json();
 }
 
@@ -292,10 +304,7 @@ export async function uploadImage(file: File, token: string) {
     body: formData,
   });
 
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || "Image upload failed");
-  }
+  if (!res.ok) throw await apiError(res, "Image upload failed");
 
   return res.json();
 }

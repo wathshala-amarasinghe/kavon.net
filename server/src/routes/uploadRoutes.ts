@@ -1,15 +1,9 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
+import { admin, protect } from "../middleware/authMiddleware";
 
 const router = express.Router();
-
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true,
-});
 
 const allowedMimeTypes = new Set([
     "image/jpeg",
@@ -63,8 +57,36 @@ function uploadToCloudinary(file: Express.Multer.File): Promise<string> {
     });
 }
 
+const receiveUpload = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    upload.single("image")(req, res, (error: unknown) => {
+        if (!error) {
+            next();
+            return;
+        }
+
+        if (error instanceof multer.MulterError) {
+            const message =
+                error.code === "LIMIT_FILE_SIZE"
+                    ? "File is too large. Maximum upload size is 4 MB"
+                    : error.message;
+
+            res.status(400).json({ message });
+            return;
+        }
+
+        res.status(400).json({
+            message:
+                error instanceof Error ? error.message : "Invalid upload",
+        });
+    });
+};
+
 // POST /api/upload
-router.post("/", upload.single("image"), async (req, res) => {
+router.post("/", protect, admin, receiveUpload, async (req, res) => {
     try {
         if (!req.file) {
             res.status(400).json({ message: "No file uploaded" });
@@ -81,6 +103,13 @@ router.post("/", upload.single("image"), async (req, res) => {
             });
             return;
         }
+
+        cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET,
+            secure: true,
+        });
 
         const url = await uploadToCloudinary(req.file);
 

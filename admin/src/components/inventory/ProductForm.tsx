@@ -106,21 +106,40 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
         const file = e.target.files?.[0];
         if (!file) return;
 
+        const allowedTypes = new Set([
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/gif',
+        ]);
+
+        if (!allowedTypes.has(file.type)) {
+            toast.error('Only JPG, PNG, WebP, or GIF images are allowed.');
+            e.target.value = '';
+            return;
+        }
+
+        if (file.size > 4 * 1024 * 1024) {
+            toast.error('Image is too large. Please choose an image below 4 MB.');
+            e.target.value = '';
+            return;
+        }
+
         try {
             setIsUploading(true);
             const token = localStorage.getItem('kavon-admin-token');
             if (!token) throw new Error("No token");
             
             const res = await uploadImage(file, token);
-            // Append localhost if relative
             const fullUrl = res.url;
             
             const newImages = [...formData.images];
             newImages[index] = fullUrl;
             setFormData({...formData, images: newImages});
-        } catch (error) {
+        } catch (error: any) {
             console.error("Upload failed", error);
-            toast.error("Image upload failed. Please try again.");
+            toast.error(error?.message || "Image upload failed. Please try again.");
+            e.target.value = '';
         } finally {
             setIsUploading(false);
         }
@@ -259,7 +278,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                                                 <label className="w-16 h-20 bg-white/5 border border-dashed border-white/10 shrink-0 flex items-center justify-center cursor-pointer hover:border-brand-volt transition-colors relative">
                                                     <input 
                                                         type="file" 
-                                                        accept="image/*"
+                                                        accept="image/jpeg,image/png,image/webp,image/gif"
                                                         className="absolute inset-0 opacity-0 cursor-pointer"
                                                         onChange={(e) => handleImageUpload(e, index)}
                                                     />

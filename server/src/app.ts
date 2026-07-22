@@ -1,10 +1,9 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
-import path from "path";
 
 import { connectDB } from "./config/db";
 import productRoutes from "./routes/productRoutes";
@@ -76,25 +75,50 @@ const couponLimiter = rateLimit({
 
 app.use("/api/coupons/validate", couponLimiter);
 
-app.use(
-    "/uploads",
-    express.static(path.join(__dirname, "../uploads"))
-);
+const requireDatabase = async (
+    _req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        console.error("Database connection failed:", error);
+        res.status(503).json({
+            message: "Database connection is temporarily unavailable",
+        });
+    }
+};
 
-connectDB();
-
-app.use("/api/products", productRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/wishlist", wishlistRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/settings", settingsRoutes);
-app.use("/api/upload", uploadRoutes);
-app.use("/api/campaigns", campaignRoutes);
-app.use("/api/coupons", couponRoutes);
+// Connect lazily per request. A temporary Atlas failure now returns JSON
+// instead of terminating the whole Vercel function.
+app.use("/api/upload", requireDatabase, uploadRoutes);
+app.use("/api/products", requireDatabase, productRoutes);
+app.use("/api/auth", requireDatabase, authRoutes);
+app.use("/api/orders", requireDatabase, orderRoutes);
+app.use("/api/wishlist", requireDatabase, wishlistRoutes);
+app.use("/api/reviews", requireDatabase, reviewRoutes);
+app.use("/api/settings", requireDatabase, settingsRoutes);
+app.use("/api/campaigns", requireDatabase, campaignRoutes);
+app.use("/api/coupons", requireDatabase, couponRoutes);
 
 app.get("/", (_req, res) => {
     res.send("KAVON_API: SYSTEM_ACTIVE");
 });
+
+app.use(
+    (
+        error: Error,
+        _req: Request,
+        res: Response,
+        _next: NextFunction
+    ) => {
+        console.error("Unhandled API error:", error);
+        res.status(500).json({
+            message: error.message || "Internal server error",
+        });
+    }
+);
 
 export default app;
