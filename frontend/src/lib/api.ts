@@ -1,4 +1,13 @@
+import type { CatalogFacets } from '@/types/product';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const EMPTY_CATALOG_FACETS: CatalogFacets = {
+  categories: [],
+  genders: [],
+  sizes: [],
+  colors: [],
+  maxPrice: 100000,
+};
 
 async function apiError(response: Response, fallback: string): Promise<Error> {
   const contentType = response.headers.get('content-type') || '';
@@ -35,6 +44,18 @@ export async function getProducts(params: Record<string, unknown> = {}) {
   const pages = Number.isFinite(Number(data.pages ?? data.totalPages))
     ? Number(data.pages ?? data.totalPages)
     : 0;
+  const rawFacets = data.facets && typeof data.facets === 'object' ? data.facets : {};
+  const facets: CatalogFacets = {
+    categories: Array.isArray(rawFacets.categories) ? rawFacets.categories.filter(Boolean) : [],
+    genders: Array.isArray(rawFacets.genders) ? rawFacets.genders.filter(Boolean) : [],
+    sizes: Array.isArray(rawFacets.sizes) ? rawFacets.sizes.filter(Boolean) : [],
+    colors: Array.isArray(rawFacets.colors)
+      ? rawFacets.colors.filter((color: unknown) => color && typeof color === 'object')
+      : [],
+    maxPrice: Number.isFinite(Number(rawFacets.maxPrice))
+      ? Math.max(0, Number(rawFacets.maxPrice))
+      : EMPTY_CATALOG_FACETS.maxPrice,
+  };
 
   return {
     ...data,
@@ -44,6 +65,7 @@ export async function getProducts(params: Record<string, unknown> = {}) {
     pages,
     totalPages: pages,
     currentPage: page,
+    facets,
   };
 }
 

@@ -20,12 +20,14 @@ export default function CheckoutPage() {
         setShippingAddress,
         paymentMethod,
         setPaymentMethod,
+        isLoaded: isCheckoutLoaded,
     } = useCheckout();
-    const { cart, subtotal } = useCart();
+    const { cart, subtotal, isLoaded: isCartLoaded } = useCart();
     const { user, loading } = useAuth();
     const router = useRouter();
     const { location } = useSettings();
     const [step, setStep] = useState(1);
+    const [isCompletingOrder, setIsCompletingOrder] = useState(false);
     const [deliveryMethod, setDeliveryMethod] = useState({ 
         id: 'standard', 
         price: calculateTacticalShipping(subtotal, location) 
@@ -39,18 +41,26 @@ export default function CheckoutPage() {
     // Security Check: Authorized Personnel Only
     useEffect(() => {
         if (!loading && !user) {
-            router.push('/login?redirect=checkout');
+            router.replace('/login?redirect=checkout');
         }
     }, [user, loading, router]);
 
     // Cart Readiness Check
     useEffect(() => {
-        if (!activeCheckoutItem && cart.length === 0) {
-            router.push('/shop');
+        if (
+            !loading
+            && isCartLoaded
+            && isCheckoutLoaded
+            && user
+            && !isCompletingOrder
+            && !activeCheckoutItem
+            && cart.length === 0
+        ) {
+            router.replace('/shop');
         }
-    }, [activeCheckoutItem, cart, router]);
+    }, [activeCheckoutItem, cart, isCartLoaded, isCheckoutLoaded, isCompletingOrder, loading, router, user]);
 
-    if (loading) return (
+    if (loading || !isCartLoaded || !isCheckoutLoaded) return (
         <div className="min-h-screen bg-brand-black flex items-center justify-center font-mono text-brand-volt uppercase tracking-widest text-xs animate-pulse">
             Syncing...
         </div>
@@ -138,6 +148,7 @@ export default function CheckoutPage() {
                             deliveryMethod={deliveryMethod.id}
                             deliverySector={location}
                             isFinalStep={step === 3}
+                            onOrderCreated={() => setIsCompletingOrder(true)}
                         />
                     </div>
                 </div>

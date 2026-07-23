@@ -4,14 +4,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 
 export function CartEmpty() {
     return (
         <div className="bg-brand-black min-h-screen text-white">
-            <Navbar />
-
             <main className="pt-64 pb-32 px-6 flex flex-col items-center justify-center text-center">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -50,7 +46,6 @@ export function CartEmpty() {
                 </motion.div>
             </main>
 
-            <Footer />
         </div>
     );
 }

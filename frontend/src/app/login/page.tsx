@@ -6,6 +6,7 @@ import { Shield, Mail, Lock, User, ArrowRight, ChevronRight, Fingerprint, Activi
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getSafeRedirect } from '@/lib/storefront-runtime';
 
 export default function LoginPage() {
     const [isLogin, setIsLogin] = useState(true);
@@ -19,7 +20,10 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (user) {
-            router.push('/');
+            const redirect = getSafeRedirect(
+                new URLSearchParams(window.location.search).get('redirect')
+            );
+            router.replace(redirect);
         }
     }, [user, router]);
 

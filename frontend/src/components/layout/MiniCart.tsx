@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import { ShoppingBag, X, Trash2, ArrowRight } from 'lucide-react';
+import { getImageUrl } from '@/lib/utils';
 
 export function MiniCart() {
     const { cart, subtotal, removeFromCart } = useCart();
@@ -30,10 +31,9 @@ export function MiniCart() {
                 {cart.length > 0 ? (
                     <div className="divide-y divide-white/5">
                         {cart.map((item) => (
-                            <div key={`${item.id}-${item.size}`} className="p-4 flex gap-4 group">
+                            <div key={`${item.id}-${item.size}-${item.color || 'Default'}-${Boolean(item.isBundle)}`} className="p-4 flex gap-4 group">
                                 <div className="w-16 h-20 bg-brand-surface border border-white/5 overflow-hidden shrink-0">
-                                    { }
-<img src={item.image} alt={item.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
+                                    <img src={getImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
                                 </div>
                                 <div className="flex-1 min-w-0 space-y-1">
                                     <div className="flex justify-between items-start">
@@ -44,12 +44,12 @@ export function MiniCart() {
                                     </div>
                                     <div className="flex justify-between items-center">
                                         <span className="text-[12px] font-mono text-white/60 uppercase tracking-widest">
-                                            SIZE: {item.size} {"//"} QTY: {item.quantity}
+                                            SIZE: {item.size} {item.color ? `// ${item.color}` : ''} {"//"} QTY: {item.quantity}
                                         </span>
                                     </div>
                                 </div>
                                 <button 
-                                    onClick={() => removeFromCart(item.id, item.size)}
+                                    onClick={() => removeFromCart(item.id, item.size, item.isBundle, item.color)}
                                     className="text-white/20 hover:text-red-500 transition-colors self-start"
                                 >
                                     <X size={14} />

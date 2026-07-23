@@ -7,44 +7,18 @@ import { ArrowRight, Zap, Plus } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import toast from 'react-hot-toast';
+import { CatalogProduct } from '@/types/product';
+import {
+    getFirstAvailableSize,
+    getProductId,
+    getProductImage,
+    isProductAvailable,
+} from '@/lib/storefront-runtime';
+import { getImageUrl } from '@/lib/utils';
 
-const PROMO_PRODUCTS = [
-    {
-        id: "PRM-V1-01",
-        name: "CORE_CARGO // SHADOW",
-        price: 8500,
-        image: "/images/products/product_1.jpeg",
-        tag: "SALE_20%",
-        inStock: true
-    },
-    {
-        id: "PRM-V1-02",
-        name: "UTILITY_VEST // VOID",
-        price: 12000,
-        image: "/images/products/product_2.jpeg",
-        tag: "SALE_15%",
-        inStock: false // Sold Out Example
-    },
-    {
-        id: "PRM-V1-03",
-        name: "TECH_SHELL // NEON",
-        price: 15500,
-        image: "/images/products/product_3.jpeg",
-        tag: "SALE_10%",
-        inStock: true
-    },
-    {
-        id: "PRM-V1-04",
-        name: "ARCHIVE_TEE // GHOST",
-        price: 5500,
-        image: "/images/products/product_4.jpeg",
-        tag: "SALE_25%",
-        inStock: false // Sold Out Example
-    }
-];
-
-export function PromoBanner() {
+export function PromoBanner({ products = [] }: { products?: CatalogProduct[] }) {
     const { addToCart } = useCart();
+    const displayProducts = products.slice(0, 4);
     const [timeLeft, setTimeLeft] = useState({
         hours: 24,
         minutes: 0,
@@ -78,16 +52,19 @@ export function PromoBanner() {
 
     const formatTime = (time: number) => time.toString().padStart(2, '0');
 
-    const handleQuickAdd = (product: typeof PROMO_PRODUCTS[0]) => {
-        if (!product.inStock) return;
+    const handleQuickAdd = (product: CatalogProduct) => {
+        const id = getProductId(product);
+        const size = getFirstAvailableSize(product);
+        if (!id || !size || !isProductAvailable(product)) return;
 
         addToCart({
-            id: product.id,
+            id,
             name: product.name,
             price: product.price,
-            image: product.image,
+            image: getProductImage(product),
             quantity: 1,
-            size: 'M'
+            size,
+            color: product.colors?.[0]?.name,
         });
 
         toast.success(`${product.name} ADDED TO ARCHIVE`, {
@@ -176,9 +153,12 @@ export function PromoBanner() {
             </motion.div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {PROMO_PRODUCTS.map((product, index) => (
+                {displayProducts.map((product, index) => {
+                    const productId = getProductId(product);
+                    const inStock = isProductAvailable(product);
+                    return (
                     <motion.div
-                        key={product.id}
+                        key={productId}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
@@ -187,9 +167,9 @@ export function PromoBanner() {
                     >
                         <div className="relative aspect-square overflow-hidden mb-4 bg-brand-black">
                             <img
-                                src={product.image}
+                                src={getImageUrl(getProductImage(product))}
                                 alt={product.name}
-                                className={`w-full h-full object-cover transition-all duration-700 ${product.inStock
+                                className={`w-full h-full object-cover transition-all duration-700 ${inStock
                                         ? "group-hover:scale-110"
                                         : "grayscale opacity-40"
                                     }`}
@@ -198,9 +178,9 @@ export function PromoBanner() {
                             {/* Tags logic */}
                             <div className="absolute top-2 left-2 flex flex-col gap-1">
                                 <span className="bg-brand-volt text-black text-[8px] font-black px-2 py-0.5 uppercase">
-                                    {product.tag}
+                                    {product.isNewDrop ? 'NEW_DROP' : product.category}
                                 </span>
-                                {!product.inStock && (
+                                {!inStock && (
                                     <span className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 uppercase tracking-tighter">
                                         SOLD_OUT
                                     </span>
@@ -208,7 +188,7 @@ export function PromoBanner() {
                             </div>
 
                             {/* Quick Add Overlay - Only active if in stock */}
-                            {product.inStock && (
+                            {inStock && (
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
                                     <button
                                         onClick={() => handleQuickAdd(product)}
@@ -220,7 +200,7 @@ export function PromoBanner() {
                             )}
 
                             {/* Sold Out Center Label */}
-                            {!product.inStock && (
+                            {!inStock && (
                                 <div className="absolute inset-0 flex items-center justify-center">
                                     <span className="border border-white/20 bg-black/60 backdrop-blur-sm px-4 py-2 font-mono text-[10px] tracking-[0.3em] text-white/60 uppercase">
                                         Archive_Empty
@@ -230,17 +210,18 @@ export function PromoBanner() {
                         </div>
 
                         <div className="space-y-1">
-                            <h3 className={`text-[10px] font-black tracking-widest uppercase transition-colors ${product.inStock ? "text-white/60 group-hover:text-white" : "text-white/20"
+                            <h3 className={`text-[10px] font-black tracking-widest uppercase transition-colors ${inStock ? "text-white/60 group-hover:text-white" : "text-white/20"
                                 }`}>
                                 {product.name}
                             </h3>
-                            <p className={`font-mono text-sm italic font-bold ${product.inStock ? "text-brand-volt" : "text-white/10"
+                            <p className={`font-mono text-sm italic font-bold ${inStock ? "text-brand-volt" : "text-white/10"
                                 }`}>
                                 <FormattedPrice amount={product.price} />
                             </p>
                         </div>
                     </motion.div>
-                ))}
+                    );
+                })}
             </div>
         </section>
     );

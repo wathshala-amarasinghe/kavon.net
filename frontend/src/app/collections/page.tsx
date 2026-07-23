@@ -6,7 +6,15 @@ import { X, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { ProductCard } from "@/components/collections/productCard";
 import { FilterBar } from "@/components/collections/filterBar";
 import { FiltersSidebar } from "@/components/collections/FiltersSidebar";
-import { CatalogProduct } from "@/types/product";
+import { CatalogFacets, CatalogProduct } from "@/types/product";
+
+const INITIAL_FACETS: CatalogFacets = {
+    categories: [],
+    genders: [],
+    sizes: [],
+    colors: [],
+    maxPrice: 100000,
+};
 
 // Seed data from Shared Products for Collections
 export default function CollectionsPage() {
@@ -23,6 +31,7 @@ export default function CollectionsPage() {
     const [allProducts, setAllProducts] = useState<CatalogProduct[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [catalogError, setCatalogError] = useState<string | null>(null);
+    const [facets, setFacets] = useState<CatalogFacets>(INITIAL_FACETS);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -45,6 +54,7 @@ export default function CollectionsPage() {
                     ...(firstPage.products || []),
                     ...remaining.flatMap((page) => page.products || []),
                 ]);
+                setFacets(firstPage.facets || INITIAL_FACETS);
             } catch (error: unknown) {
                 console.error("Failed to fetch products:", error);
                 setCatalogError(error instanceof Error ? error.message : 'Catalog could not be loaded');
@@ -75,7 +85,7 @@ export default function CollectionsPage() {
         setActiveGender("All");
         setActiveSizes([]);
         setActiveColors([]);
-        setPriceMax(100000);
+        setPriceMax(facets.maxPrice);
         setPriceFilterActive(false);
         setInStockOnly(false);
         setCurrentPage(1);
@@ -89,10 +99,12 @@ export default function CollectionsPage() {
         const result = allProducts.filter((product) => {
             const matchesCategory = activeCategory === "All" || product.category === activeCategory;
             const matchesGender = activeGender === "All" || product.gender === activeGender;
-            const matchesSize = activeSizes.length === 0 || product.sizes?.some((s: { label: string }) => activeSizes.includes(s.label));
+            const matchesSize = activeSizes.length === 0 || product.sizes?.some((s) => activeSizes.includes(s.label) && Number(s.stock) > 0);
             const matchesColor = activeColors.length === 0 || product.colors?.some((c: { name: string }) => activeColors.includes(c.name));
             const matchesPrice = !priceFilterActive || product.price <= priceMax;
-            const matchesStock = inStockOnly ? (product.stock ?? 0) > 0 : true;
+            const matchesStock = inStockOnly
+                ? product.sizes?.some((size) => Number(size.stock) > 0)
+                : true;
             const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
 
             return matchesCategory && matchesGender && matchesSize && matchesColor && matchesPrice && matchesStock && matchesSearch;
@@ -175,6 +187,11 @@ export default function CollectionsPage() {
                         priceMax={priceMax}
                         priceFilterActive={priceFilterActive}
                         setPriceMax={(val: number) => { setPriceMax(val); setPriceFilterActive(true); setCurrentPage(1); }}
+                        availableCategories={facets.categories}
+                        availableGenders={facets.genders}
+                        availableSizes={facets.sizes}
+                        availableColors={facets.colors}
+                        catalogMaxPrice={facets.maxPrice}
                         inStockOnly={inStockOnly}
                         setInStockOnly={(val: boolean) => { setInStockOnly(val); setCurrentPage(1); }}
                         clearAll={clearAll}
@@ -287,6 +304,11 @@ export default function CollectionsPage() {
                                 priceMax={priceMax}
                                 priceFilterActive={priceFilterActive}
                                 setPriceMax={(val) => { setPriceMax(val); setPriceFilterActive(true); setCurrentPage(1); }}
+                                availableCategories={facets.categories}
+                                availableGenders={facets.genders}
+                                availableSizes={facets.sizes}
+                                availableColors={facets.colors}
+                                catalogMaxPrice={facets.maxPrice}
                                 inStockOnly={inStockOnly}
                                 setInStockOnly={(val) => { setInStockOnly(val); setCurrentPage(1); }}
                                 clearAll={clearAll}

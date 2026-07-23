@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Navbar } from '@/components/layout/Navbar';
 import { SocialAuth } from '@/components/auth/SocialAuth';
 import { useAuth } from '@/context/AuthContext';
 
@@ -47,7 +46,6 @@ export default function RegisterPage() {
 
     return (
         <div className="bg-brand-black min-h-screen text-white selection:bg-[#df0715ff] selection:text-black">
-            <Navbar />
             <main className="min-h-screen flex items-center justify-center px-6 pt-32 pb-20">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

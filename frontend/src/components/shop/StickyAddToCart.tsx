@@ -10,9 +10,10 @@ interface StickyAddToCartProps {
     product: CatalogProduct;
     onAdd: () => void;
     isVisible: boolean;
+    disabled?: boolean;
 }
 
-export function StickyAddToCart({ product, onAdd, isVisible }: StickyAddToCartProps) {
+export function StickyAddToCart({ product, onAdd, isVisible, disabled = false }: StickyAddToCartProps) {
     return (
         <AnimatePresence>
             {isVisible && (
@@ -33,7 +34,8 @@ export function StickyAddToCart({ product, onAdd, isVisible }: StickyAddToCartPr
                         </div>
                         <button
                             onClick={onAdd}
-                            className="bg-brand-volt text-black px-6 py-3 font-black uppercase text-[12px] tracking-widest flex items-center gap-2 active:scale-95 transition-all"
+                            disabled={disabled}
+                            className="bg-brand-volt text-black px-6 py-3 font-black uppercase text-[12px] tracking-widest flex items-center gap-2 active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                             <ShoppingBag size={14} /> Add
                         </button>

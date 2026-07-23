@@ -6,16 +6,19 @@ import { ShoppingBag, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from 'next/navigation';
 import { CatalogProduct } from '@/types/product';
+import { getFirstAvailableSize, getProductImage, isProductAvailable } from '@/lib/storefront-runtime';
+import { getImageUrl } from '@/lib/utils';
 
 export function AIAssistantCard({ product, closeChat }: { product: CatalogProduct, closeChat: () => void }) {
     const { addToCart } = useCart();
     const router = useRouter();
 
     const handleQuickAdd = () => {
-        // Safe size selection: try index 1 (Medium), fallback to index 0, then "M"
-        const defaultSize = product.sizes && product.sizes.length > 0 
-            ? (product.sizes[1]?.label || product.sizes[0].label) 
-            : "M";
+        const defaultSize = getFirstAvailableSize(product);
+        if (!defaultSize || !isProductAvailable(product)) {
+            toast.error(`${product.name} IS OUT OF STOCK`);
+            return;
+        }
 
         addToCart({
             id: product._id || product.id || '',
@@ -23,7 +26,8 @@ export function AIAssistantCard({ product, closeChat }: { product: CatalogProduc
             price: product.price,
             quantity: 1,
             size: defaultSize,
-            image: product.images?.[0] || product.image || '',
+            image: getProductImage(product),
+            color: product.colors?.[0]?.name,
         });
         toast.success(`${product.name} ADDED TO ARCHIVE`);
     };
@@ -37,7 +41,7 @@ export function AIAssistantCard({ product, closeChat }: { product: CatalogProduc
         <div className="bg-white/5 border border-white/10 p-3 flex gap-4 my-3 group transition-all hover:border-brand-volt/50 rounded-sm">
             <div className="w-20 h-24 bg-black shrink-0 overflow-hidden rounded-sm">
                 { }
-<img src={product.images?.[0] || product.image || ''} className="w-full h-full object-cover grayscale group-hover:grayscale-0" alt={product.name} />
+<img src={getImageUrl(getProductImage(product))} className="w-full h-full object-cover grayscale group-hover:grayscale-0" alt={product.name} />
             </div>
             <div className="flex-1 flex flex-col justify-between py-0.5">
                 <div>

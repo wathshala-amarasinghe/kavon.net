@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
-import { Navbar } from '@/components/layout/Navbar';
 import { AboutHero } from '@/components/about/AboutHero';
 import { BrandPhilosophy } from '@/components/about/BrandPhilosophy';
 import { FounderSection } from '@/components/about/FounderSection';
@@ -21,7 +20,6 @@ export default function AboutPage() {
 
     return (
         <div className="bg-brand-black min-h-screen text-white selection:bg-brand-volt selection:text-black overflow-x-hidden">
-            <Navbar />
 
             {/* 💡 2026 Feature: Scroll Progress Indicator */}
             <motion.div className="fixed top-0 left-0 right-0 h-1 bg-brand-volt z-[110] origin-left" style={{ scaleX }} />

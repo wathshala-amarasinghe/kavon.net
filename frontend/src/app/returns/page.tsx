@@ -1,14 +1,12 @@
 "use client";
 
 import React from 'react';
-import { Navbar } from "@/components/layout/Navbar";
 import { Truck, RefreshCw, ShieldCheck, Globe, AlertTriangle } from 'lucide-react';
 import { FormattedPrice } from "@/components/ui/FormattedPrice";
 
 export default function ReturnsPage() {
     return (
         <main className="bg-black min-h-screen text-white selection:bg-brand-volt selection:text-black">
-            <Navbar />
 
             <div className="pt-44 pb-32 px-6 max-w-5xl mx-auto">
                 <header className="mb-24">

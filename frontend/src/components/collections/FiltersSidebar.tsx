@@ -16,6 +16,11 @@ interface FiltersSidebarProps {
     priceMax: number;
     setPriceMax: (val: number) => void;
     priceFilterActive?: boolean;
+    availableCategories?: string[];
+    availableGenders?: string[];
+    availableSizes?: string[];
+    availableColors?: { name: string; hex: string }[];
+    catalogMaxPrice?: number;
     inStockOnly: boolean;
     setInStockOnly: (val: boolean) => void;
     clearAll: () => void;
@@ -28,17 +33,20 @@ export const FiltersSidebar = ({
     activeSizes, toggleSize,
     activeColors, toggleColor,
     priceMax, setPriceMax, priceFilterActive = true,
+    availableCategories = [],
+    availableGenders = [],
+    availableSizes = [],
+    availableColors = [],
+    catalogMaxPrice = 100000,
     inStockOnly, setInStockOnly,
     clearAll, hasActiveFilters
 }: FiltersSidebarProps) => {
-    const categories = ["All", ...PRODUCT_CATEGORIES];
-    const sizes = ["S", "M", "L", "XL", "XXL"];
-    const colors = [
-        { name: "Phantom Black", hex: "#000000" },
-        { name: "Volt Green", hex: "#df0715" },
-        { name: "Slate Grey", hex: "#4a4a4a" },
-        { name: "Crimson Red", hex: "#8b0000" }
-    ];
+    const categories = ["All", ...Array.from(new Set([...PRODUCT_CATEGORIES, ...availableCategories]))];
+    const genders = ["All", ...Array.from(new Set(availableGenders.length > 0 ? availableGenders : ["Men", "Women", "Child", "Unisex"]))];
+    const sizes = Array.from(new Set(availableSizes.length > 0 ? availableSizes : ["S", "M", "L", "XL", "XXL"]));
+    const colors = availableColors;
+    const sliderMax = Math.max(1000, catalogMaxPrice);
+    const sliderStep = Math.max(100, Math.ceil(sliderMax / 100) / 100 * 100);
 
     const { formatPrice } = useCurrency();
 
@@ -56,7 +64,7 @@ export const FiltersSidebar = ({
             <div>
                 <h3 className="text-[11px] font-mono tracking-[0.4em] text-white/60 mb-6 uppercase">TARGET DIVISION</h3>
                 <div className="space-y-4">
-                    {["All", "Men", "Women", "Child", "Unisex"].map((gen) => (
+                    {genders.map((gen) => (
                         <button key={gen} onClick={() => setActiveGender(gen)} className={`block uppercase tracking-[0.2em] text-[11px] font-bold transition-all ${activeGender === gen ? "text-brand-volt translate-x-2" : "text-white/40 hover:text-white"}`}>{gen}</button>
                     ))}
                 </div>
@@ -75,6 +83,11 @@ export const FiltersSidebar = ({
                             style={{ backgroundColor: color.hex }}
                         />
                     ))}
+                    {colors.length === 0 && (
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-white/20">
+                            No color data
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -96,10 +109,10 @@ export const FiltersSidebar = ({
                 </div>
                 <input
                     type="range"
-                    min="3000"
-                    max="100000"
-                    step="1000"
-                    value={priceFilterActive ? priceMax : 100000}
+                    min="0"
+                    max={sliderMax}
+                    step={sliderStep}
+                    value={priceFilterActive ? Math.min(priceMax, sliderMax) : sliderMax}
                     onChange={(e) => setPriceMax(parseInt(e.target.value))}
                     className="w-full h-1 bg-white/10 appearance-none cursor-pointer accent-brand-volt"
                 />

@@ -15,13 +15,16 @@ const normalizeProductPayload = (body: any) => {
     const images = Array.isArray(body.images)
         ? body.images.map((image: any) => String(image || '').trim()).filter(Boolean)
         : [];
-    const colors = Array.isArray(body.colors)
+    const submittedColors = Array.isArray(body.colors)
         ? body.colors.map((color: any) => ({
             name: String(color.name || '').trim() || 'Default',
             hex: String(color.hex || '').trim() || '#000000',
             img: String(color.img || '').trim(),
-        }))
+        })).filter((color: any) => color.name)
         : [];
+    const colors = submittedColors.length > 0
+        ? submittedColors
+        : [{ name: 'Default', hex: '#000000', img: '' }];
 
     return {
         name: String(body.name || '').trim(),
@@ -172,13 +175,20 @@ router.get("/", async (req, res) => {
 
         // 4. Attribute Filtering (Sizes & Colors)
         if (sizes) {
-            const sizeList = (sizes as string).split(",");
-            query["sizes.label"] = { $in: sizeList };
+            const sizeList = String(sizes).split(",").map((size) => size.trim().toUpperCase()).filter(Boolean);
+            if (sizeList.length > 0) {
+                query.sizes = {
+                    $elemMatch: {
+                        label: { $in: sizeList },
+                        stock: { $gt: 0 },
+                    },
+                };
+            }
         }
 
         if (colors) {
-            const colorList = (colors as string).split(",");
-            query["colors.name"] = { $in: colorList };
+            const colorList = String(colors).split(",").map((color) => color.trim()).filter(Boolean);
+            if (colorList.length > 0) query["colors.name"] = { $in: colorList };
         }
 
         if (isNewDrop === 'true') {
@@ -190,32 +200,76 @@ router.get("/", async (req, res) => {
         }
 
         if (inStock === 'true') {
-            query.stock = { $gt: 0 };
+            query.sizes = query.sizes || { $elemMatch: { stock: { $gt: 0 } } };
         }
 
         // 4. Sorting Logic
-        let sortQuery: any = { createdAt: -1 };
+        let sortQuery: any = isBestSeller === 'true'
+            ? { salesCount: -1, createdAt: -1 }
+            : { createdAt: -1 };
         if (sort === "price_asc") sortQuery = { price: 1 };
         else if (sort === "price_desc") sortQuery = { price: -1 };
-        else if (sort === "popular") sortQuery = { rating: -1 };
+        else if (sort === "popular") sortQuery = { salesCount: -1, rating: -1 };
 
         // 5. Execution with Pagination
         const parsedPage = Math.max(1, Number(page) || 1);
         const parsedLimit = Math.min(100, Math.max(1, Number(limit) || 15));
         const skip = (parsedPage - 1) * parsedLimit;
         
-        const products = await Product.find(query)
-            .sort(sortQuery)
-            .skip(skip)
-            .limit(parsedLimit);
-
-        const total = await Product.countDocuments(query);
+        const [products, total, facetResult] = await Promise.all([
+            Product.find(query)
+                .sort(sortQuery)
+                .skip(skip)
+                .limit(parsedLimit),
+            Product.countDocuments(query),
+            Product.aggregate([{
+                $facet: {
+                    categories: [
+                        { $match: { category: { $type: "string", $ne: "" } } },
+                        { $group: { _id: "$category" } },
+                        { $sort: { _id: 1 } },
+                    ],
+                    genders: [
+                        { $match: { gender: { $type: "string", $ne: "" } } },
+                        { $group: { _id: "$gender" } },
+                        { $sort: { _id: 1 } },
+                    ],
+                    sizes: [
+                        { $unwind: "$sizes" },
+                        { $match: { "sizes.label": { $type: "string", $ne: "" }, "sizes.stock": { $gt: 0 } } },
+                        { $group: { _id: "$sizes.label" } },
+                        { $sort: { _id: 1 } },
+                    ],
+                    colors: [
+                        { $unwind: "$colors" },
+                        { $match: { "colors.name": { $type: "string", $ne: "" } } },
+                        { $group: { _id: "$colors.name", hex: { $first: "$colors.hex" } } },
+                        { $sort: { _id: 1 } },
+                    ],
+                    price: [
+                        { $group: { _id: null, max: { $max: "$price" } } },
+                    ],
+                },
+            }]),
+        ]);
+        const facetData = facetResult[0] || {};
+        const catalogMaxPrice = Number(facetData.price?.[0]?.max) || 0;
 
         res.json({
             products,
             total,
             page: parsedPage,
-            pages: Math.ceil(total / parsedLimit)
+            pages: Math.ceil(total / parsedLimit),
+            facets: {
+                categories: (facetData.categories || []).map((item: any) => item._id),
+                genders: (facetData.genders || []).map((item: any) => item._id),
+                sizes: (facetData.sizes || []).map((item: any) => item._id),
+                colors: (facetData.colors || []).map((item: any) => ({
+                    name: item._id,
+                    hex: item.hex || "#000000",
+                })),
+                maxPrice: Math.max(1000, Math.ceil(catalogMaxPrice / 1000) * 1000),
+            },
         });
     } catch (error) {
         console.error("Database fetch error:", error);

@@ -29,7 +29,12 @@ export default function PromotionsPage() {
             setIsLoading(true);
             setLoadError(null);
             try {
-                const campaigns = await getCampaigns();
+                let campaigns: Awaited<ReturnType<typeof getCampaigns>> = [];
+                try {
+                    campaigns = await getCampaigns();
+                } catch (error) {
+                    console.error('PROMOTION_CAMPAIGN_SYNC_FAILURE:', error);
+                }
                 const now = Date.now();
                 const campaignProducts = (Array.isArray(campaigns) ? campaigns : [])
                     .filter((campaign) =>
@@ -78,13 +83,13 @@ export default function PromotionsPage() {
             if (activePriceRange === "Above LKR 10,000") result = result.filter(p => p.price > 10000);
         }
 
-        if (activeSize) result = result.filter(p => p.sizes.some(s => s.label === activeSize));
+        if (activeSize) result = result.filter(p => p.sizes.some(s => s.label === activeSize && Number(s.stock) > 0));
 
         if (activeStockStatus) {
             const availableStock = (product: CatalogProduct) =>
-                Number.isFinite(Number(product.stock))
-                    ? Number(product.stock)
-                    : product.sizes.reduce((total, size) => total + Number(size.stock || 0), 0);
+                product.sizes.length > 0
+                    ? product.sizes.reduce((total, size) => total + Math.max(0, Number(size.stock) || 0), 0)
+                    : Math.max(0, Number(product.stock) || 0);
             if (activeStockStatus === "In Stock") result = result.filter(p => availableStock(p) > 0);
             if (activeStockStatus === "Sold Out") result = result.filter(p => availableStock(p) <= 0);
         }

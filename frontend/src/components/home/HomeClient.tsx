@@ -25,16 +25,26 @@ export default function HomeClient() {
 
   useEffect(() => {
     const fetchHomeData = async () => {
-      try {
-        const [bestData, newData, campaignData] = await Promise.all([
+      const [bestResult, newResult, campaignResult] = await Promise.allSettled([
           getProducts({ isBestSeller: true, limit: 8 }),
           getProducts({ isNewDrop: true, limit: 8 }),
           getCampaigns()
-        ]);
-        
-        setBestSellers(bestData.products || []);
-        setNewDrops(newData.products || []);
-        
+      ]);
+
+      if (bestResult.status === 'fulfilled') {
+        setBestSellers(bestResult.value.products || []);
+      } else {
+        console.error('BEST_SELLERS_SYNC_FAILURE:', bestResult.reason);
+      }
+
+      if (newResult.status === 'fulfilled') {
+        setNewDrops(newResult.value.products || []);
+      } else {
+        console.error('NEW_DROPS_SYNC_FAILURE:', newResult.reason);
+      }
+
+      if (campaignResult.status === 'fulfilled') {
+        const campaignData = campaignResult.value;
         const now = Date.now();
         const active = campaignData.find((campaign: Campaign) =>
           campaign.status === 'Active' &&
@@ -42,11 +52,11 @@ export default function HomeClient() {
           new Date(campaign.endDate).getTime() >= now
         );
         setActiveCampaign(active || null);
-      } catch (error) {
-        console.error("Failed to sync home sectors:", error);
+      } else {
+        console.error('CAMPAIGN_SYNC_FAILURE:', campaignResult.reason);
       }
     };
-    fetchHomeData();
+    void fetchHomeData();
   }, []);
 
   return (
@@ -81,7 +91,7 @@ export default function HomeClient() {
           <BestSellers products={bestSellers} />
         </section>
 
-        <PromoBanner />
+        <PromoBanner products={newDrops.length > 0 ? newDrops : bestSellers} />
 
         <div className="relative py-24 bg-brand-black">
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#df0715ff]/5 blur-[120px] rounded-full pointer-events-none" />

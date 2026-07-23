@@ -22,6 +22,19 @@ interface DeliveryProtocolProps {
 
 export function DeliveryProtocol({ selectedId, onSelect, subtotal }: DeliveryProtocolProps) {
     const { location, setLocation } = useSettings();
+
+    const selectSector = (sector: DeliverySector) => {
+        setLocation(sector);
+        if (sector === 'OUTSTATION' && selectedId === 'same-day') {
+            onSelect({
+                id: 'standard',
+                name: 'Standard_Ground',
+                eta: '3–5 Business Days',
+                price: calculateTacticalShipping(subtotal, sector),
+                icon: <Truck size={18} />,
+            });
+        }
+    };
     
     const methods: DeliveryMethod[] = [
         {
@@ -62,7 +75,7 @@ export function DeliveryProtocol({ selectedId, onSelect, subtotal }: DeliveryPro
                     {(["COLOMBO", "OUTSTATION"] as DeliverySector[]).map((sector) => (
                         <button
                             key={sector}
-                            onClick={() => setLocation(sector)}
+                            onClick={() => selectSector(sector)}
                             className={`p-6 border transition-all text-left flex flex-col gap-2 group ${location === sector 
                                 ? 'bg-brand-volt/5 border-brand-volt' 
                                 : 'bg-white/[0.02] border-white/10 hover:border-white/30'}`}

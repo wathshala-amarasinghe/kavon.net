@@ -8,33 +8,7 @@ import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
 import { CatalogProduct } from '@/types/product';
-
-const products = [
-    {
-        id: "KVN-DRP-01",
-        name: 'TECH-WEAR VEST // NEON',
-        price: 28500,
-        image: '/images/new_drops/drop_1.jpeg',
-    },
-    {
-        id: "KVN-DRP-02",
-        name: 'GRAPHIC TEE // VOID',
-        price: 7500,
-        image: '/images/new_drops/drop_2.jpeg',
-    },
-    {
-        id: "KVN-DRP-03",
-        name: 'UTILITY SHORTS // MOSS',
-        price: 14500,
-        image: '/images/new_drops/drop_3.jpeg',
-    },
-    {
-        id: "KVN-DRP-04",
-        name: 'WINDBREAKER // GHOST',
-        price: 32000,
-        image: '/images/new_drops/drop_4.jpeg',
-    },
-];
+import { getFirstAvailableSize, getProductId, getProductImage } from '@/lib/storefront-runtime';
 
 const CountdownTimer = ({ targetDate }: { targetDate: string }) => {
     const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
@@ -116,7 +90,9 @@ export function NewDrops({ products }: { products: CatalogProduct[] }) {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {displayProducts.map((product, index) => (
+                {displayProducts.map((product, index) => {
+                    const availableSize = getFirstAvailableSize(product);
+                    return (
                     <motion.div
                         key={product._id || product.id}
                         initial={{ opacity: 0, y: 30 }}
@@ -147,14 +123,16 @@ export function NewDrops({ products }: { products: CatalogProduct[] }) {
                             <div className="absolute inset-0 bg-brand-volt/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
                             <button
-                                onClick={() => addToCart({
-                                    id: product._id || product.id || "",
+                                onClick={() => availableSize && addToCart({
+                                    id: getProductId(product),
                                     name: product.name,
-                                    image: product.images?.[0],
+                                    image: getProductImage(product),
                                     price: product.price,
                                     quantity: 1,
-                                    size: 'M'
+                                    size: availableSize,
+                                    color: product.colors?.[0]?.name,
                                 })}
+                                disabled={!availableSize}
                                 className="absolute bottom-6 right-6 bg-white text-black p-4 rounded-none opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 z-10 shadow-2xl hover:bg-brand-volt"
                             >
                                 <Plus size={20} strokeWidth={3} />
@@ -173,7 +151,8 @@ export function NewDrops({ products }: { products: CatalogProduct[] }) {
                             <div className="h-[1px] w-8 bg-white/20 mt-2" />
                         </div>
                     </motion.div>
-                ))}
+                    );
+                })}
             </div>
         </section>
     );

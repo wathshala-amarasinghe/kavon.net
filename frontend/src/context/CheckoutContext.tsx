@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { normalizeCartItems } from '@/lib/storefront-runtime';
 
 interface CheckoutItem {
     id: string;
@@ -31,14 +32,53 @@ interface CheckoutContextType {
     setShippingAddress: (address: ShippingAddress) => void;
     paymentMethod: 'cod' | 'card';
     setPaymentMethod: (method: 'cod' | 'card') => void;
+    isLoaded: boolean;
 }
 
+const CHECKOUT_SESSION_KEY = 'kavon_checkout_session_v1';
 const CheckoutContext = createContext<CheckoutContextType | undefined>(undefined);
 
 export function CheckoutProvider({ children }: { children: React.ReactNode }) {
     const [activeCheckoutItem, setActiveCheckoutItem] = useState<CheckoutItem | null>(null);
     const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card'>('cod');
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    useEffect(() => {
+        let disposed = false;
+        let restoredItem: CheckoutItem | null = null;
+        let restoredAddress: ShippingAddress | null = null;
+
+        try {
+            const saved = JSON.parse(sessionStorage.getItem(CHECKOUT_SESSION_KEY) || '{}');
+            const item = normalizeCartItems(saved.activeCheckoutItem)[0];
+            if (item) restoredItem = { ...item, color: item.color || 'Default' };
+            if (saved.shippingAddress && typeof saved.shippingAddress === 'object') {
+                restoredAddress = saved.shippingAddress as ShippingAddress;
+            }
+        } catch {
+            sessionStorage.removeItem(CHECKOUT_SESSION_KEY);
+        }
+
+        queueMicrotask(() => {
+            if (disposed) return;
+            setActiveCheckoutItem(restoredItem);
+            setShippingAddress(restoredAddress);
+            setIsLoaded(true);
+        });
+
+        return () => {
+            disposed = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isLoaded) return;
+        sessionStorage.setItem(CHECKOUT_SESSION_KEY, JSON.stringify({
+            activeCheckoutItem: activeCheckoutItem ? [activeCheckoutItem] : [],
+            shippingAddress,
+        }));
+    }, [activeCheckoutItem, shippingAddress, isLoaded]);
 
     const setBuyNowItem = (item: CheckoutItem) => {
         setActiveCheckoutItem(item);
@@ -55,6 +95,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
             setShippingAddress,
             paymentMethod,
             setPaymentMethod,
+            isLoaded,
         }}>
             {children}
         </CheckoutContext.Provider>

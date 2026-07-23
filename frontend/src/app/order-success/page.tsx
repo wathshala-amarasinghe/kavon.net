@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Navbar } from "@/components/layout/Navbar";
 import { CheckCircle2, Package, Truck, ArrowRight, ShieldCheck, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { Order } from '@/context/AuthContext';
@@ -27,7 +26,6 @@ export default function OrderSuccessPage() {
 
     return (
         <div className="bg-brand-black min-h-screen text-white selection:bg-brand-volt">
-            <Navbar />
             <main className="pt-44 pb-20 px-6 max-w-[1000px] mx-auto">
                 <div className="text-center space-y-6 mb-16">
                     <motion.div 

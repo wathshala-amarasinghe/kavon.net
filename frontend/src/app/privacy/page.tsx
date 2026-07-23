@@ -1,13 +1,11 @@
 "use client";
 
 import React from 'react';
-import { Navbar } from "@/components/layout/Navbar";
 import { Truck, RefreshCw, ShieldCheck, Globe, AlertTriangle } from 'lucide-react';
 
 export default function ReturnsPage() {
     return (
         <main className="bg-black min-h-screen text-white">
-            <Navbar />
 
             <div className="pt-44 pb-32 px-6 max-w-5xl mx-auto">
                 <header className="mb-20">

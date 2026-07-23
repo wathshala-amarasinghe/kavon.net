@@ -11,15 +11,42 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
 import { CatalogProduct } from '@/types/product';
+import {
+    getFirstAvailableSize,
+    getProductImage,
+    isProductAvailable,
+} from '@/lib/storefront-runtime';
 
 export function ProductCard({ product, index, layout = "grid" }: { product: CatalogProduct, index: number, layout?: "grid" | "list" }) {
     const { addToCart } = useCart();
     const { toggleWishlist, isInWishlist } = useWishlist();
     const productId = product._id || product.id || "";
-    const productImage = product.images[0] || product.image || "";
+    const productImage = getProductImage(product);
     const isFavorite = isInWishlist(productId);
-
-    const isOutOfStock = product.stock === 0 || product.inStock === false;
+    const availableSize = getFirstAvailableSize(product);
+    const isOutOfStock = !isProductAvailable(product);
+    const addAvailableProduct = () => {
+        if (!availableSize || isOutOfStock) return;
+        addToCart({
+            id: productId,
+            name: product.name,
+            image: productImage,
+            price: product.price,
+            quantity: 1,
+            size: availableSize,
+            color: product.colors?.[0]?.name,
+        });
+    };
+    const wishlistItem = {
+        id: productId,
+        name: product.name,
+        price: product.price,
+        image: productImage,
+        images: product.images,
+        sizes: product.sizes,
+        colors: product.colors,
+        stock: product.stock,
+    };
 
     if (layout === "list") {
         return (
@@ -54,14 +81,14 @@ export function ProductCard({ product, index, layout = "grid" }: { product: Cata
 
                     <div className="flex items-center gap-4 pt-4">
                         <button 
-                            onClick={() => !isOutOfStock && addToCart({ id: productId, name: product.name, image: productImage, price: product.price, quantity: 1, size: 'M' })}
+                            onClick={addAvailableProduct}
                             disabled={isOutOfStock}
                             className={`px-10 py-4 font-black uppercase text-[12px] tracking-[0.2em] transition-all active:scale-95 ${isOutOfStock ? 'bg-white/10 text-white/20 cursor-not-allowed' : 'bg-white text-black hover:bg-brand-volt'}`}
                         >
                             {isOutOfStock ? 'OUT OF STOCK' : 'ADD TO CART'}
                         </button>
                         <button 
-                            onClick={() => toggleWishlist({ id: productId, name: product.name, price: product.price, image: productImage })}
+                            onClick={() => toggleWishlist(wishlistItem)}
                             className={`p-4 border border-white/10 ${isFavorite ? 'text-brand-volt' : 'text-white/40'} hover:border-white/30 transition-all`}
                         >
                             <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
@@ -96,7 +123,7 @@ export function ProductCard({ product, index, layout = "grid" }: { product: Cata
 
                 {!isOutOfStock && (
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 z-20">
-                        <button onClick={() => addToCart({ id: productId, name: product.name, image: productImage, price: product.price, quantity: 1, size: 'M' })} className="p-5 bg-white text-black hover:bg-brand-volt transition-colors active:scale-90">
+                        <button onClick={addAvailableProduct} className="p-5 bg-white text-black hover:bg-brand-volt transition-colors active:scale-90">
                             <Plus size={20} />
                         </button>
 
@@ -104,7 +131,7 @@ export function ProductCard({ product, index, layout = "grid" }: { product: Cata
                             <Eye size={20} />
                         </Link>
 
-                        <button onClick={() => toggleWishlist({ id: productId, name: product.name, price: product.price, image: productImage })} className={`p-5 ${isFavorite ? 'bg-brand-volt text-black' : 'bg-white text-black'} active:scale-90`}>
+                        <button onClick={() => toggleWishlist(wishlistItem)} className={`p-5 ${isFavorite ? 'bg-brand-volt text-black' : 'bg-white text-black'} active:scale-90`}>
                             <Heart size={20} fill={isFavorite ? "currentColor" : "none"} />
                         </button>
                     </div>

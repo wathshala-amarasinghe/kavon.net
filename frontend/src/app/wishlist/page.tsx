@@ -8,10 +8,11 @@ import { useWishlist, WishlistItem } from '@/context/WishlistContext';
 import { useCart } from '@/context/CartContext';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import toast from 'react-hot-toast';
+import { getImageUrl } from '@/lib/utils';
 
 export default function WishlistPage() {
-    const { wishlist, toggleWishlist } = useWishlist();
-    const { moveWishlistToCart, isLoaded } = useCart();
+    const { wishlist, toggleWishlist, isLoaded } = useWishlist();
+    const { moveWishlistToCart } = useCart();
 
     const handleMoveToCart = (item: WishlistItem) => {
         moveWishlistToCart(item);
@@ -121,9 +122,8 @@ export default function WishlistPage() {
                                 className="group relative bg-brand-surface border border-white/5 overflow-hidden"
                             >
                                 <div className="relative aspect-[3/4] overflow-hidden">
-                                    { }
-<img
-                                        src={item.image}
+                                    <img
+                                        src={getImageUrl(item.image)}
                                         alt={item.name}
                                         className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-110"
                                     />

@@ -30,3 +30,14 @@ export interface CatalogProduct {
     createdAt?: string;
     updatedAt?: string;
 }
+
+export interface CatalogFacets {
+    categories: string[];
+    genders: string[];
+    sizes: string[];
+    colors: {
+        name: string;
+        hex: string;
+    }[];
+    maxPrice: number;
+}

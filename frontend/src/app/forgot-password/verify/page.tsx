@@ -3,7 +3,6 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Navbar } from '@/components/layout/Navbar';
 import toast from 'react-hot-toast';
 import { verifyPasswordResetCode } from '@/lib/api';
 
@@ -48,7 +47,6 @@ export default function VerifyCode() {
 
     return (
         <div className="bg-brand-black min-h-screen text-white">
-            <Navbar />
             <main className="min-h-screen flex items-center justify-center px-6 pt-20">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md bg-brand-surface border border-white/10 p-12 relative shadow-2xl">
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-[#df0715]" />

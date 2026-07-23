@@ -1,14 +1,12 @@
 "use client";
 
 import React from 'react';
-import { Navbar } from "@/components/layout/Navbar";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function ReturnsPolicy() {
     return (
         <div className="bg-brand-black min-h-screen text-white">
-            <Navbar />
             <main className="pt-44 pb-20 px-6 max-w-4xl mx-auto">
                 <Link href="/shop" className="flex items-center gap-2 text-brand-volt font-mono text-[10px] mb-12 uppercase tracking-widest">
                     <ArrowLeft size={14} /> Back_To_Archive

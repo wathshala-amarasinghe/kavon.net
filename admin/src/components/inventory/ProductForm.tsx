@@ -44,9 +44,9 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
         if (initialData) {
             setFormData({
                 ...initialData,
-                images: initialData.images || [''],
-                colors: initialData.colors || [{ name: 'Default', hex: '#000000', img: '' }],
-                sizes: initialData.sizes || [
+                images: initialData.images?.length ? initialData.images : [''],
+                colors: initialData.colors?.length ? initialData.colors : [{ name: 'Default', hex: '#000000', img: '' }],
+                sizes: initialData.sizes?.length ? initialData.sizes : [
                     { label: 'S', stock: 0 },
                     { label: 'M', stock: 0 },
                     { label: 'L', stock: 0 },
@@ -106,6 +106,14 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
             return;
         }
 
+        const cleanedColors = formData.colors
+            .map((color: any) => ({
+                name: String(color.name || '').trim(),
+                hex: String(color.hex || '#000000').trim(),
+                img: String(color.img || '').trim(),
+            }))
+            .filter((color: any) => color.name);
+
         const finalData = {
             ...formData,
             name: formData.name.trim(),
@@ -113,7 +121,10 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
             images: cleanedImages,
             price: Number(formData.price),
             stock: totalSizeStock,
-            sizes: formData.sizes.map((s: any) => ({ ...s, stock: Number(s.stock) || 0 }))
+            sizes: formData.sizes.map((s: any) => ({ ...s, stock: Number(s.stock) || 0 })),
+            colors: cleanedColors.length > 0
+                ? cleanedColors
+                : [{ name: 'Default', hex: '#000000', img: '' }],
         };
 
         setIsSubmitting(true);
@@ -366,6 +377,63 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                                                     }}
                                                     className="flex-1 bg-transparent font-mono text-[10px] outline-none text-right"
                                                 />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <label className="font-mono text-[9px] text-white/40 uppercase tracking-widest">Color_Palette</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({
+                                                ...formData,
+                                                colors: [...formData.colors, { name: '', hex: '#000000', img: '' }],
+                                            })}
+                                            className="text-[9px] font-mono uppercase tracking-widest text-brand-volt hover:text-white transition-colors"
+                                        >
+                                            + Add Color
+                                        </button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {formData.colors.map((color: any, index: number) => (
+                                            <div key={index} className="grid grid-cols-[44px_1fr_auto] gap-3 items-center bg-white/[0.02] border border-white/5 p-3">
+                                                <input
+                                                    type="color"
+                                                    value={color.hex || '#000000'}
+                                                    onChange={(e) => {
+                                                        const colors = [...formData.colors];
+                                                        colors[index] = { ...colors[index], hex: e.target.value };
+                                                        setFormData({ ...formData, colors });
+                                                    }}
+                                                    className="w-11 h-10 bg-transparent border-0 cursor-pointer"
+                                                    aria-label={`Color value ${index + 1}`}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={color.name}
+                                                    onChange={(e) => {
+                                                        const colors = [...formData.colors];
+                                                        colors[index] = { ...colors[index], name: e.target.value };
+                                                        setFormData({ ...formData, colors });
+                                                    }}
+                                                    placeholder="COLOR NAME"
+                                                    className="bg-transparent font-mono text-[10px] uppercase outline-none"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    disabled={formData.colors.length === 1}
+                                                    onClick={() => setFormData({
+                                                        ...formData,
+                                                        colors: formData.colors.filter((_: any, colorIndex: number) => colorIndex !== index),
+                                                    })}
+                                                    className="p-2 text-white/20 hover:text-red-500 transition-colors disabled:opacity-10"
+                                                    aria-label={`Remove ${color.name || 'color'}`}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
                                             </div>
                                         ))}
                                     </div>

@@ -15,12 +15,14 @@ export function OrderSummary({
     selectedDeliveryPrice = 0, 
     deliveryMethod = 'standard',
     deliverySector = 'COLOMBO',
-    isFinalStep = false 
+    isFinalStep = false,
+    onOrderCreated,
 }: { 
     selectedDeliveryPrice?: number;
     deliveryMethod?: string;
     deliverySector?: DeliverySector;
     isFinalStep?: boolean;
+    onOrderCreated?: () => void;
 }) {
     const router = useRouter();
     const { cart, subtotal: cartSubtotal, discount: cartDiscount, applyCoupon, activeCoupon, couponError, getCouponDiscount, clearCart, isPointsRedeemed, setIsPointsRedeemed, pointsDiscount: cartPointsDiscount } = useCart();
@@ -94,7 +96,7 @@ export function OrderSummary({
                 paymentMethod,
                 deliveryMethod,
                 deliverySector,
-                couponCode: activeCoupon,
+                couponCode: discount > 0 ? activeCoupon : null,
                 pointsUsed: isPointsRedeemed ? 1000 : 0,
             };
 
@@ -117,6 +119,7 @@ export function OrderSummary({
             }
 
             localStorage.setItem('kavon_last_order', JSON.stringify(createdOrder));
+            onOrderCreated?.();
             
             // Only clear cart if it was a cart checkout
             if (!activeCheckoutItem) {
@@ -125,9 +128,7 @@ export function OrderSummary({
                 clearBuyNowItem();
             }
             
-            setTimeout(() => {
-                router.push('/order-success');
-            }, 100);
+            router.replace('/order-success');
         } catch (error: unknown) {
             console.error('DEPLOYMENT_FAILURE:', error);
             alert(`DEPLOYMENT_ERROR: ${error instanceof Error ? error.message : "Unknown error"}`);

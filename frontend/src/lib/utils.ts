@@ -21,7 +21,7 @@ export function getHighlightedParts(text: string, query: string) {
 
     return parts.map(part => ({
         text: part,
-        isMatch: regex.test(part)
+        isMatch: part.toLocaleLowerCase() === query.trim().toLocaleLowerCase()
     }));
 }
 

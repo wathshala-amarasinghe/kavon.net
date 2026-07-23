@@ -10,9 +10,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SkeletonProduct } from "@/components/layout/SkeletonProduct";
 import { getProducts } from "@/lib/api";
 import { useInventory } from "@/context/InventoryContext";
-import { CatalogProduct } from "@/types/product";
+import { CatalogFacets, CatalogProduct } from "@/types/product";
 
 const ITEMS_PER_PAGE = 15;
+const INITIAL_FACETS: CatalogFacets = {
+    categories: [],
+    genders: [],
+    sizes: [],
+    colors: [],
+    maxPrice: 100000,
+};
 
 function ShopContent() {
     const router = useRouter();
@@ -24,25 +31,32 @@ function ShopContent() {
     const [totalItems, setTotalItems] = useState(0);
     const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
     const [catalogError, setCatalogError] = useState<string | null>(null);
+    const [facets, setFacets] = useState<CatalogFacets>(INITIAL_FACETS);
     const { syncInventory } = useInventory();
 
     // URL State Extractors
     const activeCategory = searchParams.get("category") || "All";
     const activeGender = searchParams.get("gender") || "All";
-    const activeSizes = searchParams.get("sizes")?.split(",") || [];
-    const activeColors = searchParams.get("colors")?.split(",") || [];
+    const activeSizes = searchParams.get("sizes")?.split(",").filter(Boolean) || [];
+    const activeColors = searchParams.get("colors")?.split(",").filter(Boolean) || [];
     const priceParam = searchParams.get("price");
-    const priceMax = parseInt(priceParam || "100000");
-    const hasPriceFilter = priceParam !== null;
-    const sortOption = searchParams.get("sort") || "latest";
-    const viewMode = (searchParams.get("view") as "grid" | "list") || "grid";
+    const parsedPrice = Number(priceParam);
+    const hasPriceFilter = priceParam !== null && Number.isFinite(parsedPrice) && parsedPrice >= 0;
+    const priceMax = hasPriceFilter ? parsedPrice : facets.maxPrice;
+    const requestedSort = searchParams.get("sort");
+    const sortOption = ["latest", "price_asc", "price_desc", "popular"].includes(requestedSort || "")
+        ? requestedSort as string
+        : "latest";
+    const viewMode = searchParams.get("view") === "list" ? "list" : "grid";
     const inStockOnly = searchParams.get("stock") === "true";
     const searchQuery = searchParams.get("q") || "";
-    const currentPage = parseInt(searchParams.get("page") || "1");
+    const requestedPage = Number(searchParams.get("page"));
+    const currentPage = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
     const isNewDrop = searchParams.get("isNewDrop") === "true";
     const isBestSeller = searchParams.get("isBestSeller") === "true";
 
     useEffect(() => {
+        let cancelled = false;
         const fetchFiltered = async () => {
             setIsLoading(true);
             setCatalogError(null);
@@ -67,21 +81,29 @@ function ShopContent() {
                 const safePages = Number.isFinite(Number(data?.pages)) ? Number(data.pages) : 0;
                 const safeTotal = Number.isFinite(Number(data?.total)) ? Number(data.total) : safeProducts.length;
 
-                setProducts(safeProducts);
-                setTotalPages(safePages);
-                setTotalItems(safeTotal);
-                syncInventory(safeProducts);
+                if (!cancelled) {
+                    setProducts(safeProducts);
+                    setTotalPages(safePages);
+                    setTotalItems(safeTotal);
+                    setFacets(data.facets || INITIAL_FACETS);
+                    syncInventory(safeProducts);
+                }
             } catch (error: unknown) {
                 console.error("CATALOG_SYNC_FAILURE:", error);
-                setProducts([]);
-                setTotalPages(0);
-                setTotalItems(0);
-                setCatalogError(error instanceof Error ? error.message : 'Catalog could not be loaded');
+                if (!cancelled) {
+                    setProducts([]);
+                    setTotalPages(0);
+                    setTotalItems(0);
+                    setCatalogError(error instanceof Error ? error.message : 'Catalog could not be loaded');
+                }
             } finally {
-                setIsLoading(false);
+                if (!cancelled) setIsLoading(false);
             }
         };
-        fetchFiltered();
+        void fetchFiltered();
+        return () => {
+            cancelled = true;
+        };
     }, [activeCategory, activeGender, activeSizes.join(","), activeColors.join(","), priceMax, hasPriceFilter, sortOption, searchQuery, currentPage, isNewDrop, isBestSeller, inStockOnly, syncInventory]);
 
     // URL State Updater
@@ -129,6 +151,11 @@ function ShopContent() {
                             priceMax={priceMax}
                             priceFilterActive={hasPriceFilter}
                             setPriceMax={(val) => updateUrl({ price: val.toString(), page: "1" })}
+                            availableCategories={facets.categories}
+                            availableGenders={facets.genders}
+                            availableSizes={facets.sizes}
+                            availableColors={facets.colors}
+                            catalogMaxPrice={facets.maxPrice}
                             inStockOnly={inStockOnly}
                             setInStockOnly={(val) => updateUrl({ stock: val.toString(), page: "1" })}
                             clearAll={() => {
@@ -234,6 +261,11 @@ function ShopContent() {
                                     priceMax={priceMax}
                                     priceFilterActive={hasPriceFilter}
                                     setPriceMax={(val) => updateUrl({ price: val.toString(), page: "1" })}
+                                    availableCategories={facets.categories}
+                                    availableGenders={facets.genders}
+                                    availableSizes={facets.sizes}
+                                    availableColors={facets.colors}
+                                    catalogMaxPrice={facets.maxPrice}
                                     inStockOnly={inStockOnly}
                                     setInStockOnly={(val) => updateUrl({ stock: val.toString(), page: "1" })}
                                     clearAll={() => {

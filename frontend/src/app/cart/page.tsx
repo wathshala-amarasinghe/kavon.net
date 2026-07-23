@@ -2,7 +2,6 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Navbar } from "@/components/layout/Navbar";
 import { CartItem } from "@/components/cart/CartItem";
 import { OrderSummary } from "@/components/cart/OrderSummary";
 import { useCart } from "@/context/CartContext";
@@ -14,7 +13,6 @@ export default function CartPage() {
 
     return (
         <div className="bg-brand-black min-h-screen text-white selection:bg-brand-volt">
-            <Navbar />
             <main className="pt-48 pb-20 px-6 max-w-[1400px] mx-auto">
                 <header className="mb-12 border-l-2 border-brand-volt pl-8">
                     <span className="font-mono text-[10px] tracking-[0.5em] text-brand-volt uppercase mb-2 block">Archive_Check</span>
@@ -26,7 +24,7 @@ export default function CartPage() {
                     <div className="lg:col-span-8 space-y-4">
                         <AnimatePresence mode="popLayout">
                             {cart.map((item) => (
-                                <CartItem key={`${item.id}-${item.size}`} item={item} />
+                                <CartItem key={`${item.id}-${item.size}-${item.color || 'Default'}-${Boolean(item.isBundle)}`} item={item} />
                             ))}
                         </AnimatePresence>
                         {cart.length === 0 && (

@@ -9,6 +9,7 @@ import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
 import { CatalogProduct } from '@/types/product';
+import { getFirstAvailableSize, getProductId, getProductImage } from '@/lib/storefront-runtime';
 
 export function BestSellers({ products = [] }: { products?: CatalogProduct[] }) {
     const { addToCart } = useCart();
@@ -26,7 +27,9 @@ export function BestSellers({ products = [] }: { products?: CatalogProduct[] }) 
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {bestSellerProducts.map((product, index) => (
+                {bestSellerProducts.map((product, index) => {
+                    const availableSize = getFirstAvailableSize(product);
+                    return (
                     <motion.div
                         key={product._id || product.id}
                         initial={{ opacity: 0, y: 30 }}
@@ -59,15 +62,18 @@ export function BestSellers({ products = [] }: { products?: CatalogProduct[] }) 
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    if (!availableSize) return;
                                     addToCart({
-                                        id: product._id || product.id || "",
+                                        id: getProductId(product),
                                         name: product.name,
-                                        image: product.images?.[0] || product.image || "",
+                                        image: getProductImage(product),
                                         price: product.price,
                                         quantity: 1,
-                                        size: 'M'
+                                        size: availableSize,
+                                        color: product.colors?.[0]?.name,
                                     });
                                 }}
+                                disabled={!availableSize}
                                 className="absolute bottom-4 right-4 bg-white text-black p-4 rounded-none opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 hover:bg-brand-volt z-20 active:scale-95"
                             >
                                 <Plus size={20} strokeWidth={3} />
@@ -86,7 +92,8 @@ export function BestSellers({ products = [] }: { products?: CatalogProduct[] }) 
                             <div className="h-[1px] w-8 bg-white/20 mt-2" />
                         </div>
                     </motion.div>
-                ))}
+                    );
+                })}
             </div>
         </section>
     );

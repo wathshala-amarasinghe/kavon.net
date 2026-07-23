@@ -1,8 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useWishlist, WishlistItem } from './WishlistContext';
 import { validateCoupon } from '@/lib/api';
+import {
+    cartsAreEqual,
+    getFirstAvailableSize,
+    normalizeCartItems,
+    sameCartLine,
+} from '@/lib/storefront-runtime';
 
 export interface CartItem {
     id: string;
@@ -18,9 +24,9 @@ export interface CartItem {
 interface CartContextType {
     cart: CartItem[];
     addToCart: (item: CartItem) => void;
-    removeFromCart: (id: string, size: string, isBundle?: boolean) => void;
-    updateQuantity: (id: string, size: string, delta: number, isBundle?: boolean) => void;
-    moveToWishlist: (id: string, size: string, isBundle?: boolean) => void;
+    removeFromCart: (id: string, size: string, isBundle?: boolean, color?: string) => void;
+    updateQuantity: (id: string, size: string, delta: number, isBundle?: boolean, color?: string) => void;
+    moveToWishlist: (id: string, size: string, isBundle?: boolean, color?: string) => Promise<void>;
     applyCoupon: (code: string, amount?: number) => Promise<boolean>;
     subtotal: number;
     discount: number;
@@ -51,74 +57,99 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } | null>(null);
     const [couponError, setCouponError] = useState<string | null>(null);
     const [isPointsRedeemed, setIsPointsRedeemed] = useState(false);
-    const { toggleWishlist } = useWishlist();
+    const { toggleWishlist, isInWishlist } = useWishlist();
+    const channelRef = useRef<BroadcastChannel | null>(null);
 
     useEffect(() => {
-        const channel = new BroadcastChannel('kavon_sync_sector');
-        
-        channel.onmessage = (event) => {
-            if (event.data.type === 'CART_SYNC') {
-                setCart(event.data.payload);
+        let disposed = false;
+        const applySynchronizedCart = (value: unknown) => {
+            const synchronized = normalizeCartItems(value);
+            setCart((current) => cartsAreEqual(current, synchronized) ? current : synchronized);
+        };
+        const handleStorage = (event: StorageEvent) => {
+            if (event.key !== 'kavon-manifest-v1') return;
+            try {
+                applySynchronizedCart(event.newValue ? JSON.parse(event.newValue) : []);
+            } catch {
+                applySynchronizedCart([]);
             }
         };
 
+        if (typeof BroadcastChannel !== 'undefined') {
+            const channel = new BroadcastChannel('kavon_sync_sector');
+            channel.onmessage = (event) => {
+                if (event.data?.type === 'CART_SYNC') {
+                    applySynchronizedCart(event.data.payload);
+                }
+            };
+            channelRef.current = channel;
+        }
+        window.addEventListener('storage', handleStorage);
+
+        let initialCart: CartItem[] = [];
         const savedCart = localStorage.getItem('kavon-manifest-v1');
         if (savedCart) {
-            try { 
-                const parsed = JSON.parse(savedCart);
-                setTimeout(() => setCart(parsed), 0);
+            try {
+                initialCart = normalizeCartItems(JSON.parse(savedCart));
             } catch {
                 localStorage.removeItem('kavon-manifest-v1');
             }
         }
-        setTimeout(() => setIsLoaded(true), 0);
+        queueMicrotask(() => {
+            if (disposed) return;
+            setCart(initialCart);
+            setIsLoaded(true);
+        });
 
-        return () => channel.close();
+        return () => {
+            disposed = true;
+            window.removeEventListener('storage', handleStorage);
+            channelRef.current?.close();
+            channelRef.current = null;
+        };
     }, []);
 
     useEffect(() => {
         if (isLoaded) {
             localStorage.setItem('kavon-manifest-v1', JSON.stringify(cart));
-            
-            // Broadcast to other tabs
-            const channel = new BroadcastChannel('kavon_sync_sector');
-            channel.postMessage({ type: 'CART_SYNC', payload: cart });
-            setTimeout(() => channel.close(), 10);
+            channelRef.current?.postMessage({ type: 'CART_SYNC', payload: cart });
         }
     }, [cart, isLoaded]);
 
     const addToCart = (newItem: CartItem) => {
+        const normalizedItem = normalizeCartItems([newItem])[0];
+        if (!normalizedItem) return;
+
         setCart(prev => {
-            // Check for match including isBundle flag to avoid merging discounted items with regular ones
-            const existing = prev.find(i => 
-                i.id === newItem.id && 
-                i.size === newItem.size && 
-                i.isBundle === newItem.isBundle
-            );
+            const existing = prev.find((item) => sameCartLine(item, normalizedItem));
             if (existing) {
-                return prev.map(i => 
-                    (i.id === newItem.id && i.size === newItem.size && i.isBundle === newItem.isBundle) 
-                        ? { ...i, quantity: i.quantity + newItem.quantity } 
-                        : i
+                return prev.map((item) =>
+                    sameCartLine(item, normalizedItem)
+                        ? { ...item, quantity: Math.min(20, item.quantity + normalizedItem.quantity) }
+                        : item
                 );
             }
-            return [...prev, newItem];
+            return [...prev, normalizedItem];
         });
     };
 
-    const removeFromCart = (id: string, size: string, isBundle?: boolean) => {
-        setCart(prev => prev.filter(i => !(i.id === id && i.size === size && i.isBundle === isBundle)));
+    const removeFromCart = (id: string, size: string, isBundle?: boolean, color?: string) => {
+        setCart((current) => current.filter((item) => !sameCartLine(item, { id, size, isBundle, color })));
     };
 
-    const updateQuantity = (id: string, size: string, delta: number, isBundle?: boolean) => {
-        setCart(prev => prev.map(i => (i.id === id && i.size === size && i.isBundle === isBundle) ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i));
+    const updateQuantity = (id: string, size: string, delta: number, isBundle?: boolean, color?: string) => {
+        setCart((current) => current.map((item) => (
+            sameCartLine(item, { id, size, isBundle, color })
+                ? { ...item, quantity: Math.min(20, Math.max(1, item.quantity + delta)) }
+                : item
+        )));
     };
 
-    const moveToWishlist = (id: string, size: string, isBundle?: boolean) => {
-        const item = cart.find(i => i.id === id && i.size === size && i.isBundle === isBundle);
+    const moveToWishlist = async (id: string, size: string, isBundle?: boolean, color?: string) => {
+        const item = cart.find((candidate) => sameCartLine(candidate, { id, size, isBundle, color }));
         if (item) {
-            toggleWishlist({ ...item });
-            removeFromCart(id, size, isBundle);
+            const saved = isInWishlist(id) || await toggleWishlist({ ...item });
+            if (saved) removeFromCart(id, size, isBundle, color);
         }
     };
 
@@ -163,10 +194,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
 
     const moveWishlistToCart = (item: WishlistItem) => {
+        const size = item.size || getFirstAvailableSize({ sizes: item.sizes || [] }) || 'M';
+
         addToCart({
             ...item,
             quantity: 1,
-            size: "M", // Default tactical size
+            size,
+            color: item.colors?.[0]?.name,
         });
     };
 

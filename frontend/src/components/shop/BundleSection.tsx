@@ -6,6 +6,7 @@ import { useCart } from '@/context/CartContext';
 import toast from 'react-hot-toast';
 import { CatalogProduct } from '@/types/product';
 import { getImageUrl } from '@/lib/utils';
+import { getFirstAvailableSize, getProductImage } from '@/lib/storefront-runtime';
 
 interface BundleProps {
     currentProduct: CatalogProduct;
@@ -14,7 +15,9 @@ interface BundleProps {
 
 export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
     const { addToCart } = useCart();
-    const [selectedBundleSize, setSelectedBundleSize] = useState(bundleProduct.sizes[1]?.label || "M");
+    const currentProductSize = getFirstAvailableSize(currentProduct);
+    const initialBundleSize = getFirstAvailableSize(bundleProduct);
+    const [selectedBundleSize, setSelectedBundleSize] = useState(initialBundleSize || "");
 
     // Bundle Logic: 10% discount if bought together
     const subtotal = currentProduct.price + bundleProduct.price;
@@ -22,13 +25,19 @@ export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
     const savings = subtotal - bundlePrice;
 
     const handleAddBundle = () => {
+        if (!currentProductSize || !selectedBundleSize) {
+            toast.error("ONE_OR_MORE_SET_ITEMS_ARE_OUT_OF_STOCK");
+            return;
+        }
+
         // 1. Add current product with 10% discount
         addToCart({
             id: currentProduct._id || currentProduct.id || "",
             name: currentProduct.name,
-            image: currentProduct.images[0] || currentProduct.image || "",
+            image: getProductImage(currentProduct),
             quantity: 1, 
-            size: "M", 
+            size: currentProductSize,
+            color: currentProduct.colors?.[0]?.name,
             price: currentProduct.price * 0.9, 
             isBundle: true 
         });
@@ -37,9 +46,10 @@ export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
         addToCart({
             id: bundleProduct._id || bundleProduct.id || "",
             name: bundleProduct.name,
-            image: bundleProduct.images[0] || bundleProduct.image || "",
+            image: getProductImage(bundleProduct),
             quantity: 1,
             size: selectedBundleSize,
+            color: bundleProduct.colors?.[0]?.name,
             price: bundleProduct.price * 0.9,
             isBundle: true
         });
@@ -72,12 +82,12 @@ export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
                 <div className="flex items-center gap-4 shrink-0">
                     <div className="w-24 h-32 border border-white/10 bg-brand-surface overflow-hidden">
                         { }
-<img src={getImageUrl(currentProduct.images[0] || currentProduct.image)} className="w-full h-full object-cover opacity-50" alt="" />
+<img src={getImageUrl(getProductImage(currentProduct))} className="w-full h-full object-cover opacity-50" alt="" />
                     </div>
                     <Plus className="text-white/20" size={24} />
                     <div className="w-32 h-44 border-2 border-brand-volt bg-brand-surface overflow-hidden shadow-[0_0_30px_rgba(223, 7, 21,0.1)]">
                         { }
-<img src={getImageUrl(bundleProduct.images[0] || bundleProduct.image)} className="w-full h-full object-cover" alt="" />
+<img src={getImageUrl(getProductImage(bundleProduct))} className="w-full h-full object-cover" alt="" />
                     </div>
                 </div>
 
@@ -92,8 +102,9 @@ export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
                         {bundleProduct.sizes.map((s) => (
                             <button
                                 key={s.label}
+                                disabled={Number(s.stock) <= 0}
                                 onClick={() => setSelectedBundleSize(s.label)}
-                                className={`px-3 py-1 text-[10px] font-mono border transition-all ${selectedBundleSize === s.label
+                                className={`px-3 py-1 text-[10px] font-mono border transition-all disabled:opacity-20 disabled:line-through ${selectedBundleSize === s.label
                                         ? 'bg-white text-black border-white'
                                         : 'border-white/10 text-white/40 hover:border-white/30'
                                     }`}
@@ -114,6 +125,7 @@ export function BundleSection({ currentProduct, bundleProduct }: BundleProps) {
 
                     <button
                         onClick={handleAddBundle}
+                        disabled={!currentProductSize || !selectedBundleSize}
                         className="flex items-center gap-3 bg-white text-black px-8 py-4 font-black uppercase text-[11px] tracking-[0.2em] hover:bg-brand-volt transition-all group"
                     >
                         Acquire_Set <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />

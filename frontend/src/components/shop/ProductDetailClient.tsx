@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Navbar } from "@/components/layout/Navbar";
+import { useRouter } from 'next/navigation';
 import { ReviewSection } from "@/components/shop/ReviewSection";
 import {
-    ShoppingBag, Truck, Heart, Share2,
+    Truck, Heart, Share2,
     RotateCcw, ShieldCheck, Minus, Plus, ChevronRight, Info, X
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
@@ -26,11 +25,15 @@ import { getProducts } from "@/lib/api";
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
 import { CatalogProduct } from '@/types/product';
+import {
+    getFirstAvailableSize,
+    getProductId,
+    getProductImage,
+} from '@/lib/storefront-runtime';
 
 const MotionImage = motion.create(Image);
 
 export default function ProductDetailClient({ product: initialProduct }: { product: CatalogProduct }) {
-    const params = useParams();
     const router = useRouter();
     const { addToCart } = useCart();
     const { toggleWishlist, isInWishlist } = useWishlist();
@@ -40,11 +43,14 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
     const [product] = useState<CatalogProduct>(initialProduct);
     const [relatedProducts, setRelatedProducts] = useState<CatalogProduct[]>([]);
-    const [loading, setLoading] = useState(false);
-
-    const [selectedColor, setSelectedColor] = useState<CatalogProduct["colors"][number]>(product.colors?.[0] || { name: 'Standard', hex: '#000', img: product.images[0] });
-    const [selectedImage, setSelectedImage] = useState(product.images[0]);
-    const [selectedSize, setSelectedSize] = useState<CatalogProduct["sizes"][number]>(product.sizes?.[1] || product.sizes?.[0] || { label: 'FREE', stock: 0 });
+    const initialSizeLabel = getFirstAvailableSize(product);
+    const initialSize = product.sizes?.find((size) => size.label === initialSizeLabel)
+        || product.sizes?.[0]
+        || { label: 'FREE', stock: 0 };
+    const productImage = getProductImage(product);
+    const [selectedColor, setSelectedColor] = useState<CatalogProduct["colors"][number]>(product.colors?.[0] || { name: 'Default', hex: '#000', img: productImage });
+    const [selectedImage, setSelectedImage] = useState(productImage);
+    const [selectedSize, setSelectedSize] = useState<CatalogProduct["sizes"][number]>(initialSize);
     const [quantity, setQuantity] = useState(1);
     const [modalContent, setModalContent] = useState<{ title: string; desc: string; link: string; highlight: string } | null>(null);
     const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
@@ -53,6 +59,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
 
     useEffect(() => {
         const fetchRelated = async () => {
+            syncInventory([product]);
             try {
                 const response = await getProducts({ category: product.category, limit: 5 });
                 const related = (response.products || [])
@@ -60,7 +67,6 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     .slice(0, 4);
                 setRelatedProducts(related);
                 syncInventory(related);
-                syncInventory([product]);
             } catch (error) {
                 console.error('RELATED_PRODUCTS_SYNC_FAILURE:', error);
             }
@@ -95,13 +101,17 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     }, []);
 
     const handleWishlist = () => {
-        const productId = product._id || product.id || "";
-        toggleWishlist({ id: productId, name: product.name, price: product.price, image: selectedImage });
-        if (!isInWishlist(productId)) {
-            toast.success("ASSET_ADDED_TO_WISHLIST");
-        } else {
-            toast.error("ASSET_REMOVED_FROM_WISHLIST");
-        }
+        const productId = getProductId(product);
+        void toggleWishlist({
+            id: productId,
+            name: product.name,
+            price: product.price,
+            image: selectedImage,
+            images: product.images,
+            sizes: product.sizes,
+            colors: product.colors,
+            stock: product.stock,
+        });
     };
 
     const openPolicyModal = (type: 'returns' | 'security') => {
@@ -123,13 +133,31 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
     };
 
     const handleBuyNow = () => {
-        setBuyNowItem({ id: product._id || product.id || "", name: product.name, price: product.price, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity });
+        if (Number(selectedSize.stock) <= 0) return;
+        setBuyNowItem({ id: getProductId(product), name: product.name, price: product.price, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity });
         router.push('/checkout');
     };
 
+    const handleShare = async () => {
+        const shareData = { title: product.name, url: window.location.href };
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                toast.success('PRODUCT_LINK_COPIED');
+            }
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') return;
+            toast.error('SHARE_PROTOCOL_FAILED');
+        }
+    };
+
+    const selectedStock = Math.max(0, Number(selectedSize.stock) || 0);
+    const canAcquire = Boolean(getProductId(product)) && selectedStock > 0;
+
     return (
         <div className="bg-brand-black min-h-screen text-white selection:bg-brand-volt">
-            <Navbar />
             <main className="pt-44 pb-20 px-6 max-w-[1440px] mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                     {/* GALLERY SECTION */}
@@ -213,7 +241,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                 {product.colors?.map((c) => (
                                     <button
                                         key={c.name}
-                                        onClick={() => { setSelectedColor(c); setSelectedImage(c.img); }}
+                                        onClick={() => {
+                                            setSelectedColor(c);
+                                            setSelectedImage(c.img || productImage);
+                                        }}
                                         className={`w-10 h-10 border-2 transition-all p-0.5 ring-1 ring-white/20 ${selectedColor.name === c.name ? 'border-brand-volt' : 'border-transparent'}`}
                                     >
                                         <div className="w-full h-full shadow-inner" style={{ backgroundColor: c.hex }} />
@@ -242,12 +273,15 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {product.sizes?.map((s) => {
-                                    const currentStock = checkStock(product._id || product.id || "", s.label);
+                                    const currentStock = Math.max(0, checkStock(getProductId(product), s.label) || Number(s.stock) || 0);
                                     return (
                                         <button
                                             key={s.label}
                                             disabled={currentStock === 0}
-                                            onClick={() => setSelectedSize(s)}
+                                            onClick={() => {
+                                                setSelectedSize(s);
+                                                setQuantity(1);
+                                            }}
                                             className={`px-5 py-2.5 border text-xs font-mono transition-all ${currentStock === 0 ? 'opacity-20 cursor-not-allowed line-through' : ''} ${selectedSize.label === s.label ? 'bg-white text-black border-white' : 'border-white/10 text-white/40 hover:border-white/30'}`}
                                         >
                                             {s.label}
@@ -304,30 +338,39 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                 <div className="flex items-center w-max border border-white/10">
                                     <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-3 hover:text-brand-volt transition-colors"><Minus size={14} /></button>
                                     <span className="w-12 text-center font-mono text-sm border-x border-white/10">{quantity}</span>
-                                    <button onClick={() => setQuantity(quantity + 1)} className="p-3 hover:text-brand-volt transition-colors"><Plus size={14} /></button>
+                                    <button
+                                        onClick={() => setQuantity(Math.min(selectedStock, quantity + 1))}
+                                        disabled={!canAcquire || quantity >= selectedStock}
+                                        className="p-3 hover:text-brand-volt transition-colors disabled:opacity-20"
+                                    >
+                                        <Plus size={14} />
+                                    </button>
                                 </div>
                             </div>
 
                             <div className="space-y-3">
                                 <button
                                     onClick={handleBuyNow}
-                                    className="w-full py-5 bg-brand-volt text-black font-black uppercase text-[12px] tracking-widest hover:brightness-110 active:scale-[0.98] transition-all"
+                                    disabled={!canAcquire}
+                                    className="w-full py-5 bg-brand-volt text-black font-black uppercase text-[12px] tracking-widest hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     Buy Now
                                 </button>
                                 <button
                                     onClick={() => {
-                                        addToCart({ id: product._id || product.id || "", name: product.name, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity: quantity, price: product.price });
+                                        if (!canAcquire) return;
+                                        addToCart({ id: getProductId(product), name: product.name, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity: Math.min(quantity, selectedStock), price: product.price });
                                         toast.success("MANIFEST_UPDATED: ASSET_LOCKED");
                                     }}
-                                    className="w-full py-5 border border-white/20 text-white font-black uppercase text-[12px] tracking-widest hover:bg-white hover:text-black transition-all"
+                                    disabled={!canAcquire}
+                                    className="w-full py-5 border border-white/20 text-white font-black uppercase text-[12px] tracking-widest hover:bg-white hover:text-black transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     Add to Cart
                                 </button>
                             </div>
 
                             <div className="flex border-t border-white/5 pt-6 gap-2">
-                                <button className="flex-1 flex items-center justify-center gap-2 py-3 border border-white/5 text-[12px] font-mono uppercase text-white/40 hover:text-white transition-all">
+                                <button onClick={handleShare} className="flex-1 flex items-center justify-center gap-2 py-3 border border-white/5 text-[12px] font-mono uppercase text-white/40 hover:text-white transition-all">
                                     <Share2 size={14} /> Share
                                 </button>
                                 <button
@@ -419,14 +462,19 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                     onClose={() => setIsFitFinderOpen(false)}
                     onResult={(size) => {
                         const found = product.sizes?.find((s) => s.label === size);
-                        if (found) setSelectedSize(found);
+                        if (found && Number(found.stock) > 0) {
+                            setSelectedSize(found);
+                            setQuantity(1);
+                        }
                     }}
                 />
                 <StickyAddToCart
                     isVisible={isStickyVisible}
                     product={product}
+                    disabled={!canAcquire}
                     onAdd={() => {
-                        addToCart({ id: product._id || product.id || "", name: product.name, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity: 1, price: product.price });
+                        if (!canAcquire) return;
+                        addToCart({ id: getProductId(product), name: product.name, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity: 1, price: product.price });
                         toast.success("MANIFEST_UPDATED");
                     }}
                 />
