@@ -2,9 +2,19 @@
 
 import { useInventory } from "@/context/InventoryContext";
 
-export function StockBadge({ productId, size, minimal = false }: { productId: string, size: string, minimal?: boolean }) {
+export function StockBadge({
+    productId,
+    size,
+    fallbackStock = 0,
+    minimal = false,
+}: {
+    productId: string;
+    size: string;
+    fallbackStock?: number;
+    minimal?: boolean;
+}) {
     const { checkStock } = useInventory();
-    const stock = checkStock(productId, size);
+    const stock = Math.max(0, checkStock(productId, size) ?? fallbackStock);
 
     if (stock === 0) {
         return (

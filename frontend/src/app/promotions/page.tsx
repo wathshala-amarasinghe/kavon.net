@@ -100,6 +100,30 @@ export default function PromotionsPage() {
         return result;
     }, [promoProducts, activeCategory, activePriceRange, activeSize, activeStockStatus, sortBy]);
 
+    const availableCategories = useMemo(() => {
+        const knownCategories = new Set<string>(PRODUCT_CATEGORIES);
+        const productCategories = new Set(
+            promoProducts.map((product) => product.category).filter(Boolean)
+        );
+
+        return [
+            ...PRODUCT_CATEGORIES.filter((category) => productCategories.has(category)),
+            ...Array.from(productCategories)
+                .filter((category) => !knownCategories.has(category))
+                .sort((a, b) => a.localeCompare(b)),
+        ];
+    }, [promoProducts]);
+
+    const availableSizes = useMemo(() => (
+        Array.from(new Set(
+            promoProducts.flatMap((product) =>
+                (product.sizes || [])
+                    .filter((size) => Number(size.stock) > 0)
+                    .map((size) => size.label)
+            )
+        )).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+    ), [promoProducts]);
+
     // Pagination Logic
     const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
     const currentItems = useMemo(() => {
@@ -184,9 +208,12 @@ export default function PromotionsPage() {
                                 <div className="space-y-6">
                                     <h4 className="font-mono text-[12px] text-brand-volt uppercase tracking-[0.3em] font-bold">Category</h4>
                                     <div className="flex flex-col gap-3">
-                                        {PRODUCT_CATEGORIES.map(cat => (
+                                        {availableCategories.map(cat => (
                                             <button key={cat} onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} className={`text-left font-mono text-[12px] uppercase tracking-[0.15em] transition-colors ${activeCategory === cat ? 'text-brand-volt' : 'text-white/40 hover:text-white'}`}>{cat}</button>
                                         ))}
+                                        {availableCategories.length === 0 && (
+                                            <span className="font-mono text-[11px] uppercase text-white/30">No categories available</span>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="space-y-6">
@@ -208,9 +235,12 @@ export default function PromotionsPage() {
                                 <div className="space-y-6">
                                     <h4 className="font-mono text-[12px] text-brand-volt uppercase tracking-[0.3em] font-bold">Size</h4>
                                     <div className="flex flex-wrap gap-2">
-                                        {['S', 'M', 'L', 'XL', '30', '32'].map(size => (
+                                        {availableSizes.map(size => (
                                             <button key={size} onClick={() => setActiveSize(activeSize === size ? null : size)} className={`w-10 h-10 border flex items-center justify-center font-mono text-[12px] transition-all ${activeSize === size ? 'border-brand-volt text-brand-volt' : 'border-white/10 text-white/40 hover:border-white'}`}>{size}</button>
                                         ))}
+                                        {availableSizes.length === 0 && (
+                                            <span className="font-mono text-[11px] uppercase text-white/30">No stocked sizes</span>
+                                        )}
                                     </div>
                                 </div>
                             </div>

@@ -18,26 +18,73 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
-import toast from 'react-hot-toast';
 
 export default function DashboardPage() {
-    const { user, orderHistory, loyaltyPoints, transmissions, logout } = useAuth();
+    const { user, loading, orderHistory, loyaltyPoints, transmissions, logout, updateProfile } = useAuth();
     const { location } = useSettings();
     const [activeTab, setActiveTab] = useState<'history' | 'comms' | 'intel'>('history');
+    const [isEditingAddress, setIsEditingAddress] = useState(false);
+    const [isSavingAddress, setIsSavingAddress] = useState(false);
+    const [addressError, setAddressError] = useState('');
+    const [addressForm, setAddressForm] = useState({
+        address: '',
+        city: '',
+        postalCode: '',
+        country: 'Sri Lanka',
+        phone: '',
+    });
 
     const handleLogout = () => {
         logout();
-        toast.error('LOGGED_OUT', {
-            style: {
-                borderRadius: '0px',
-                background: '#000',
-                color: '#ff4b4b',
-                border: '1px solid #ff4b4b',
-                fontSize: '12px',
-                fontFamily: 'monospace',
-            },
-        });
     };
+
+    const openAddressEditor = () => {
+        setAddressForm({
+            address: user?.shippingAddress?.address || '',
+            city: user?.shippingAddress?.city || '',
+            postalCode: user?.shippingAddress?.postalCode || '',
+            country: 'Sri Lanka',
+            phone: user?.shippingAddress?.phone || '',
+        });
+        setAddressError('');
+        setIsEditingAddress(true);
+    };
+
+    const saveAddress = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (isSavingAddress) return;
+
+        const normalized = Object.fromEntries(
+            Object.entries(addressForm).map(([key, value]) => [key, value.trim()])
+        ) as typeof addressForm;
+        if (Object.values(normalized).some((value) => !value)) {
+            setAddressError('Complete every address field.');
+            return;
+        }
+
+        setIsSavingAddress(true);
+        setAddressError('');
+        try {
+            await updateProfile({
+                name: user?.name,
+                email: user?.email,
+                shippingAddress: normalized,
+            });
+            setIsEditingAddress(false);
+        } catch (error) {
+            setAddressError(error instanceof Error ? error.message : 'Address update failed.');
+        } finally {
+            setIsSavingAddress(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-volt border-t-transparent" />
+            </div>
+        );
+    }
 
     if (!user) {
         return (
@@ -150,12 +197,14 @@ export default function DashboardPage() {
 
                                     {orderHistory.length > 0 ? (
                                         <div className="space-y-4">
-                                            {orderHistory.map((order) => (
-                                                <div key={order.id} className="bg-white/[0.02] border border-white/10 p-6 group hover:border-brand-volt/40 transition-all">
+                                            {orderHistory.map((order) => {
+                                                const orderId = order._id || order.id || 'UNKNOWN';
+                                                return (
+                                                    <div key={orderId} className="bg-white/[0.02] border border-white/10 p-6 group hover:border-brand-volt/40 transition-all">
                                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                                         <div className="space-y-2">
                                                             <div className="flex items-center gap-4">
-                                                                <span className="text-[13px] font-black uppercase tracking-[0.3em] text-white">#{order.id}</span>
+                                                                <span className="text-[13px] font-black uppercase tracking-[0.3em] text-white">#{orderId}</span>
                                                                 <span className="px-2 py-0.5 bg-brand-volt/20 text-brand-volt text-[12px] font-mono uppercase tracking-[0.2em] border border-brand-volt/40 font-bold">
                                                                     {order.status}
                                                                 </span>
@@ -171,7 +220,7 @@ export default function DashboardPage() {
                                                                 <FormattedPrice amount={order.totalPrice || order.totals?.total || 0} />
                                                             </div>
                                                             <Link 
-                                                                href={`/order-track?id=${order._id || order.id}&phone=${order.shippingAddress?.phone || ""}`} 
+                                                                href={`/order-track?id=${orderId}&phone=${order.shippingAddress?.phone || ""}`}
                                                                 className="text-[12px] font-mono text-white hover:text-brand-volt uppercase tracking-[0.3em] mt-2 block font-bold"
                                                             >
                                                                 Track Order
@@ -187,8 +236,9 @@ export default function DashboardPage() {
                                                             </div>
                                                         ))}
                                                     </div>
-                                                </div>
-                                            ))}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     ) : (
                                         <div className="py-20 text-center border-2 border-dashed border-white/5 bg-white/[0.01]">
@@ -255,16 +305,71 @@ export default function DashboardPage() {
                                             <h3 className="text-lg font-black uppercase italic text-white flex items-center gap-3 tracking-[0.2em]">
                                                 <MapPin size={18} className="text-brand-volt" /> Shipping Address
                                             </h3>
-                                            <button className="text-[12px] font-mono text-brand-volt uppercase tracking-[0.3em] hover:underline font-bold bg-brand-volt/10 px-3 py-1 border border-brand-volt/20">Update</button>
+                                            <button
+                                                onClick={openAddressEditor}
+                                                className="text-[12px] font-mono text-brand-volt uppercase tracking-[0.3em] hover:underline font-bold bg-brand-volt/10 px-3 py-1 border border-brand-volt/20"
+                                            >
+                                                {user.shippingAddress?.address ? 'Update' : 'Add'}
+                                            </button>
                                         </div>
                                         <div className="space-y-4">
-                                            <div className="p-4 bg-black/40 border border-white/5">
-                                                <span className="text-[12px] font-mono text-white/40 uppercase block mb-1 tracking-[0.3em]">Primary Address</span>
-                                                <p className="text-[13px] font-mono text-white uppercase tracking-[0.1em]">No address saved yet</p>
-                                            </div>
-                                            <button className="w-full py-4 border border-white/20 text-[12px] font-mono text-white hover:bg-white/5 transition-all uppercase tracking-[0.2em] font-bold">
-                                                + Add New Address
-                                            </button>
+                                            {isEditingAddress ? (
+                                                <form onSubmit={saveAddress} className="space-y-3">
+                                                    {([
+                                                        ['address', 'Street address'],
+                                                        ['city', 'City'],
+                                                        ['postalCode', 'Postal code'],
+                                                        ['country', 'Country'],
+                                                        ['phone', 'Phone'],
+                                                    ] as const).map(([field, label]) => (
+                                                        <label key={field} className="block space-y-1">
+                                                            <span className="text-[10px] font-mono text-white/50 uppercase tracking-[0.2em]">{label}</span>
+                                                            <input
+                                                                value={addressForm[field]}
+                                                                onChange={(event) => setAddressForm((current) => ({
+                                                                    ...current,
+                                                                    [field]: event.target.value,
+                                                                }))}
+                                                                autoComplete={field === 'postalCode' ? 'postal-code' : field === 'address' ? 'street-address' : field === 'phone' ? 'tel' : field}
+                                                                readOnly={field === 'country'}
+                                                                required
+                                                                className="w-full bg-black/60 border border-white/15 px-3 py-3 text-xs font-mono text-white outline-none focus:border-brand-volt read-only:text-white/50"
+                                                            />
+                                                        </label>
+                                                    ))}
+                                                    {addressError && <p role="alert" className="text-xs font-mono text-red-400">{addressError}</p>}
+                                                    <div className="flex gap-3 pt-2">
+                                                        <button
+                                                            type="submit"
+                                                            disabled={isSavingAddress}
+                                                            className="flex-1 py-3 bg-brand-volt text-black text-[11px] font-black uppercase tracking-[0.2em] disabled:opacity-50"
+                                                        >
+                                                            {isSavingAddress ? 'Saving...' : 'Save Address'}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsEditingAddress(false)}
+                                                            className="px-4 py-3 border border-white/20 text-[11px] font-mono uppercase"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            ) : (
+                                                <div className="p-4 bg-black/40 border border-white/5">
+                                                    <span className="text-[12px] font-mono text-white/40 uppercase block mb-1 tracking-[0.3em]">Primary Address</span>
+                                                    {user.shippingAddress?.address ? (
+                                                        <address className="text-[13px] not-italic font-mono text-white uppercase tracking-[0.1em] leading-relaxed">
+                                                            {user.shippingAddress.address}<br />
+                                                            {user.shippingAddress.city}, {user.shippingAddress.postalCode}<br />
+                                                            {user.shippingAddress.country}<br />
+                                                            {user.shippingAddress.phone}
+                                                        </address>
+                                                    ) : (
+                                                        <p className="text-[13px] font-mono text-white/50 uppercase tracking-[0.1em]">No address saved yet</p>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
 
@@ -277,7 +382,7 @@ export default function DashboardPage() {
                                         </div>
                                         <div className="space-y-4">
                                             <div className="p-10 text-center border border-dashed border-white/5">
-                                                <p className="text-[12px] font-mono text-white/20 uppercase tracking-[0.3em]">No payment methods linked</p>
+                                                <p className="text-[12px] font-mono text-white/40 uppercase tracking-[0.3em]">Cash on Delivery is available at checkout</p>
                                             </div>
                                         </div>
                                     </div>

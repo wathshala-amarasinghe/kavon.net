@@ -10,7 +10,7 @@ interface InventoryState {
 
 interface InventoryContextType {
     inventory: InventoryState;
-    checkStock: (id: string, size: string) => number;
+    checkStock: (id: string, size: string) => number | undefined;
     decrementStock: (id: string, size: string, qty: number) => void;
     syncInventory: (products: { _id?: string, id?: string, sizes: { label: string, stock: number }[] }[]) => void;
 }
@@ -38,7 +38,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const checkStock = useCallback((id: string, size: string) => {
-        return inventory[id]?.[size] ?? 0;
+        return inventory[id]?.[size];
     }, [inventory]);
 
     const decrementStock = useCallback((id: string, size: string, qty: number) => {

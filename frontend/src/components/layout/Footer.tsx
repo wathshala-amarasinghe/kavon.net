@@ -42,7 +42,7 @@ export function Footer() {
                         </div>
 
                         <p className="text-white/60 text-[12px] font-mono leading-relaxed mb-8 max-w-xs uppercase tracking-wide">
-                            High-performance streetwear engineered for the modern nomad. Designed in Sri Lanka, deployed globally.
+                            High-performance streetwear engineered for the modern nomad. Designed in Sri Lanka with island-wide online delivery.
                         </p>
                     </motion.div>
 
@@ -112,10 +112,7 @@ export function Footer() {
                             <Link href="/tos" className="text-white/60 hover:text-white text-[12px] font-mono transition-colors tracking-wide uppercase">Terms Of Service</Link>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-[#df0715ff] animate-pulse text-[12px]">●</span>
-                        <span className="text-white/70 text-[12px] font-black uppercase tracking-widest">Active Status</span>
-                    </div>
+                    <span className="text-white/50 text-[12px] font-black uppercase tracking-widest">Designed in Sri Lanka</span>
                 </div>
             </div>
         </footer>

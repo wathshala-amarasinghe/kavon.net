@@ -9,6 +9,8 @@ import {
     normalizeCartItems,
     sameCartLine,
 } from '@/lib/storefront-runtime';
+import { useSettings } from './UserSettingsContext';
+import { calculateTacticalShipping } from '@/lib/logistics';
 
 export interface CartItem {
     id: string;
@@ -58,6 +60,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const [couponError, setCouponError] = useState<string | null>(null);
     const [isPointsRedeemed, setIsPointsRedeemed] = useState(false);
     const { toggleWishlist, isInWishlist } = useWishlist();
+    const { location } = useSettings();
     const channelRef = useRef<BroadcastChannel | null>(null);
 
     useEffect(() => {
@@ -181,7 +184,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
     const discount = getCouponDiscount(subtotal);
     const pointsDiscount = isPointsRedeemed ? (subtotal - discount) * 0.05 : 0;
-    const shippingFee = subtotal >= 10000 || subtotal === 0 ? 0 : 500;
+    const shippingFee = calculateTacticalShipping(subtotal, location);
     const total = subtotal - discount - pointsDiscount + shippingFee;
     const cartCount = cart.reduce((acc, i) => acc + i.quantity, 0);
 

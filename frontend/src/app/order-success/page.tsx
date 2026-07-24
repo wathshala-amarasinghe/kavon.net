@@ -10,7 +10,7 @@ export default function OrderSuccessPage() {
     const [order, setOrder] = useState<Order | null>(null);
 
     useEffect(() => {
-        const saved = localStorage.getItem('kavon_last_order');
+        const saved = sessionStorage.getItem('kavon_last_order');
         if (saved) {
             setTimeout(() => setOrder(JSON.parse(saved)), 0);
         }

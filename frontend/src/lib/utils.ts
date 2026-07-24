@@ -29,7 +29,7 @@ export function getHighlightedParts(text: string, query: string) {
  * Image URL Resolver: Ensures absolute URLs for Next.js Image component
  */
 export function getImageUrl(url: string | undefined | null) {
-    if (!url) return "/img/Logo-1.jpeg";
+    if (!url) return "/logo/logo-1.png";
     if (url.startsWith('http')) return url;
     
     const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;

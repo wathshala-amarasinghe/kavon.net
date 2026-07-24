@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';
-import Image from 'next/image';
 
 export function SupportMessage() {
     return (
@@ -27,41 +26,14 @@ export function SupportMessage() {
                 </p>
 
                 <p className="text-white/40 text-[11px] tracking-widest leading-relaxed uppercase mb-8 max-w-lg">
-                    Our specialized support unit monitors all inquiries 24/7. Whether it is an order update or a tactical product query, we aim for a response time under 12 hours. Your experience defines our evolution.
+                    Contact our support team for order updates or product questions. Inquiries are reviewed during published operating hours: Monday to Saturday, 9AM to 8PM.
                 </p>
 
-                <div className="flex items-center gap-4">
-                    {/* Avatar Group */}
-                    <div className="flex -space-x-3">
-                        {[1, 2, 3].map((i) => (
-                            <div
-                                key={i}
-                                className="relative w-10 h-10 border border-brand-black bg-brand-surface overflow-hidden"
-                            >
-                                <Image
-                                    // Ensure these files exist in /public/images/support/agent_x.jpg
-                                    src={`/images/support/agent_${i}.jpg`}
-                                    alt={`Support Agent ${i}`}
-                                    fill
-                                    className="object-cover grayscale hover:grayscale-0 transition-all duration-500"
-                                    sizes="40px"
-                                />
-                                {/* Fallback in case image fails to load */}
-                                <div className="absolute inset-0 bg-brand-surface -z-10 flex items-center justify-center text-[8px] text-white/10">
-                                    AV_{i}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="flex flex-col">
-                        <span className="text-[9px] font-mono text-brand-volt uppercase tracking-tighter leading-none mb-1">
-                            Active_Agents_Online
-                        </span>
-                        <span className="text-[8px] font-mono text-white/20 uppercase tracking-tighter">
-                            System_Version // v4.0.2
-                        </span>
-                    </div>
+                <div className="inline-flex items-center gap-3 border border-white/10 px-4 py-3">
+                    <ShieldCheck size={16} className="text-brand-volt" />
+                    <span className="text-[9px] font-mono text-white/50 uppercase tracking-widest">
+                        Support hours // Mon–Sat, 9AM–8PM
+                    </span>
                 </div>
             </div>
         </motion.div>

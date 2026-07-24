@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { protect, admin, AuthRequest } from '../middleware/authMiddleware';
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -16,6 +17,9 @@ const getJwtSecret = () => {
 
 const hashRecoveryValue = (value: string) =>
     crypto.createHmac('sha256', getJwtSecret()).update(value).digest('hex');
+
+const isValidEmail = (email: string) =>
+    email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const sendRecoveryCode = async (email: string, code: string) => {
     const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -42,11 +46,11 @@ router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
-        if (typeof name !== 'string' || !name.trim()) {
+        if (typeof name !== 'string' || !name.trim() || name.trim().length > 100) {
             return res.status(400).json({ message: 'Name is required' });
         }
 
-        if (typeof email !== 'string' || !email.trim()) {
+        if (typeof email !== 'string' || !isValidEmail(email.trim().toLowerCase())) {
             return res.status(400).json({ message: 'A valid email is required' });
         }
 
@@ -55,6 +59,9 @@ router.post('/register', async (req, res) => {
         }
 
         const normalizedEmail = email.toLowerCase().trim();
+        if (!isValidEmail(normalizedEmail)) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
 
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) {
@@ -73,7 +80,8 @@ router.post('/register', async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                loyaltyPoints: user.loyaltyPoints
+                loyaltyPoints: user.loyaltyPoints,
+                shippingAddress: user.shippingAddress,
             }
         });
     } catch (error: any) {
@@ -111,7 +119,8 @@ router.post('/login', async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                loyaltyPoints: user.loyaltyPoints
+                loyaltyPoints: user.loyaltyPoints,
+                shippingAddress: user.shippingAddress,
             }
         });
     } catch (error: any) {
@@ -123,7 +132,7 @@ router.post('/login', async (req, res) => {
 router.post('/password/forgot', async (req, res) => {
     try {
         const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
-        if (!email) return res.status(400).json({ message: 'Email is required' });
+        if (!isValidEmail(email)) return res.status(400).json({ message: 'A valid email is required' });
 
         const user: any = await User.findOne({ email }).select(
             '+passwordResetCodeHash +passwordResetExpires +passwordResetAttempts +passwordResetTokenHash'
@@ -254,6 +263,9 @@ router.put('/profile', protect, async (req: AuthRequest, res) => {
             if (!nextName || !nextEmail) {
                 return res.status(400).json({ message: 'Name and email are required' });
             }
+            if (nextName.length > 100 || !isValidEmail(nextEmail)) {
+                return res.status(400).json({ message: 'Enter a valid name and email address' });
+            }
 
             if (req.body.password && (typeof req.body.password !== 'string' || req.body.password.length < 8)) {
                 return res.status(400).json({ message: 'Password must contain at least 8 characters' });
@@ -272,12 +284,21 @@ router.put('/profile', protect, async (req: AuthRequest, res) => {
             }
 
             if (req.body.shippingAddress) {
+                const shippingAddress = req.body.shippingAddress;
+                const addressValues = ['address', 'city', 'postalCode', 'phone']
+                    .map((field) => String(shippingAddress[field] || '').trim());
+                if (
+                    addressValues.some((value) => !value || value.length > 200) ||
+                    String(shippingAddress.country || '').trim().toLowerCase() !== 'sri lanka'
+                ) {
+                    return res.status(400).json({ message: 'Enter a complete Sri Lankan shipping address' });
+                }
                 user.shippingAddress = {
-                    address: req.body.shippingAddress.address || user.shippingAddress?.address,
-                    city: req.body.shippingAddress.city || user.shippingAddress?.city,
-                    postalCode: req.body.shippingAddress.postalCode || user.shippingAddress?.postalCode,
-                    country: req.body.shippingAddress.country || user.shippingAddress?.country,
-                    phone: req.body.shippingAddress.phone || user.shippingAddress?.phone,
+                    address: addressValues[0],
+                    city: addressValues[1],
+                    postalCode: addressValues[2],
+                    country: 'Sri Lanka',
+                    phone: addressValues[3],
                 };
             }
 
@@ -321,6 +342,9 @@ router.get('/', protect, admin, async (req, res) => {
 // @access  Private/Admin
 router.delete('/:id', protect, admin, async (req, res) => {
     try {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
         const user = await User.findById(req.params.id);
         if (user) {
             if (user.role === 'admin') {
@@ -342,6 +366,10 @@ router.delete('/:id', protect, admin, async (req, res) => {
 router.put('/:id/role', protect, admin, async (req: AuthRequest, res) => {
     try {
         const { role } = req.body;
+
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
 
         if (!['user', 'admin'].includes(role)) {
             return res.status(400).json({ message: 'Role must be either user or admin' });

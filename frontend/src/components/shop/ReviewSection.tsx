@@ -142,15 +142,18 @@ export function ReviewSection({ productId }: { productId: string }) {
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="review-dialog-title"
                             className="relative w-full max-w-lg bg-brand-surface border border-white/10 p-10 space-y-8"
                         >
-                            <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 text-white/40 hover:text-white">
+                            <button onClick={() => setIsModalOpen(false)} aria-label="Close review form" className="absolute top-6 right-6 text-white/40 hover:text-white">
                                 <X size={24} />
                             </button>
 
                             <div className="space-y-2">
                                 <span className="text-brand-volt font-mono text-[12px] tracking-[0.4em] uppercase">Leave a Review</span>
-                                <h3 className="text-3xl font-black uppercase italic text-white">Write a Review</h3>
+                                <h3 id="review-dialog-title" className="text-3xl font-black uppercase italic text-white">Write a Review</h3>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
@@ -162,6 +165,8 @@ export function ReviewSection({ productId }: { productId: string }) {
                                                 key={star} 
                                                 type="button"
                                                 onClick={() => setNewReview({...newReview, rating: star})}
+                                                aria-label={`Rate ${star} out of 5`}
+                                                aria-pressed={newReview.rating === star}
                                                 className={`p-2 border transition-all ${newReview.rating >= star ? 'border-brand-volt text-brand-volt bg-brand-volt/5' : 'border-white/10 text-white/20'}`}
                                             >
                                                 <Star size={20} fill={newReview.rating >= star ? "currentColor" : "none"} />

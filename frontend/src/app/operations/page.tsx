@@ -15,8 +15,13 @@ export default function OperationsPage() {
 
     React.useEffect(() => {
         const fetchOps = async () => {
-            const data = await getCampaigns();
-            setOperations(data);
+            try {
+                const data = await getCampaigns();
+                setOperations(data);
+            } catch (error) {
+                console.error('OPERATIONS_SYNC_FAILURE:', error);
+                setOperations([]);
+            }
         };
         fetchOps();
     }, []);
@@ -72,7 +77,11 @@ export default function OperationsPage() {
                         transition={{ delay: 0.5 }}
                         className="flex flex-col items-center gap-6"
                     >
-                        <button className="group relative w-20 h-20 rounded-full border border-white/20 flex items-center justify-center hover:border-brand-volt transition-all">
+                        <button
+                            onClick={() => document.getElementById('mission-logs')?.scrollIntoView({ behavior: 'smooth' })}
+                            aria-label="View current campaigns"
+                            className="group relative w-20 h-20 rounded-full border border-white/20 flex items-center justify-center hover:border-brand-volt transition-all"
+                        >
                             <div className="absolute inset-0 rounded-full border border-brand-volt animate-ping opacity-20" />
                             <Play size={32} className="text-white group-hover:text-brand-volt transition-colors ml-1" />
                         </button>
@@ -86,7 +95,7 @@ export default function OperationsPage() {
             </section>
 
             {/* 2. MISSION_LOGS */}
-            <section className="relative py-40 px-6 md:px-12">
+            <section id="mission-logs" className="relative py-40 px-6 md:px-12 scroll-mt-24">
                 <div className="max-w-7xl mx-auto space-y-40">
                     {operations.map((op, i) => (
                         <div key={op._id} className={`flex flex-col ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} gap-12 md:gap-24 items-center`}>

@@ -118,7 +118,7 @@ export function OrderSummary({
                 setIsPointsRedeemed(false);
             }
 
-            localStorage.setItem('kavon_last_order', JSON.stringify(createdOrder));
+            sessionStorage.setItem('kavon_last_order', JSON.stringify(createdOrder));
             onOrderCreated?.();
             
             // Only clear cart if it was a cart checkout

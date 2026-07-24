@@ -44,6 +44,7 @@ interface Transmission {
 
 export interface AuthUser {
     _id?: string;
+    id?: string;
     name: string;
     email: string;
     role: "user" | "admin";
@@ -73,6 +74,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getTransmissionStorageKey = (account: AuthUser) => {
+    const identity = account._id || account.id || account.email.trim().toLowerCase();
+    return `kavon-user-messages-v1:${identity}`;
+};
+
+const loadTransmissions = (account: AuthUser): Transmission[] => {
+    const saved = localStorage.getItem(getTransmissionStorageKey(account));
+    if (!saved) return [];
+
+    try {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        localStorage.removeItem(getTransmissionStorageKey(account));
+        return [];
+    }
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [loading, setLoading] = useState(true);
@@ -82,36 +101,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const initAuth = async () => {
+            // This legacy key mixed account data together on shared browsers.
+            localStorage.removeItem('kavon-user-intel-v1');
             const token = localStorage.getItem('kavon-token-v1');
-            let loadedBackendOrders = false;
             if (token) {
                 try {
                     const userData = await getMe(token);
                     if (userData) {
                         setUser(userData);
                         setLoyaltyPoints(userData.loyaltyPoints || 0);
-                        
-                        // Fetch real order history from backend
-                        const backendOrders = await getMyOrders(token);
-                        setOrderHistory(backendOrders);
-                        loadedBackendOrders = true;
+                        setTransmissions(loadTransmissions(userData));
+
+                        try {
+                            const backendOrders = await getMyOrders(token);
+                            setOrderHistory(Array.isArray(backendOrders) ? backendOrders : []);
+                        } catch {
+                            setOrderHistory([]);
+                        }
                     } else {
                         localStorage.removeItem('kavon-token-v1');
                     }
-                } catch (error) {
+                } catch {
                     localStorage.removeItem('kavon-token-v1');
                 }
-            }
-            
-            const savedIntel = localStorage.getItem('kavon-user-intel-v1');
-            if (savedIntel) {
-                try {
-                    const parsed = JSON.parse(savedIntel);
-                    if (!loadedBackendOrders) {
-                        setOrderHistory(Array.isArray(parsed.history) ? parsed.history : []);
-                    }
-                    setTransmissions(parsed.transmissions || []);
-                } catch (e) { localStorage.removeItem('kavon-user-intel-v1'); }
             }
             setLoading(false);
         };
@@ -119,19 +131,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('kavon-user-intel-v1', JSON.stringify({
-            history: orderHistory,
-            transmissions: transmissions
-        }));
-    }, [orderHistory, transmissions]);
+        if (!user) return;
+        localStorage.setItem(getTransmissionStorageKey(user), JSON.stringify(transmissions));
+    }, [transmissions, user]);
 
     const login = async (credentials: Record<string, unknown>) => {
         try {
             const data = await apiLogin(credentials);
-            setUser(data.user);
-            setLoyaltyPoints(data.user.loyaltyPoints as number);
             localStorage.setItem('kavon-token-v1', data.token);
-            toast.success("BIOMETRIC_MATCH: ACCESS_GRANTED");
+            setUser(data.user);
+            setLoyaltyPoints(Number(data.user.loyaltyPoints) || 0);
+            setOrderHistory([]);
+            setTransmissions(loadTransmissions(data.user));
+
+            try {
+                const backendOrders = await getMyOrders(data.token);
+                setOrderHistory(Array.isArray(backendOrders) ? backendOrders : []);
+            } catch {
+                setOrderHistory([]);
+            }
+            toast.success("ACCESS_GRANTED");
         } catch (error: unknown) {
             toast.error(error instanceof Error ? error.message : "Login failed");
             throw error;
@@ -142,7 +161,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const data = await apiRegister(userData);
             setUser(data.user);
-            setLoyaltyPoints(data.user.loyaltyPoints as number);
+            setLoyaltyPoints(Number(data.user.loyaltyPoints) || 0);
+            setOrderHistory([]);
+            setTransmissions([]);
             localStorage.setItem('kavon-token-v1', data.token);
             toast.success("IDENTITY_VERIFIED: WELCOME_INITIATED");
         } catch (error: unknown) {
@@ -153,7 +174,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = () => {
         setUser(null);
+        setOrderHistory([]);
+        setTransmissions([]);
+        setLoyaltyPoints(0);
         localStorage.removeItem('kavon-token-v1');
+        sessionStorage.removeItem('kavon_last_order');
+        sessionStorage.removeItem('kavon_checkout_session_v1');
         toast.success("SESSION_TERMINATED");
     };
 
@@ -186,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             const data = await apiUpdateProfile(userData, token);
             setUser(data.user);
-            setLoyaltyPoints(data.user.loyaltyPoints as number);
+            setLoyaltyPoints(Number(data.user.loyaltyPoints) || 0);
             localStorage.setItem('kavon-token-v1', data.token);
             toast.success("PROFILE_SYNCHRONIZED: ASSETS_UPDATED");
         } catch (error: unknown) {

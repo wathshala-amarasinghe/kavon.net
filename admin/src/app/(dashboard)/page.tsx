@@ -24,7 +24,7 @@ export default function OverviewPage() {
           const [data, users, campaigns] = await Promise.all([
             getOrders(token),
             getUsers(token),
-            getCampaigns(),
+            getCampaigns(token),
           ]);
           setOrders(data);
           setUserCount(Array.isArray(users) ? users.length : 0);

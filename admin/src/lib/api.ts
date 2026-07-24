@@ -186,8 +186,11 @@ export async function updateUserRole(id: string, role: string, token: string) {
 
 // --- CAMPAIGN MANAGEMENT ---
 
-export async function getCampaigns() {
-  const res = await fetch(`${API_URL}/campaigns`, { cache: "no-store" });
+export async function getCampaigns(token: string) {
+  const res = await fetch(`${API_URL}/campaigns/admin`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+    cache: "no-store",
+  });
   if (!res.ok) throw await apiError(res, "Campaign sync failed");
   return res.json();
 }

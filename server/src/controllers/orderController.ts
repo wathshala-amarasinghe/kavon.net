@@ -241,6 +241,16 @@ export const addOrderItems = async (req: AuthRequest, res: Response) => {
         if (!shippingAddress || requiredAddressFields.some((field) => !String(shippingAddress[field] || '').trim())) {
             return res.status(400).json({ message: 'Complete shipping address is required' });
         }
+        if (
+            requiredAddressFields.some((field) => String(shippingAddress[field]).trim().length > 200) ||
+            String(shippingAddress.secondaryPhone || '').trim().length > 30
+        ) {
+            return res.status(400).json({ message: 'Shipping address contains an invalid field' });
+        }
+
+        if (String(shippingAddress.country).trim().toLowerCase() !== 'sri lanka') {
+            return res.status(400).json({ message: 'Online delivery is currently available only within Sri Lanka' });
+        }
 
         if (paymentMethod !== 'cod') {
             return res.status(400).json({ message: 'Card payments are not available yet' });
@@ -387,7 +397,7 @@ export const addOrderItems = async (req: AuthRequest, res: Response) => {
                     address: String(shippingAddress.address).trim(),
                     city: String(shippingAddress.city).trim(),
                     postalCode: String(shippingAddress.postalCode).trim(),
-                    country: String(shippingAddress.country).trim(),
+                    country: 'Sri Lanka',
                     phone: String(shippingAddress.phone).trim(),
                     secondaryPhone: String(shippingAddress.secondaryPhone || '').trim(),
                 },
@@ -430,7 +440,7 @@ export const getOrderById = async (req: AuthRequest, res: Response) => {
             // Check if order belongs to user or if user is admin
             const ownerId = (order.user as any)?._id || order.user;
             if (ownerId?.toString() !== req.user?._id.toString() && req.user?.role !== 'admin') {
-                return res.status(401).json({ message: 'Not authorized to view this order' });
+                return res.status(403).json({ message: 'You do not have access to this order' });
             }
             res.json(order);
         } else {

@@ -2,15 +2,16 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Instagram, Radio, Shield } from 'lucide-react';
+import { Images, Radio, Shield } from 'lucide-react';
+import Link from 'next/link';
 
-const UGC_ASSETS = [
-    { id: 'OP_82', img: '/images/products/product_1.jpeg', tag: '#KAVONDivision' },
-    { id: 'UNIT_04', img: '/images/products/product_2.jpeg', tag: '#TacticalGear' },
-    { id: 'VOID_9', img: '/images/products/product_3.jpeg', tag: '#UrbanDivision' },
-    { id: 'STRIKE_2', img: '/images/products/product_4.jpeg', tag: '#CyberStreet' },
-    { id: 'ALPHA_X', img: '/images/products/product_5.jpeg', tag: '#Techwear' },
-    { id: 'OPER_12', img: '/images/products/product_6.jpeg', tag: '#KAVONCore' },
+const ARCHIVE_ASSETS = [
+    { id: 'OP_82', img: '/images/products/product_1.jpeg', tag: 'KAVON Archive' },
+    { id: 'UNIT_04', img: '/images/products/product_2.jpeg', tag: 'Product Study' },
+    { id: 'VOID_9', img: '/images/products/product_3.jpeg', tag: 'Urban Division' },
+    { id: 'STRIKE_2', img: '/images/products/product_4.jpeg', tag: 'Material Study' },
+    { id: 'ALPHA_X', img: '/images/products/product_5.jpeg', tag: 'Design Archive' },
+    { id: 'OPER_12', img: '/images/products/product_6.jpeg', tag: 'KAVON Core' },
 ];
 
 export function CommunityUGC() {
@@ -18,7 +19,7 @@ export function CommunityUGC() {
         <section className="py-32 bg-black border-t border-white/5 relative overflow-hidden">
             {/* Background Branding */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/[0.02] font-black text-[20vw] italic pointer-events-none select-none uppercase whitespace-nowrap tracking-[0.1em]">
-                COMMUNITY_ASSETS
+                KAVON_ARCHIVE
             </div>
 
             <div className="max-w-[1400px] mx-auto px-6 relative z-10">
@@ -27,27 +28,26 @@ export function CommunityUGC() {
                         <div className="flex items-center gap-3 text-brand-volt">
                             <Radio size={16} className="animate-pulse" />
                             {/* Increased tracking for the feed label */}
-                            <span className="font-mono text-[12px] uppercase tracking-[0.4em]">Community Feed</span>
+                            <span className="font-mono text-[12px] uppercase tracking-[0.4em]">Brand Archive</span>
                         </div>
                         {/* Increased tracking for the main heading */}
                         <h2 className="text-5xl md:text-7xl font-black uppercase italic leading-none tracking-[0.05em]">
-                            Community<span className="text-brand-volt">_Spotlight</span>
+                            Visual<span className="text-brand-volt">_Archive</span>
                         </h2>
                     </div>
 
-                    <a
-                        href="https://instagram.com"
-                        target="_blank"
+                    <Link
+                        href="/shop"
                         className="flex items-center gap-4 bg-white/5 border border-white/10 px-8 py-5 hover:bg-brand-volt hover:text-black transition-all group"
                     >
-                        <Instagram size={20} />
+                        <Images size={20} />
                         {/* Increased tracking for the button text */}
-                        <span className="font-black uppercase text-[12px] tracking-[0.3em]">Follow on Instagram</span>
-                    </a>
+                        <span className="font-black uppercase text-[12px] tracking-[0.3em]">Explore Products</span>
+                    </Link>
                 </header>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    {UGC_ASSETS.map((asset, i) => (
+                    {ARCHIVE_ASSETS.map((asset, i) => (
                         <motion.div
                             key={asset.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -78,7 +78,7 @@ export function CommunityUGC() {
 
                             {/* Corner Badge */}
                             <div className="absolute top-2 right-2 w-6 h-6 border border-white/20 flex items-center justify-center bg-black/40 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all">
-                                <Instagram size={12} className="text-white" />
+                                <Images size={12} className="text-white" />
                             </div>
                         </motion.div>
                     ))}
@@ -87,7 +87,7 @@ export function CommunityUGC() {
                 <div className="mt-16 flex justify-center">
                     {/* Increased tracking for the footer status text */}
                     <p className="font-mono text-[11px] text-white/20 uppercase tracking-[0.6em] animate-pulse">
-                        @KAVON.Official — Tag us to be featured
+                        KAVON visual direction and product archive
                     </p>
                 </div>
             </div>

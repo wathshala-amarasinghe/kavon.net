@@ -14,14 +14,14 @@ export function useAIAssistant() {
         if (query.includes("shipping") || query.includes("delivery")) {
             return {
                 type: 'faq',
-                content: "We ship all orders via secure carriers. Domestic delivery takes 1-3 days, while international shipping takes 7-14 days.",
+                content: "Delivery within Sri Lanka typically takes 2-4 business days after processing. Online checkout currently supports Sri Lankan addresses.",
                 found: true
             };
         }
         if (query.includes("return") || query.includes("exchange") || query.includes("refund")) {
             return {
                 type: 'faq',
-                content: `You can return or exchange any unworn items within 14 days of purchase. Contact us at ${settings?.contactEmail || 'hq@kavon.net'} to start the process.`,
+                content: `Eligible unworn items can be returned within 7 days of delivery with their original tags. Exclusions apply; contact ${settings?.contactEmail || 'hq@kavon.net'} to start the process.`,
                 found: true
             };
         }

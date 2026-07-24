@@ -1,5 +1,6 @@
 "use client";
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 
 export function FounderSection() {
     return (
@@ -9,8 +10,13 @@ export function FounderSection() {
                 initial={{ opacity: 0, x: -50 }}
                 className="aspect-[4/5] bg-brand-surface border border-white/5 relative overflow-hidden"
             >
-                { }
-<img src="/images/founder/profile.jpg" className="w-full h-full object-cover grayscale" alt="Founder" />
+                <Image
+                    src="/images/founder/profile.jpg"
+                    alt="KAVON founder Wathshala Dulashan"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover grayscale"
+                />
             </motion.div>
 
             <div className="space-y-8">

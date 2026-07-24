@@ -108,13 +108,7 @@ export default function HomeClient() {
           <LookbookBanner />
         </div>
 
-        <div className="container mx-auto px-6 py-20">
-          <div className="flex items-baseline gap-4 mb-12">
-            <h2 className="text-4xl font-light tracking-tighter">Voices of <span className="italic">Kavon</span></h2>
-            <div className="flex-1 h-px bg-gradient-to-r from-white/20 to-transparent" />
-          </div>
-          <Testimonials />
-        </div>
+        <Testimonials />
 
         <CommunityUGC />
 
@@ -129,7 +123,6 @@ export default function HomeClient() {
       </main>
 
       <div className="fixed inset-0 pointer-events-none z-[100]">
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
       </div>
     </div>

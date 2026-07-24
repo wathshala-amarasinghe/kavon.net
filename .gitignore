@@ -25,3 +25,8 @@ frontend/lint_errors.txt
 frontend/lint_output*.txt
 .vercel
 .env*
+
+# Runtime-generated files
+server/uploads/
+server/dist/
+**/*.tsbuildinfo

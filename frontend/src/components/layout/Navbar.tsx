@@ -14,7 +14,6 @@ import { CatalogProduct } from '@/types/product';
 import { SearchDropdown } from './SearchDropdown';
 import { MiniCart } from './MiniCart';
 import { COLLECTION_NAV_LINKS } from '@/lib/catalog';
-import toast from 'react-hot-toast';
 import {
     Search,
     ShoppingBag,
@@ -97,16 +96,6 @@ export function Navbar() {
 
     const handleLogout = () => {
         logout();
-        toast.error('LOGGED_OUT', {
-            style: {
-                borderRadius: '0px',
-                background: '#000',
-                color: '#ff4b4b',
-                border: '1px solid #ff4b4b',
-                fontSize: '12px',
-                fontFamily: 'monospace',
-            },
-        });
     };
 
     const { currency, setCurrency } = useCurrency();
@@ -173,9 +162,20 @@ export function Navbar() {
                             className="relative group"
                             onMouseEnter={() => link.dropdown && setIsCollectionsOpen(true)}
                             onMouseLeave={() => link.dropdown && setIsCollectionsOpen(false)}
+                            onFocus={() => link.dropdown && setIsCollectionsOpen(true)}
+                            onBlur={(event) => {
+                                if (link.dropdown && !event.currentTarget.contains(event.relatedTarget)) {
+                                    setIsCollectionsOpen(false);
+                                }
+                            }}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Escape') setIsCollectionsOpen(false);
+                            }}
                         >
                             <Link
                                 href={link.href}
+                                aria-haspopup={link.dropdown ? 'menu' : undefined}
+                                aria-expanded={link.dropdown ? isCollectionsOpen : undefined}
                                 className="text-[14px] font-black uppercase tracking-[0.2em] text-white/70 hover:text-white transition-all relative py-4"
                             >
                                 {link.name}
@@ -189,6 +189,7 @@ export function Navbar() {
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: 10 }}
+                                            role="menu"
                                             className="absolute top-full left-0 w-64 bg-black/95 border border-white/10 backdrop-blur-xl p-4 shadow-2xl"
                                         >
                                             <div className="space-y-4">
@@ -264,6 +265,10 @@ export function Navbar() {
                         className="relative group"
                         onMouseEnter={() => setIsCartHovered(true)}
                         onMouseLeave={() => setIsCartHovered(false)}
+                        onFocus={() => setIsCartHovered(true)}
+                        onBlur={(event) => {
+                            if (!event.currentTarget.contains(event.relatedTarget)) setIsCartHovered(false);
+                        }}
                     >
                         <Link href="/cart" className="relative block" aria-label={`View Cart: ${cartCount} items`}>
                             <ShoppingBag size={20} strokeWidth={2.5} className="text-white group-hover:opacity-100 transition-opacity" />
@@ -280,7 +285,12 @@ export function Navbar() {
                         </AnimatePresence>
                     </div>
 
-                    <button className="md:hidden text-white" onClick={() => setIsOpen(!isOpen)}>
+                    <button
+                        className="md:hidden text-white"
+                        onClick={() => setIsOpen(!isOpen)}
+                        aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                        aria-expanded={isOpen}
+                    >
                         {isOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
                 </div>
@@ -327,7 +337,7 @@ export function Navbar() {
                             <Link href="/" onClick={() => setIsOpen(false)} className="w-32 h-10 relative">
                                 <Image src="/logo/logo-1.png" alt="KAVON" fill sizes="128px" className="object-contain" />
                             </Link>
-                            <button onClick={() => setIsOpen(false)} className="text-white">
+                            <button onClick={() => setIsOpen(false)} className="text-white" aria-label="Close navigation menu">
                                 <X size={32} />
                             </button>
                         </div>
@@ -343,7 +353,7 @@ export function Navbar() {
                                 >
                                     <Link
                                         href={link.href}
-                                        onClick={() => !link.dropdown && setIsOpen(false)}
+                                        onClick={() => setIsOpen(false)}
                                         className="text-4xl font-black uppercase italic tracking-tighter text-white hover:text-brand-volt transition-all flex items-center justify-between group"
                                     >
                                         {link.name}

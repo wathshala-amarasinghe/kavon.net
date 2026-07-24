@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     description: "High-performance streetwear engineered for the modern nomad.",
     images: [
       {
-        url: "/img/Logo-1.jpeg",
+        url: "/logo/logo-1.png",
         width: 1200,
         height: 630,
         alt: "KAVON TACTICAL"

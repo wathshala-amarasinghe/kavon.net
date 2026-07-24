@@ -118,22 +118,22 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
         if (type === 'returns') {
             setModalContent({
                 title: "Return & Refund Policy",
-                highlight: "14-Day Tactical Window",
-                desc: "Every asset deployed from our division is eligible for a full refund or exchange within 14 days, provided the original security tags remain intact.",
+                highlight: "7-Day Return Window",
+                desc: "Eligible items can be returned within 7 days of delivery when they are unworn, unwashed, and have all original tags attached. Final-sale exclusions apply.",
                 link: "/returns"
             });
         } else {
             setModalContent({
                 title: "Security & Privacy",
-                highlight: "End-to-End Encryption",
-                desc: "Your data is secured using the AES-256 standard. We do not store sensitive payment credentials on our local nodes, ensuring maximum operative privacy.",
+                highlight: "Privacy-Conscious Checkout",
+                desc: "Checkout data is transmitted over secure HTTPS connections. KAVON currently accepts Cash on Delivery and does not collect or store payment-card credentials.",
                 link: "/privacy"
             });
         }
     };
 
     const handleBuyNow = () => {
-        if (Number(selectedSize.stock) <= 0) return;
+        if (!canAcquire) return;
         setBuyNowItem({ id: getProductId(product), name: product.name, price: product.price, image: selectedImage, size: selectedSize.label, color: selectedColor.name, quantity });
         router.push('/checkout');
     };
@@ -153,8 +153,12 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
         }
     };
 
-    const selectedStock = Math.max(0, Number(selectedSize.stock) || 0);
+    const selectedStock = Math.max(
+        0,
+        checkStock(getProductId(product), selectedSize.label) ?? (Number(selectedSize.stock) || 0)
+    );
     const canAcquire = Boolean(getProductId(product)) && selectedStock > 0;
+    const freeShippingThreshold = location === "COLOMBO" ? 10000 : 15000;
 
     return (
         <div className="bg-brand-black min-h-screen text-white selection:bg-brand-volt">
@@ -167,9 +171,13 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                 <button
                                     key={idx}
                                     onMouseEnter={() => setSelectedImage(img)}
+                                    onFocus={() => setSelectedImage(img)}
+                                    onClick={() => setSelectedImage(img)}
+                                    aria-label={`View ${product.name} image ${idx + 1}`}
+                                    aria-pressed={selectedImage === img}
                                     className={`w-16 md:w-20 aspect-[3/4] border transition-all ${selectedImage === img ? 'border-brand-volt' : 'border-white/10'} bg-brand-surface overflow-hidden relative`}
                                 >
-                                    <Image src={getImageUrl(img)} fill sizes="80px" className="object-cover" alt="" />
+                                    <Image src={getImageUrl(img)} fill sizes="80px" className="object-cover" alt={`${product.name} view ${idx + 1}`} />
                                 </button>
                             ))}
                         </div>
@@ -192,9 +200,13 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                             </AnimatePresence>
 
                             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 md:hidden">
-                                {product.images.map((_, idx: number) => (
-                                    <div
+                                {product.images.map((img, idx: number) => (
+                                    <button
                                         key={idx}
+                                        type="button"
+                                        onClick={() => setSelectedImage(img)}
+                                        aria-label={`View ${product.name} image ${idx + 1}`}
+                                        aria-pressed={selectedImage === img}
                                         className={`w-1.5 h-1.5 rounded-full transition-all ${product.images.indexOf(selectedImage) === idx ? 'bg-brand-volt w-4' : 'bg-white/20'}`}
                                     />
                                 ))}
@@ -229,13 +241,21 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                     </div>
                                 )}
                             </div>
-                            <p className="text-[12px] font-mono text-white/20 uppercase tracking-widest">100K+ items sold in this sector</p>
+                            <p className="text-[12px] font-mono text-white/20 uppercase tracking-widest">
+                                {Number(product.salesCount) > 0
+                                    ? `${Number(product.salesCount).toLocaleString()} sold`
+                                    : 'Limited release'}
+                            </p>
                         </div>
 
                         <div className="space-y-3">
                             <div className="flex justify-between items-end">
                                 <p className="text-[12px] font-mono text-white/40 uppercase tracking-widest">Color: <span className="text-white">{selectedColor.name}</span></p>
-                                <StockBadge productId={product._id || product.id || ""} size={selectedSize.label} />
+                                <StockBadge
+                                    productId={product._id || product.id || ""}
+                                    size={selectedSize.label}
+                                    fallbackStock={Number(selectedSize.stock) || 0}
+                                />
                             </div>
                             <div className="flex gap-3">
                                 {product.colors?.map((c) => (
@@ -245,6 +265,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                             setSelectedColor(c);
                                             setSelectedImage(c.img || productImage);
                                         }}
+                                        aria-label={`Select ${c.name} color`}
+                                        aria-pressed={selectedColor.name === c.name}
                                         className={`w-10 h-10 border-2 transition-all p-0.5 ring-1 ring-white/20 ${selectedColor.name === c.name ? 'border-brand-volt' : 'border-transparent'}`}
                                     >
                                         <div className="w-full h-full shadow-inner" style={{ backgroundColor: c.hex }} />
@@ -273,7 +295,10 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {product.sizes?.map((s) => {
-                                    const currentStock = Math.max(0, checkStock(getProductId(product), s.label) || Number(s.stock) || 0);
+                                    const currentStock = Math.max(
+                                        0,
+                                        checkStock(getProductId(product), s.label) ?? (Number(s.stock) || 0)
+                                    );
                                     return (
                                         <button
                                             key={s.label}
@@ -300,7 +325,9 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                     <Truck size={16} className="text-brand-volt shrink-0 mt-1" />
                                     <div className="space-y-1">
                                         <p className="text-[12px] font-bold uppercase tracking-wider">Free Shipping</p>
-                                        <p className="text-[12px] text-white/40">Orders over LKR 10,000. Est delivery: {getDeliveryEstimate()}</p>
+                                        <p className="text-[12px] text-white/40">
+                                            Orders from LKR {freeShippingThreshold.toLocaleString()}. Est delivery: {getDeliveryEstimate()}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -314,7 +341,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                             <p className="text-[12px] font-bold uppercase tracking-wider group-hover:text-brand-volt transition-colors">Return & refund policy</p>
                                             <ChevronRight size={14} className="text-white/20 group-hover:text-brand-volt translate-x-0 group-hover:translate-x-1 transition-all" />
                                         </div>
-                                        <p className="text-[12px] text-white/40">14-day tactical return enabled</p>
+                                        <p className="text-[12px] text-white/40">See the 7-day return policy and exclusions</p>
                                     </div>
                                 </button>
 
@@ -328,7 +355,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                             <p className="text-[12px] font-bold uppercase tracking-wider group-hover:text-brand-volt transition-colors">Security & Privacy</p>
                                             <ChevronRight size={14} className="text-white/20 group-hover:text-brand-volt translate-x-0 group-hover:translate-x-1 transition-all" />
                                         </div>
-                                        <p className="text-[12px] text-white/40">End-to-end encrypted protocol</p>
+                                        <p className="text-[12px] text-white/40">Secure checkout and privacy information</p>
                                     </div>
                                 </button>
                             </div>
@@ -336,11 +363,18 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                             <div className="space-y-3">
                                 <p className="text-[12px] font-mono text-white/30 uppercase tracking-widest">Quantity</p>
                                 <div className="flex items-center w-max border border-white/10">
-                                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-3 hover:text-brand-volt transition-colors"><Minus size={14} /></button>
+                                    <button
+                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                        aria-label="Decrease quantity"
+                                        className="p-3 hover:text-brand-volt transition-colors"
+                                    >
+                                        <Minus size={14} />
+                                    </button>
                                     <span className="w-12 text-center font-mono text-sm border-x border-white/10">{quantity}</span>
                                     <button
                                         onClick={() => setQuantity(Math.min(selectedStock, quantity + 1))}
                                         disabled={!canAcquire || quantity >= selectedStock}
+                                        aria-label="Increase quantity"
                                         className="p-3 hover:text-brand-volt transition-colors disabled:opacity-20"
                                     >
                                         <Plus size={14} />
@@ -394,6 +428,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                         <div className="bg-brand-black border border-white/10 p-8 max-w-md w-full space-y-6 shadow-2xl relative z-[301] animate-in zoom-in-95 duration-300">
                             <button
                                 onClick={() => setModalContent(null)}
+                                aria-label="Close information dialog"
                                 className="absolute top-4 right-4 text-white/20 hover:text-brand-volt transition-colors"
                             >
                                 <X size={20} />

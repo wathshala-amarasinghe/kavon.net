@@ -35,12 +35,28 @@ const normalizeCampaign = async (body: any) => {
 
 export const getCampaigns = async (req: Request, res: Response) => {
     try {
-        const campaigns = await Campaign.find({})
+        const now = new Date();
+        const campaigns = await Campaign.find({
+            status: 'Active',
+            startDate: { $lte: now },
+            endDate: { $gte: now },
+        })
             .populate('products')
             .sort({ createdAt: -1 });
         res.json(campaigns);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+export const getAllCampaigns = async (_req: AuthRequest, res: Response) => {
+    try {
+        const campaigns = await Campaign.find({})
+            .populate('products')
+            .sort({ createdAt: -1 });
+        res.json(campaigns);
+    } catch {
+        res.status(500).json({ message: 'Campaign retrieval failed' });
     }
 };
 

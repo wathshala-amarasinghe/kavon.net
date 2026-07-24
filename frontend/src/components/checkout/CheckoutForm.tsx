@@ -14,7 +14,7 @@ export function CheckoutForm({ onNext }: { onNext: (address: ShippingAddress) =>
         address: savedAddress?.address || '',
         city: savedAddress?.city || '',
         postalCode: savedAddress?.postalCode || '',
-        country: savedAddress?.country || 'Sri Lanka',
+        country: 'Sri Lanka',
     });
 
     const updateField = (field: keyof ShippingAddress, value: string) => {
@@ -31,7 +31,7 @@ export function CheckoutForm({ onNext }: { onNext: (address: ShippingAddress) =>
             address: formData.address.trim(),
             city: formData.city.trim(),
             postalCode: formData.postalCode.trim(),
-            country: formData.country.trim(),
+            country: 'Sri Lanka',
         });
     };
 

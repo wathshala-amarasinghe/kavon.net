@@ -16,15 +16,11 @@ export function CTASection() {
                     Join the <span className="text-brand-volt">Movement.</span>
                 </motion.h2>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <Link href="/shop" className="w-full sm:w-auto">
-                        <button className="w-full px-12 py-6 bg-white text-black font-black uppercase text-xs tracking-[0.4em] hover:bg-brand-volt transition-all flex items-center justify-center gap-4 group">
-                            Explore_Collections <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform" />
-                        </button>
+                    <Link href="/shop" className="group flex w-full items-center justify-center gap-4 bg-white px-12 py-6 text-xs font-black uppercase tracking-[0.4em] text-black transition-all hover:bg-brand-volt sm:w-auto">
+                        Explore_Collections <ArrowRight size={16} className="transition-transform group-hover:translate-x-2" />
                     </Link>
-                    <Link href="/collections" className="w-full sm:w-auto">
-                        <button className="w-full px-12 py-6 border border-white/10 text-white font-black uppercase text-xs tracking-[0.4em] hover:bg-white hover:text-black transition-all">
-                            View_Lookbook
-                        </button>
+                    <Link href="/collections" className="w-full border border-white/10 px-12 py-6 text-xs font-black uppercase tracking-[0.4em] text-white transition-all hover:bg-white hover:text-black sm:w-auto">
+                        View_Lookbook
                     </Link>
                 </div>
             </div>

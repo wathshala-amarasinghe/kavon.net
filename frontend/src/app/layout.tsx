@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     description: "wear power wear kavon. Engineered for the urban environment. Explore our latest tactical drops.",
     images: [
       {
-        url: "/img/Logo-1.jpeg",
+        url: "/logo/logo-1.png",
         width: 1200,
         height: 630,
         alt: "KAVON TACTICAL"
@@ -55,8 +55,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "KAVON | wear power wear kavon",
     description: "wear power wear kavon. High-performance streetwear for the modern nomad.",
-    images: ["/img/Logo-1.jpeg"],
-    creator: "@kavon_division"
+    images: ["/logo/logo-1.png"]
   },
   robots: {
     index: true,
@@ -77,11 +76,6 @@ export const metadata: Metadata = {
     shortcut: "/logo/symbol-1.png",
     apple: "/logo/symbol-1.png",
   },
-  verification: {
-    google: 'google-site-verification-id',
-    yandex: 'yandex-verification-id',
-  },
-
 };
 
 export const viewport: Viewport = {

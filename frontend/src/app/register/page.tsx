@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { SocialAuth } from '@/components/auth/SocialAuth';
 import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterPage() {
@@ -135,8 +134,6 @@ export default function RegisterPage() {
                             {isSubmitting ? 'Creating Account...' : 'Create Account'}
                         </button>
                     </form>
-
-                    <SocialAuth />
 
                     <div className="mt-8 pt-8 border-t border-white/10 text-center flex flex-col gap-4">
                         <p className="text-[12px] font-mono text-white/40 uppercase tracking-[0.2em]">

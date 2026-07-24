@@ -70,17 +70,13 @@ export async function getProducts(params: Record<string, unknown> = {}) {
 }
 
 export async function getProductById(id: string) {
-  try {
-    const res = await fetch(`${API_URL}/products/${id}`, {
-      cache: "no-store",
-    });
+  const res = await fetch(`${API_URL}/products/${id}`, {
+    cache: "no-store",
+  });
 
-    if (!res.ok) return null;
-    return res.json();
-  } catch (error) {
-    console.warn("API_FETCH_ERROR [getProductById]:", error);
-    return null;
-  }
+  if (res.status === 400 || res.status === 404) return null;
+  if (!res.ok) throw await apiError(res, 'Product could not be loaded');
+  return res.json();
 }
 
 export async function login(credentials: Record<string, unknown>) {
@@ -267,6 +263,16 @@ export async function getProductReviews(productId: string) {
   }
 
   return res.json();
+}
+
+export async function getFeaturedReviews() {
+  const res = await fetch(`${API_URL}/reviews/featured`, {
+    cache: "no-store",
+  });
+
+  if (!res.ok) throw await apiError(res, 'Customer reviews could not be loaded');
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export async function createReview(reviewData: Record<string, unknown>, token: string) {

@@ -1,160 +1,104 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Star } from 'lucide-react';
+import { getFeaturedReviews } from '@/lib/api';
+import { getImageUrl } from '@/lib/utils';
 
-const testimonials = [
-    {
-        id: 1,
-        name: 'MARCUS T.',
-        text: 'The quality is insane. The heavyweight hoodie feels like armor but fits perfectly. Best drop this year.',
-        rating: 5,
-        image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
-    },
-    {
-        id: 2,
-        name: 'SARAH J.',
-        text: 'Finally a brand that understands proportions. The oversized fit is actually designed, not just sized up.',
-        rating: 5,
-        image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
-    },
-    {
-        id: 3,
-        name: 'DAVID L.',
-        text: 'Customer service was top tier and the packaging felt premium. KAVON is setting a new standard.',
-        rating: 5,
-        image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
-    },
-    {
-        id: 4,
-        name: 'ELENA R.',
-        text: "The materials used are next level. I've washed my tees dozens of times and they still hold their shape perfectly.",
-        rating: 5,
-        image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
-    },
-];
+interface FeaturedReview {
+    _id: string;
+    userName: string;
+    text?: string;
+    comment: string;
+    rating: number;
+    image?: string;
+    product?: {
+        name?: string;
+        images?: string[];
+    };
+}
+
+const displayName = (name: string) => {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length < 2) return parts[0] || 'Customer';
+    return `${parts[0]} ${parts.at(-1)?.charAt(0) || ''}.`;
+};
 
 export function Testimonials() {
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [reviews, setReviews] = useState<FeaturedReview[]>([]);
 
-    const next = () => {
-        setCurrentIndex((prev) => (prev + 1) % testimonials.length);
-    };
+    useEffect(() => {
+        let active = true;
+        getFeaturedReviews()
+            .then((data) => {
+                if (active) setReviews(data);
+            })
+            .catch((error) => {
+                console.error('FEATURED_REVIEW_SYNC_FAILURE:', error);
+                if (active) setReviews([]);
+            });
+        return () => {
+            active = false;
+        };
+    }, []);
 
-    const prev = () => {
-        setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
-    };
+    if (reviews.length === 0) return null;
 
     return (
-        <section className="py-24 px-6 max-w-7xl mx-auto overflow-hidden bg-background">
-            <div className="flex items-end justify-between mb-12">
-                <h2 className="font-heading text-5xl md:text-6xl text-white">
-                    WHAT THEY SAY
-                </h2>
-                <div className="hidden md:flex gap-4">
-                    <button
-                        onClick={prev}
-                        className="p-3 border border-white/20 text-white hover:bg-white hover:text-brand-black transition-colors"
-                    >
-                        <ChevronLeft size={20} />
-                    </button>
-                    <button
-                        onClick={next}
-                        className="p-3 border border-white/20 text-white hover:bg-white hover:text-brand-black transition-colors"
-                    >
-                        <ChevronRight size={20} />
-                    </button>
+        <section className="mx-auto max-w-7xl overflow-hidden bg-background px-6 py-24">
+            <div className="mb-12 flex items-end justify-between">
+                <div>
+                    <p className="mb-3 font-mono text-xs uppercase tracking-[0.4em] text-brand-volt">Verified purchases</p>
+                    <h2 className="font-heading text-5xl text-white md:text-6xl">CUSTOMER REVIEWS</h2>
                 </div>
             </div>
 
-            <div className="relative">
-                <div className="md:hidden">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={currentIndex}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="bg-brand-surface p-8 border border-white/5"
-                        >
-                            <div className="flex gap-1 mb-6">
-                                {[...Array(testimonials[currentIndex].rating)].map((_, i) => (
-                                    <Star
-                                        key={i}
-                                        size={16}
-                                        className="fill-brand-volt text-brand-volt"
-                                    />
-                                ))}
-                            </div>
-                            <p className="text-white/80 text-lg mb-8 min-h-[100px] font-body">
-                            &ldquo;{testimonials[currentIndex].text}&rdquo;
-                            </p>
-                            <div className="flex items-center gap-4">
-                                { }
-<img
-                                    src={testimonials[currentIndex].image}
-                                    alt={testimonials[currentIndex].name}
-                                    className="w-12 h-12 rounded-full object-cover grayscale"
-                                />
-                                <span className="font-heading text-xl text-white tracking-wider">
-                                    {testimonials[currentIndex].name}
-                                </span>
-                            </div>
-                        </motion.div>
-                    </AnimatePresence>
-                    <div className="flex justify-center gap-4 mt-8">
-                        <button
-                            onClick={prev}
-                            className="p-3 border border-white/20 text-white hover:bg-white hover:text-brand-black transition-colors"
-                        >
-                            <ChevronLeft size={20} />
-                        </button>
-                        <button
-                            onClick={next}
-                            className="p-3 border border-white/20 text-white hover:bg-white hover:text-brand-black transition-colors"
-                        >
-                            <ChevronRight size={20} />
-                        </button>
-                    </div>
-                </div>
-
-                <div className="hidden md:grid grid-cols-3 gap-6">
-                    {testimonials.slice(0, 3).map((testimonial, index) => (
-                        <motion.div
-                            key={testimonial.id}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                {reviews.slice(0, 3).map((review, index) => {
+                    const image = review.image || review.product?.images?.[0];
+                    return (
+                        <motion.article
+                            key={review._id}
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
-                            className="bg-brand-surface p-8 border border-white/5 hover:border-brand-volt/50 transition-colors group"
+                            className="group border border-white/5 bg-brand-surface p-8 transition-colors hover:border-brand-volt/50"
                         >
-                            <div className="flex gap-1 mb-6">
-                                {[...Array(testimonial.rating)].map((_, i) => (
+                            <div className="mb-6 flex gap-1" aria-label={`${review.rating} out of 5 stars`}>
+                                {Array.from({ length: 5 }, (_, star) => (
                                     <Star
-                                        key={i}
+                                        key={star}
                                         size={16}
-                                        className="fill-brand-volt text-brand-volt"
+                                        aria-hidden="true"
+                                        className={star < review.rating ? 'fill-brand-volt text-brand-volt' : 'text-white/15'}
                                     />
                                 ))}
                             </div>
-                            <p className="text-white/80 text-lg mb-8 min-h-[120px] font-body">
-                            &ldquo;{testimonial.text}&rdquo;
-                            </p>
+                            <p className="mb-8 min-h-[120px] text-lg text-white/80">&ldquo;{review.comment || review.text}&rdquo;</p>
                             <div className="flex items-center gap-4">
-                                { }
-<img
-                                    src={testimonial.image}
-                                    alt={testimonial.name}
-                                    className="w-12 h-12 rounded-full object-cover grayscale group-hover:grayscale-0 transition-all"
-                                />
-                                <span className="font-heading text-xl text-white tracking-wider">
-                                    {testimonial.name}
-                                </span>
+                                {image && (
+                                    <img
+                                        src={getImageUrl(image)}
+                                        alt=""
+                                        className="h-12 w-12 rounded-full object-cover grayscale"
+                                    />
+                                )}
+                                <div>
+                                    <span className="block font-heading text-xl tracking-wider text-white">
+                                        {displayName(review.userName)}
+                                    </span>
+                                    {review.product?.name && (
+                                        <span className="font-mono text-[10px] uppercase tracking-widest text-white/35">
+                                            {review.product.name}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                        </motion.div>
-                    ))}
-                </div>
+                        </motion.article>
+                    );
+                })}
             </div>
         </section>
     );

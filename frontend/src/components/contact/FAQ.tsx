@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 const FAQS = [
-    { q: "How long does delivery take?", a: "Domestic shipping takes 1-3 business days. International orders typically arrive within 7-14 days." },
-    { q: "Do you offer returns?", a: "Yes, we accept returns within 14 days of delivery for unworn items in original packaging." },
+    { q: "How long does delivery take?", a: "Delivery within Sri Lanka typically takes 2-4 business days after processing." },
+    { q: "Do you offer returns?", a: "Eligible unworn items can be returned within 7 days of delivery with their original tags. Exclusions apply." },
     { q: "How to choose my size?", a: "Consult our size guide in the product description. Our fits are intentionally oversized." }
 ];
 

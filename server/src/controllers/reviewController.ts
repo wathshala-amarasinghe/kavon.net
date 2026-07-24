@@ -5,6 +5,21 @@ import { AuthRequest } from '../middleware/authMiddleware';
 import Order from '../models/Order';
 import mongoose from 'mongoose';
 
+// @desc    Get recent verified reviews for public storefront sections
+// @route   GET /api/reviews/featured
+export const getFeaturedReviews = async (_req: Request, res: Response) => {
+    try {
+        const reviews = await Review.find({ verifiedPurchase: true })
+            .select('userName rating comment image product createdAt verifiedPurchase')
+            .populate('product', 'name images')
+            .sort({ createdAt: -1 })
+            .limit(6);
+        res.json(reviews);
+    } catch {
+        res.status(500).json({ message: 'Reviews could not be loaded' });
+    }
+};
+
 // @desc    Get reviews for a product
 // @route   GET /api/reviews/:productId
 export const getProductReviews = async (req: Request, res: Response) => {

@@ -6,24 +6,32 @@ import { protect, admin } from "../middleware/authMiddleware";
 const router = express.Router();
 
 const normalizeProductPayload = (body: any) => {
-    const sizes = Array.isArray(body.sizes)
-        ? body.sizes.map((size: any) => ({
+    const normalizedSizes = Array.isArray(body.sizes)
+        ? body.sizes.slice(0, 20).map((size: any) => ({
             label: String(size.label || '').trim().toUpperCase(),
             stock: Math.max(0, Number(size.stock) || 0),
         })).filter((size: any) => size.label)
         : [];
+    const sizes = Array.from(
+        new Map(normalizedSizes.map((size: any) => [size.label, size])).values()
+    );
     const images = Array.isArray(body.images)
-        ? body.images.map((image: any) => String(image || '').trim()).filter(Boolean)
+        ? body.images.slice(0, 10).map((image: any) => String(image || '').trim()).filter(Boolean)
         : [];
     const submittedColors = Array.isArray(body.colors)
-        ? body.colors.map((color: any) => ({
+        ? body.colors.slice(0, 20).map((color: any) => ({
             name: String(color.name || '').trim() || 'Default',
-            hex: String(color.hex || '').trim() || '#000000',
+            hex: /^#[0-9a-fA-F]{6}$/.test(String(color.hex || '').trim())
+                ? String(color.hex).trim()
+                : '#000000',
             img: String(color.img || '').trim(),
         })).filter((color: any) => color.name)
         : [];
-    const colors = submittedColors.length > 0
-        ? submittedColors
+    const uniqueColors = Array.from(
+        new Map(submittedColors.map((color: any) => [color.name.toLowerCase(), color])).values()
+    );
+    const colors = uniqueColors.length > 0
+        ? uniqueColors
         : [{ name: 'Default', hex: '#000000', img: '' }];
 
     return {
@@ -150,7 +158,16 @@ router.get("/", async (req, res) => {
 
         // 1. Search Logic
         if (q) {
-            query.name = { $regex: escapeRegex(String(q).slice(0, 100)), $options: "i" };
+            const searchPattern = {
+                $regex: escapeRegex(String(q).trim().slice(0, 100)),
+                $options: "i",
+            };
+            query.$or = [
+                { name: searchPattern },
+                { description: searchPattern },
+                { category: searchPattern },
+                { "colors.name": searchPattern },
+            ];
         }
 
         // 2. Category Filter
@@ -275,7 +292,6 @@ router.get("/", async (req, res) => {
         console.error("Database fetch error:", error);
         res.status(500).json({
             message: "Failed to fetch products",
-            error: (error as Error).message
         });
     }
 });

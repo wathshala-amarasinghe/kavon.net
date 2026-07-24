@@ -20,9 +20,9 @@ export interface IProduct extends Document {
 
 const ProductSchema: Schema = new Schema(
     {
-        name: { type: String, required: true, trim: true },
-        description: { type: String, required: true, trim: true },
-        price: { type: Number, required: true, min: 0.01 },
+        name: { type: String, required: true, trim: true, maxlength: 150 },
+        description: { type: String, required: true, trim: true, maxlength: 5000 },
+        price: { type: Number, required: true, min: 0.01, max: 100000000 },
         category: {
             type: String,
             required: true,
@@ -31,15 +31,32 @@ const ProductSchema: Schema = new Schema(
         },
         gender: { type: String, enum: ['Men', 'Women', 'Child', 'Unisex'], default: 'Unisex' },
         images: {
-            type: [String],
+            type: [{ type: String, maxlength: 2048 }],
             required: true,
             validate: {
-                validator: (images: string[]) => Array.isArray(images) && images.length > 0,
-                message: 'At least one product image is required',
+                validator: (images: string[]) => Array.isArray(images) && images.length > 0 && images.length <= 10,
+                message: 'Add between 1 and 10 product images',
             },
         },
-        colors: { type: [{ name: String, hex: String, img: String }], default: [] },
-        sizes: { type: [{ label: String, stock: { type: Number, min: 0, default: 0 } }], default: [] },
+        colors: {
+            type: [{
+                name: { type: String, maxlength: 60 },
+                hex: { type: String, match: /^#[0-9a-fA-F]{6}$/ },
+                img: { type: String, maxlength: 2048 },
+            }],
+            default: [],
+        },
+        sizes: {
+            type: [{
+                label: { type: String, maxlength: 20 },
+                stock: { type: Number, min: 0, max: 100000, default: 0 },
+            }],
+            validate: {
+                validator: (sizes: unknown[]) => Array.isArray(sizes) && sizes.length > 0 && sizes.length <= 20,
+                message: 'Add between 1 and 20 sizes',
+            },
+            default: [],
+        },
         stock: { type: Number, required: true, min: 0, default: 0 },
         isNewDrop: { type: Boolean, default: true },
         salesCount: { type: Number, min: 0, default: 0 },

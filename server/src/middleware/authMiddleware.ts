@@ -40,6 +40,6 @@ export const admin = (req: AuthRequest, res: Response, next: NextFunction) => {
     if (req.user && req.user.role === 'admin') {
         return next();
     } else {
-        return res.status(401).json({ message: 'Not authorized as an admin' });
+        return res.status(403).json({ message: 'Administrator access is required' });
     }
 };

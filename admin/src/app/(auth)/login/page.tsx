@@ -58,6 +58,7 @@ export default function AdminLoginPage() {
                             <input 
                                 type="email" 
                                 required
+                                autoComplete="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="IDENTIFY_OPERATOR..."
@@ -73,6 +74,8 @@ export default function AdminLoginPage() {
                             <input 
                                 type="password" 
                                 required
+                                autoComplete="current-password"
+                                minLength={8}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="ENTER_CIPHER..."
@@ -94,7 +97,7 @@ export default function AdminLoginPage() {
                 <div className="flex items-center gap-4 py-4 border-t border-white/5">
                     <ShieldAlert size={14} className="text-white/20" />
                     <p className="font-mono text-[9px] text-white/20 uppercase leading-relaxed">
-                        Notice: All unauthorized access attempts are logged and reported to central division command.
+                        Restricted system. Invalid credentials are denied and repeated login attempts are rate-limited.
                     </p>
                 </div>
             </motion.div>

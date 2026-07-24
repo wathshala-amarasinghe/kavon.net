@@ -72,7 +72,7 @@ export function PaymentProtocol({ selectedMethod, onMethodChange }: PaymentProto
             {/* Security Footer */}
             <div className="pt-6 flex items-center gap-4 text-[9px] font-mono text-white/20 uppercase tracking-[0.2em] leading-relaxed">
                 <ShieldCheck size={20} className="text-brand-volt shrink-0" />
-                Cipher encryption active. Payment data is never stored on local nodes.
+                Cash on Delivery is the only payment method currently available. Card details are not collected.
             </div>
         </section>
     );

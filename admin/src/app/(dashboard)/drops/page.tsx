@@ -18,7 +18,8 @@ export default function DropsPage() {
     const fetchCampaigns = async () => {
         setIsLoading(true);
         try {
-            const data = await getCampaigns();
+            const token = localStorage.getItem('kavon-admin-token') || "";
+            const data = await getCampaigns(token);
             setCampaigns(data);
         } catch (error) {
             toast.error("DATABASE_SYNC_FAILURE");
@@ -41,7 +42,7 @@ export default function DropsPage() {
                 await createCampaign(formData, token);
                 toast.success("CAMPAIGN_INITIALIZED");
             }
-            fetchCampaigns();
+            void fetchCampaigns();
         } catch (error) {
             toast.error("SYNCHRONIZATION_ERROR");
         }
@@ -58,7 +59,7 @@ export default function DropsPage() {
         try {
             await deleteCampaign(campaignToDelete, token);
             toast.success("CAMPAIGN_TERMINATED");
-            fetchCampaigns();
+            void fetchCampaigns();
         } catch (error) {
             toast.error("TERMINATION_FAILURE");
         } finally {

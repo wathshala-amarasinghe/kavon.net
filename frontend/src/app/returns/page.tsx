@@ -20,7 +20,7 @@ export default function ReturnsPage() {
                     </h1>
 
                     <p className="text-white/60 font-mono text-[14px] uppercase tracking-[0.15em] leading-loose max-w-3xl">
-                        Comprehensive information on order delivery, customs clearance, and return procedures.
+                        Delivery rates, timeframes, and return procedures for orders within Sri Lanka.
                     </p>
                 </header>
 
@@ -38,19 +38,16 @@ export default function ReturnsPage() {
                                 <ul className="space-y-4 font-mono text-[13px] text-white/70 uppercase leading-relaxed tracking-[0.1em]">
                                     <li className="flex gap-3"><span className="text-brand-volt opacity-50">&gt;</span> Processing: 1-2 Business Days</li>
                                     <li className="flex gap-3"><span className="text-brand-volt opacity-50">&gt;</span> Delivery: 2-4 Business Days</li>
-                                    <li className="flex gap-3"><span className="text-brand-volt opacity-50">&gt;</span> Carriers: Prompt Logistics, Grasshopper</li>
-                                    <li className="flex gap-3"><span className="text-brand-volt font-bold opacity-100">&gt;</span> Cost: FREE on orders above <FormattedPrice amount={15000} /></li>
+                                    <li className="flex gap-3"><span className="text-brand-volt opacity-50">&gt;</span> Colombo delivery: LKR 350; free from <FormattedPrice amount={10000} /></li>
+                                    <li className="flex gap-3"><span className="text-brand-volt font-bold opacity-100">&gt;</span> Outstation delivery: LKR 650; free from <FormattedPrice amount={15000} /></li>
                                 </ul>
                             </div>
 
                             <div className="p-10 bg-white/[0.02] border border-white/5 space-y-6">
-                                <h4 className="font-black uppercase tracking-[0.4em] text-white text-sm">Global_Operations (International)</h4>
-                                <ul className="space-y-4 font-mono text-[11px] text-white/60 uppercase leading-relaxed tracking-[0.15em]">
-                                    <li className="flex gap-3"><span className="text-white/20">&gt;</span> Fulfillment: 2-3 standard cycles</li>
-                                    <li className="flex gap-3"><span className="text-white/20">&gt;</span> Deployment: 7-14 business cycles</li>
-                                    <li className="flex gap-3"><span className="text-white/20">&gt;</span> Carriers: DHL_Express, Fedex_Priority</li>
-                                    <li className="flex gap-3"><span className="text-white/20">&gt;</span> Customs: Duties calculated at sector boundary</li>
-                                </ul>
+                                <h4 className="font-black uppercase tracking-[0.4em] text-white text-sm">International Orders</h4>
+                                <p className="font-mono text-[11px] text-white/60 uppercase leading-relaxed tracking-[0.15em]">
+                                    Online checkout currently supports Sri Lankan addresses. Contact support before ordering for another destination.
+                                </p>
                             </div>
                         </div>
                     </section>
@@ -73,7 +70,7 @@ export default function ReturnsPage() {
                             <div className="space-y-8 px-2">
                                 <div className="flex gap-6">
                                     <div className="w-10 h-10 bg-brand-volt text-black flex items-center justify-center font-black text-xs shrink-0 italic">01</div>
-                                    <p className="font-mono text-[11px] text-white/60 uppercase pt-2 tracking-[0.15em] leading-relaxed">Initialize request via the [Customer_Dashboard] or support comms.</p>
+                                    <p className="font-mono text-[11px] text-white/60 uppercase pt-2 tracking-[0.15em] leading-relaxed">Contact support with your order ID and delivery phone number.</p>
                                 </div>
                                 <div className="flex gap-6">
                                     <div className="w-10 h-10 bg-brand-volt text-black flex items-center justify-center font-black text-xs shrink-0 italic">02</div>
@@ -109,9 +106,9 @@ export default function ReturnsPage() {
                             Every deployment is insured and monitored until successful hand-off.
                         </p>
                     </div>
-                    <button className="w-full lg:w-auto px-14 py-6 bg-black text-white font-black uppercase text-xs tracking-[0.5em] hover:bg-brand-volt hover:text-black transition-all duration-500 active:scale-95">
-                        Initiate_Return
-                    </button>
+                    <a href="/contact" className="w-full lg:w-auto px-14 py-6 bg-black text-white text-center font-black uppercase text-xs tracking-[0.5em] hover:bg-brand-volt hover:text-black transition-all duration-500 active:scale-95">
+                        Contact Support
+                    </a>
                 </div>
             </div>
 

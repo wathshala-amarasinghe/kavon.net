@@ -12,6 +12,7 @@ export default function LoginPage() {
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [name, setName] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,6 +37,12 @@ export default function LoginPage() {
             if (isLogin) {
                 await login({ email, password });
             } else {
+                if (password.length < 8) {
+                    throw new Error('Password must contain at least 8 characters');
+                }
+                if (password !== confirmPassword) {
+                    throw new Error('Passwords do not match');
+                }
                 await register({ name, email, password });
             }
         } catch (err: unknown) {
@@ -51,7 +58,6 @@ export default function LoginPage() {
             <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-volt/5 blur-[120px] rounded-full" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-volt/5 blur-[120px] rounded-full" />
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]" />
             </div>
 
             <div className="max-w-[450px] w-full mx-auto relative z-10">
@@ -76,7 +82,7 @@ export default function LoginPage() {
                         transition={{ delay: 0.1 }}
                         className="text-white/40 font-mono text-[11px] uppercase tracking-[0.3em]"
                     >
-                        {isLogin ? 'Enter Credentials for Biometric Match' : 'Register your signature in the KAVON division'}
+                        {isLogin ? 'Enter your account credentials' : 'Create your KAVON customer account'}
                     </motion.p>
                 </header>
 
@@ -109,6 +115,7 @@ export default function LoginPage() {
                                             type="text"
                                             name="name"
                                             autoComplete="name"
+                                            maxLength={100}
                                             required
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
@@ -151,8 +158,9 @@ export default function LoginPage() {
                                 <input
                                     type="password"
                                     name="password"
-                                    autoComplete="current-password"
+                                    autoComplete={isLogin ? 'current-password' : 'new-password'}
                                     required
+                                    minLength={8}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="w-full bg-black/50 border border-white/10 py-4 pl-12 pr-4 text-sm font-mono focus:border-brand-volt/50 focus:outline-none transition-all placeholder:text-white/10"
@@ -160,6 +168,26 @@ export default function LoginPage() {
                                 />
                             </div>
                         </div>
+
+                        {!isLogin && (
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-mono text-white/40 uppercase tracking-[0.2em] ml-1">Confirm_Access_Key</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                                    <input
+                                        type="password"
+                                        name="confirmPassword"
+                                        autoComplete="new-password"
+                                        required
+                                        minLength={8}
+                                        value={confirmPassword}
+                                        onChange={(event) => setConfirmPassword(event.target.value)}
+                                        className="w-full bg-black/50 border border-white/10 py-4 pl-12 pr-4 text-sm font-mono focus:border-brand-volt/50 focus:outline-none transition-all placeholder:text-white/10"
+                                        placeholder="••••••••••••"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <AnimatePresence>
                             {error && (
@@ -204,9 +232,9 @@ export default function LoginPage() {
                 <footer className="mt-12 flex items-center justify-between opacity-20 hover:opacity-100 transition-opacity">
                     <div className="flex gap-4">
                         <Shield size={16} />
-                        <span className="text-[9px] font-mono uppercase tracking-[0.3em]">End-to-End Encrypted</span>
+                        <span className="text-[9px] font-mono uppercase tracking-[0.3em]">Secure HTTPS Connection</span>
                     </div>
-                    <span className="text-[9px] font-mono uppercase tracking-[0.3em]">Division_v1.0.42</span>
+                    <span className="text-[9px] font-mono uppercase tracking-[0.3em]">Customer Account</span>
                 </footer>
             </div>
         </div>

@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Shield, HelpCircle, Package, CreditCard, RefreshCw, Search, X } from 'lucide-react';
+import Link from 'next/link';
 
 const faqData = [
     {
@@ -11,15 +12,15 @@ const faqData = [
         items: [
             {
                 q: "What is the standard delivery timeframe?",
-                a: "Domestic delivery (Sri Lanka) typically takes 2-4 business days. International shipping ranges from 7-14 business days depending on your location."
+                a: "Delivery within Sri Lanka typically takes 2-4 business days after processing."
             },
             {
                 q: "Do you ship internationally?",
-                a: "Yes, we ship globally to most countries. If your location has specific customs restrictions, our support team will contact you after order placement."
+                a: "Online checkout currently supports delivery within Sri Lanka. Contact support before ordering if you need another destination."
             },
             {
                 q: "How can I track my order?",
-                a: "Once your order is shipped, a tracking ID will be sent to your email. You can also track it in real-time via our Tracking portal in the main menu."
+                a: "Use your order ID and delivery phone number in the Tracking portal, or open the order from your account dashboard."
             }
         ]
     },
@@ -29,11 +30,11 @@ const faqData = [
         items: [
             {
                 q: "Which payment methods are accepted?",
-                a: "We accept Visa, Mastercard, and common digital payment methods. All transactions are processed through secure, encrypted channels."
+                a: "Cash on Delivery is currently available. Card and digital payment options are not active yet."
             },
             {
                 q: "Can I cancel my order?",
-                a: "Orders can be cancelled within 60 minutes of placement. Once processing begins, we are unable to stop the shipment."
+                a: "Contact support as soon as possible with your order ID. Cancellation depends on whether fulfillment has already started."
             }
         ]
     },
@@ -162,9 +163,9 @@ export default function FAQPage() {
                     <p className="font-mono text-[13px] uppercase tracking-[0.2em] leading-loose max-w-md mx-auto opacity-70">
                         If you couldn&apos;t find what you were looking for, please contact our support team directly.
                     </p>
-                    <button className="px-12 py-5 bg-black text-white font-black uppercase text-[12px] tracking-[0.5em] hover:bg-brand-volt hover:text-black transition-all active:scale-95">
+                    <Link href="/contact" className="inline-block px-12 py-5 bg-black text-white font-black uppercase text-[12px] tracking-[0.5em] hover:bg-brand-volt hover:text-black transition-all active:scale-95">
                         Contact Support
-                    </button>
+                    </Link>
                 </div>
             </div>
         </main>

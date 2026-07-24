@@ -19,6 +19,8 @@ import couponRoutes from "./routes/couponRoutes";
 dotenv.config({ path: ".env.local" });
 
 const app = express();
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
 
 const allowedOrigins = (
     process.env.CORS_ORIGINS ||
@@ -63,6 +65,26 @@ const limiter = rateLimit({
 
 app.use("/api/", limiter);
 
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: { message: "Too many login attempts. Please try again later" },
+});
+
+const registrationLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 20,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { message: "Too many registration attempts. Please try again later" },
+});
+
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/register", registrationLimiter);
+
 const couponLimiter = rateLimit({
     windowMs: 10 * 60 * 1000,
     limit: 5,
@@ -84,6 +106,16 @@ const passwordRecoveryLimiter = rateLimit({
 });
 
 app.use("/api/auth/password", passwordRecoveryLimiter);
+
+const trackingLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    message: { message: "Too many tracking attempts. Please try again later" },
+});
+
+app.use("/api/orders/track", trackingLimiter);
 
 const requireDatabase = async (
     _req: Request,
@@ -124,9 +156,20 @@ app.use(
         res: Response,
         _next: NextFunction
     ) => {
-        console.error("Unhandled API error:", error);
-        res.status(500).json({
-            message: error.message || "Internal server error",
+        const isCorsError = error.message.startsWith("CORS blocked origin:");
+        if (isCorsError) {
+            console.warn("Blocked request from an unapproved origin");
+        } else {
+            console.error("Unhandled API error:", error);
+        }
+        const status = isCorsError ? 403 : 500;
+        const message = isCorsError
+            ? "Origin is not allowed"
+            : process.env.NODE_ENV === "production"
+                ? "Internal server error"
+                : error.message || "Internal server error";
+        res.status(status).json({
+            message,
         });
     }
 );

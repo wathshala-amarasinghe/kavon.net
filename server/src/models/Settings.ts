@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const settingsSchema = new mongoose.Schema({
   promoBanner: {
     enabled: { type: Boolean, default: true },
-    text: { type: String, default: "FREE EXPEDITED DEPLOYMENT ON ALL ORDERS OVER LKR 10,000" },
+    text: { type: String, default: "FREE STANDARD DELIVERY FROM LKR 10,000 IN COLOMBO / LKR 15,000 OUTSTATION" },
     link: { type: String, default: "/shop" }
   },
   popupBanner: {

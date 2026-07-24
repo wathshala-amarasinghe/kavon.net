@@ -10,6 +10,11 @@ const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 export const metadata: Metadata = {
   title: "KAVON | Admin_Panel",
   description: "Tactical Administrative Interface",
+  robots: {
+    index: false,
+    follow: false,
+    noarchive: true,
+  },
   icons: {
     icon: [
       { url: "/logo/symbol-1.png", href: "/logo/symbol-1.png" },

@@ -20,11 +20,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = `${product.name} | KAVON TACTICAL`;
   const description = product.description || `Buy ${product.name} at KAVON. High-performance streetwear engineered for the modern nomad.`;
-  const image = product.images?.[0] || "/img/Logo-1.jpeg";
+  const image = product.images?.[0] || "/logo/logo-1.png";
+  const canonical = `/products/${product._id || product.id || id}`;
 
   return {
     title,
     description,
+    alternates: { canonical },
     openGraph: {
       title,
       description,
