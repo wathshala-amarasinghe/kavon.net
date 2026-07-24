@@ -29,7 +29,9 @@ const initAdmin = async () => {
                 name: adminName,
                 email: adminEmail,
                 password: adminPassword,
-                role: 'admin'
+                role: 'admin',
+                emailVerified: true,
+                emailVerifiedAt: new Date()
             });
             await admin.save();
             console.log("✅ Default Administrative account created.");

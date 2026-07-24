@@ -27,7 +27,7 @@ export function OrderSummary({
     const router = useRouter();
     const { cart, subtotal: cartSubtotal, discount: cartDiscount, applyCoupon, activeCoupon, couponError, getCouponDiscount, clearCart, isPointsRedeemed, setIsPointsRedeemed, pointsDiscount: cartPointsDiscount } = useCart();
     const { activeCheckoutItem, clearBuyNowItem, shippingAddress, paymentMethod } = useCheckout();
-    const { addOrderToHistory, loyaltyPoints, deductPoints } = useAuth();
+    const { user, addOrderToHistory, loyaltyPoints, deductPoints } = useAuth();
     const [couponInput, setCouponInput] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
@@ -53,6 +53,12 @@ export function OrderSummary({
     };
 
     const handleConfirm = async () => {
+        if (user?.emailVerified === false) {
+            alert("Please verify your email before completing your purchase.");
+            router.push('/checkout');
+            return;
+        }
+
         const token = localStorage.getItem('kavon-token-v1');
         if (!token) {
             alert("AUTH_REQUIRED: Please sign in to proceed with deployment.");

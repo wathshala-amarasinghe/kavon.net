@@ -8,6 +8,34 @@ KAVON is a full-stack commerce platform organized as a monorepo:
 
 The live checkout currently supports authenticated customers, Sri Lankan delivery, and Cash on Delivery. Product prices, stock, coupons, loyalty discounts, shipping, and final totals are recalculated by the API before an order is created.
 
+## Account email verification
+
+New customer accounts require email verification before checkout. The API sends
+transactional email through Brevo; the Brevo secret must exist only in the
+server environment.
+
+Required API variables:
+
+```text
+BREVO_API_KEY=your-private-api-key
+EMAIL_FROM_NAME=KAVON
+EMAIL_FROM_ADDRESS=your-verified-sender@example.com
+EMAIL_SUPPORT_ADDRESS=your-support-address@example.com
+FRONTEND_URL=https://your-storefront.example.com
+EMAIL_VERIFICATION_EXPIRY_HOURS=24
+```
+
+The sender configured by `EMAIL_FROM_ADDRESS` must be a verified Brevo sender.
+New verification links are single-use, expire after 24 hours, and can be resent
+after a 60-second cooldown. Existing customers are marked verified by an
+idempotent migration when the server connects to MongoDB.
+
+Run the verification regression suite from `server`:
+
+```bash
+npm test
+```
+
 ## Local development
 
 Install and run each application from its own directory:

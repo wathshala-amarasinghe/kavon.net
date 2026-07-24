@@ -49,6 +49,8 @@ export interface AuthUser {
     email: string;
     role: "user" | "admin";
     loyaltyPoints: number;
+    emailVerified: boolean;
+    emailVerifiedAt?: string;
     shippingAddress?: {
         address: string;
         city: string;
@@ -58,11 +60,18 @@ export interface AuthUser {
     };
 }
 
+export interface RegistrationResult {
+    message: string;
+    requiresEmailVerification: boolean;
+    emailSent: boolean;
+    user: AuthUser;
+}
+
 interface AuthContextType {
     user: AuthUser | null;
     loading: boolean;
     login: (credentials: Record<string, unknown>) => Promise<void>;
-    register: (userData: Record<string, unknown>) => Promise<void>;
+    register: (userData: Record<string, unknown>) => Promise<RegistrationResult>;
     logout: () => void;
     addOrderToHistory: (order: Order) => void;
     loyaltyPoints: number;
@@ -159,13 +168,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const register = async (userData: Record<string, unknown>) => {
         try {
-            const data = await apiRegister(userData);
-            setUser(data.user);
-            setLoyaltyPoints(Number(data.user.loyaltyPoints) || 0);
-            setOrderHistory([]);
-            setTransmissions([]);
-            localStorage.setItem('kavon-token-v1', data.token);
-            toast.success("IDENTITY_VERIFIED: WELCOME_INITIATED");
+            const data = await apiRegister(userData) as RegistrationResult;
+            toast.success(
+                data.emailSent
+                    ? "ACCOUNT_CREATED: CHECK_YOUR_EMAIL"
+                    : "ACCOUNT_CREATED: RESEND_EMAIL_REQUIRED"
+            );
+            return data;
         } catch (error: unknown) {
             toast.error(error instanceof Error ? error.message : "Registration failed");
             throw error;

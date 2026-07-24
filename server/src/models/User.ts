@@ -7,6 +7,11 @@ export interface IUser extends Document {
     password: string;
     role: 'user' | 'admin';
     loyaltyPoints: number;
+    emailVerified: boolean;
+    emailVerifiedAt?: Date;
+    emailVerificationTokenHash?: string;
+    emailVerificationExpiresAt?: Date;
+    verificationEmailLastSentAt?: Date;
     shippingAddress?: {
         address: string;
         city: string;
@@ -36,6 +41,13 @@ const UserSchema: Schema = new Schema(
         password: { type: String, required: true, minlength: 8, select: false },
         role: { type: String, enum: ['user', 'admin'], default: 'user' },
         loyaltyPoints: { type: Number, default: 0 },
+        // Accounts created before email verification was introduced are migrated
+        // to verified. New registrations explicitly set this field to false.
+        emailVerified: { type: Boolean, default: true },
+        emailVerifiedAt: { type: Date },
+        emailVerificationTokenHash: { type: String, select: false },
+        emailVerificationExpiresAt: { type: Date, select: false },
+        verificationEmailLastSentAt: { type: Date, select: false },
         shippingAddress: {
             address: { type: String },
             city: { type: String },

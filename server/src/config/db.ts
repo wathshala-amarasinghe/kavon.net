@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import User from "../models/User";
 
 type MongooseCache = {
     connection: typeof mongoose | null;
@@ -32,7 +33,11 @@ export const connectDB = async (): Promise<typeof mongoose> => {
                 serverSelectionTimeoutMS: 5000,
                 maxPoolSize: 10,
             })
-            .then((connection) => {
+            .then(async (connection) => {
+                await User.updateMany(
+                    { emailVerified: { $exists: false } },
+                    { $set: { emailVerified: true, emailVerifiedAt: new Date() } }
+                );
                 console.log(`MongoDB connected: ${connection.connection.host}`);
                 return connection;
             })

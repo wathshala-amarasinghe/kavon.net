@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
     "build": "tsc",
+    "test": "node --test -r ts-node/register src/utils/emailVerification.test.ts src/services/emailService.test.ts src/routes/authRoutes.test.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {

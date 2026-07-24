@@ -1,6 +1,18 @@
 import type { CatalogFacets } from '@/types/product';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+export class ApiError extends Error {
+  code?: string;
+  status: number;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
 const EMPTY_CATALOG_FACETS: CatalogFacets = {
   categories: [],
   genders: [],
@@ -13,11 +25,11 @@ async function apiError(response: Response, fallback: string): Promise<Error> {
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
     const data = await response.json().catch(() => null);
-    return new Error(data?.message || fallback);
+    return new ApiError(data?.message || fallback, response.status, data?.code);
   }
 
   const message = (await response.text().catch(() => '')).trim();
-  return new Error(message || fallback);
+  return new ApiError(message || fallback, response.status);
 }
 
 export async function getProducts(params: Record<string, unknown> = {}) {
@@ -107,6 +119,44 @@ export async function register(userData: Record<string, unknown>) {
   }
 
   return res.json();
+}
+
+export async function verifyEmail(token: string) {
+  const res = await fetch(`${API_URL}/auth/verify-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new ApiError(
+      data.message || 'Unable to verify email',
+      res.status,
+      data.code
+    );
+  }
+
+  return data;
+}
+
+export async function resendVerificationEmail(email: string) {
+  const res = await fetch(`${API_URL}/auth/resend-verification`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new ApiError(
+      data.message || 'Unable to request a verification email',
+      res.status,
+      data.code
+    );
+  }
+
+  return data;
 }
 
 export async function requestPasswordReset(email: string) {

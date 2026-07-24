@@ -1,20 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Mail, Lock, User, ArrowRight, ChevronRight, Fingerprint, Activity, AlertCircle } from 'lucide-react';
+import { Shield, Mail, Lock, User, ArrowRight, ChevronRight, Fingerprint, Activity, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getSafeRedirect } from '@/lib/storefront-runtime';
 
-export default function LoginPage() {
-    const [isLogin, setIsLogin] = useState(true);
+function LoginContent() {
+    const searchParams = useSearchParams();
+    const [isLogin, setIsLogin] = useState(searchParams.get('mode') !== 'register');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [name, setName] = useState('');
     const [error, setError] = useState('');
+    const verifiedNotice = searchParams.get('verified') === 'true';
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { login, register, user } = useAuth();
     const router = useRouter();
@@ -22,11 +24,11 @@ export default function LoginPage() {
     useEffect(() => {
         if (user) {
             const redirect = getSafeRedirect(
-                new URLSearchParams(window.location.search).get('redirect')
+                searchParams.get('redirect')
             );
             router.replace(redirect);
         }
-    }, [user, router]);
+    }, [user, router, searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -43,7 +45,17 @@ export default function LoginPage() {
                 if (password !== confirmPassword) {
                     throw new Error('Passwords do not match');
                 }
-                await register({ name, email, password });
+                const result = await register({ name, email, password });
+                sessionStorage.setItem('kavon-verification-email', result.user.email);
+                sessionStorage.setItem(
+                    'kavon-verification-last-sent-at',
+                    result.emailSent ? Date.now().toString() : '0'
+                );
+                sessionStorage.setItem(
+                    'kavon-verification-email-sent',
+                    result.emailSent ? 'true' : 'false'
+                );
+                router.push('/check-email');
             }
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Authentication failed');
@@ -98,6 +110,15 @@ export default function LoginPage() {
                         transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                         className="absolute left-0 right-0 h-[1px] bg-brand-volt/20 z-20 pointer-events-none" 
                     />
+
+                    {verifiedNotice && isLogin && (
+                        <div className="mb-6 flex items-start gap-3 border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-300">
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                            <p className="text-xs leading-relaxed">
+                                Your email has been verified. You can now sign in.
+                            </p>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <AnimatePresence mode="wait">
@@ -238,5 +259,19 @@ export default function LoginPage() {
                 </footer>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen bg-brand-black flex items-center justify-center font-mono text-brand-volt uppercase tracking-widest text-xs animate-pulse">
+                    Loading…
+                </div>
+            }
+        >
+            <LoginContent />
+        </Suspense>
     );
 }

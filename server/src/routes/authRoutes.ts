@@ -1,9 +1,17 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
+import { rateLimit } from 'express-rate-limit';
+import User, { IUser } from '../models/User';
 import { protect, admin, AuthRequest } from '../middleware/authMiddleware';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
+import {
+    createEmailVerificationChallenge,
+    getResendWaitSeconds,
+    getVerificationTokenStatus,
+    hashVerificationToken,
+} from '../utils/emailVerification';
+import { trySendVerificationEmail } from '../services/emailService';
 
 const router = express.Router();
 
@@ -20,6 +28,59 @@ const hashRecoveryValue = (value: string) =>
 
 const isValidEmail = (email: string) =>
     email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const normalizeEmail = (value: unknown) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+const createAuthToken = (userId: string) =>
+    jwt.sign({ id: userId }, getJwtSecret(), { expiresIn: '7d' });
+
+const toPublicUser = (user: IUser) => ({
+    id: user._id,
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    loyaltyPoints: user.loyaltyPoints,
+    emailVerified: user.emailVerified !== false,
+    emailVerifiedAt: user.emailVerifiedAt,
+    shippingAddress: user.shippingAddress,
+});
+
+const registrationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { message: 'Too many registration attempts. Please try again later.' },
+});
+
+const resendVerificationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: {
+        message: 'If an unverified account exists, a verification email will be sent shortly.',
+    },
+});
+
+const genericResendMessage =
+    'If an unverified account exists, a verification email will be sent shortly.';
+
+const genericExistingRegistrationResponse = (name: string, email: string) => ({
+    message:
+        'If this email is eligible, check the inbox for account verification instructions.',
+    requiresEmailVerification: true,
+    emailSent: false,
+    user: {
+        name,
+        email,
+        role: 'user',
+        loyaltyPoints: 0,
+        emailVerified: false,
+    },
+});
 
 const sendRecoveryCode = async (email: string, code: string) => {
     const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -42,65 +103,197 @@ const sendRecoveryCode = async (email: string, code: string) => {
 };
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', registrationLimiter, async (req: Request, res: Response) => {
+    const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+    const email = normalizeEmail(req.body.email);
+    const password = typeof req.body.password === 'string' ? req.body.password : '';
+
     try {
-        const { name, email, password } = req.body;
-
-        if (typeof name !== 'string' || !name.trim() || name.trim().length > 100) {
-            return res.status(400).json({ message: 'Name is required' });
+        if (name.length < 2 || name.length > 100) {
+            return res.status(400).json({ message: 'Please enter a valid name.' });
+        }
+        if (!isValidEmail(email)) {
+            return res.status(400).json({ message: 'Please enter a valid email address.' });
+        }
+        if (password.length < 8 || password.length > 128) {
+            return res.status(400).json({
+                message: 'Password must contain between 8 and 128 characters.',
+            });
         }
 
-        if (typeof email !== 'string' || !isValidEmail(email.trim().toLowerCase())) {
-            return res.status(400).json({ message: 'A valid email is required' });
-        }
-
-        if (typeof password !== 'string' || password.length < 8) {
-            return res.status(400).json({ message: 'Password must contain at least 8 characters' });
-        }
-
-        const normalizedEmail = email.toLowerCase().trim();
-        if (!isValidEmail(normalizedEmail)) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const existingUser = await User.findOne({ email: normalizedEmail });
+        const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(201).json(genericExistingRegistrationResponse(name, email));
         }
 
-        const user = new User({ name: name.trim(), email: normalizedEmail, password });
+        const challenge = createEmailVerificationChallenge();
+        const user = new User({
+            name,
+            email,
+            password,
+            emailVerified: false,
+            emailVerificationTokenHash: challenge.tokenHash,
+            emailVerificationExpiresAt: challenge.expiresAt,
+            verificationEmailLastSentAt: challenge.issuedAt,
+        });
         await user.save();
 
-        const token = jwt.sign({ id: user._id }, getJwtSecret(), { expiresIn: '7d' });
-
-        res.status(201).json({
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                loyaltyPoints: user.loyaltyPoints,
-                shippingAddress: user.shippingAddress,
-            }
+        const emailSent = await trySendVerificationEmail({
+            recipientEmail: user.email,
+            recipientName: user.name,
+            token: challenge.token,
         });
-    } catch (error: any) {
-        res.status(500).json({ message: error.message });
+        if (!emailSent) {
+            user.verificationEmailLastSentAt = undefined;
+            try {
+                await user.save();
+            } catch {
+                // The account and verification challenge are already stored.
+            }
+        }
+
+        return res.status(201).json({
+            message: emailSent
+                ? 'Account created. Check your email to verify your account.'
+                : 'Account created, but the verification email could not be sent. Please request a new email.',
+            requiresEmailVerification: true,
+            emailSent,
+            user: toPublicUser(user),
+        });
+    } catch (error: unknown) {
+        if (
+            typeof error === 'object' &&
+            error !== null &&
+            'code' in error &&
+            error.code === 11000
+        ) {
+            return res.status(201).json(genericExistingRegistrationResponse(name, email));
+        }
+        return res.status(500).json({ message: 'Unable to create account right now.' });
     }
 });
 
-// Login
-router.post('/login', async (req, res) => {
+// Verify a single-use email token.
+router.post('/verify-email', async (req: Request, res: Response) => {
     try {
-        const { email, password } = req.body;
+        const token = typeof req.body.token === 'string' ? req.body.token.trim() : '';
+        if (!/^[a-f0-9]{64}$/i.test(token)) {
+            return res.status(400).json({
+                code: 'VERIFICATION_INVALID',
+                message: 'This verification link is invalid.',
+            });
+        }
 
-        if (typeof email !== 'string' || typeof password !== 'string') {
+        const tokenHash = hashVerificationToken(token);
+        const user = await User.findOne({
+            emailVerificationTokenHash: tokenHash,
+        }).select(
+            '+emailVerificationTokenHash +emailVerificationExpiresAt +verificationEmailLastSentAt'
+        );
+
+        if (!user) {
+            return res.status(400).json({
+                code: 'VERIFICATION_INVALID',
+                message: 'This verification link is invalid or has already been used.',
+            });
+        }
+
+        const status = getVerificationTokenStatus({
+            suppliedToken: token,
+            storedTokenHash: user.emailVerificationTokenHash,
+            expiresAt: user.emailVerificationExpiresAt,
+            emailVerified: user.emailVerified,
+        });
+
+        if (status === 'expired') {
+            return res.status(410).json({
+                code: 'VERIFICATION_EXPIRED',
+                message: 'This verification link has expired.',
+            });
+        }
+        if (status !== 'valid') {
+            return res.status(400).json({
+                code: 'VERIFICATION_INVALID',
+                message: 'This verification link is invalid or has already been used.',
+            });
+        }
+
+        user.emailVerified = true;
+        user.emailVerifiedAt = new Date();
+        user.emailVerificationTokenHash = undefined;
+        user.emailVerificationExpiresAt = undefined;
+        user.verificationEmailLastSentAt = undefined;
+        await user.save();
+
+        return res.json({
+            message: 'Your email has been verified. You can now sign in.',
+        });
+    } catch {
+        return res.status(500).json({ message: 'Unable to verify email right now.' });
+    }
+});
+
+// Requesting a resend never reveals whether the email exists or is verified.
+router.post(
+    '/resend-verification',
+    resendVerificationLimiter,
+    async (req: Request, res: Response) => {
+        try {
+            const email = normalizeEmail(req.body.email);
+            if (!isValidEmail(email)) {
+                return res.json({ message: genericResendMessage });
+            }
+
+            const user = await User.findOne({ email }).select(
+                '+emailVerificationTokenHash +emailVerificationExpiresAt +verificationEmailLastSentAt'
+            );
+
+            if (!user || user.emailVerified !== false) {
+                return res.json({ message: genericResendMessage });
+            }
+
+            if (getResendWaitSeconds(user.verificationEmailLastSentAt) > 0) {
+                return res.json({ message: genericResendMessage });
+            }
+
+            const challenge = createEmailVerificationChallenge();
+            user.emailVerificationTokenHash = challenge.tokenHash;
+            user.emailVerificationExpiresAt = challenge.expiresAt;
+            user.verificationEmailLastSentAt = challenge.issuedAt;
+            await user.save();
+
+            const emailSent = await trySendVerificationEmail({
+                recipientEmail: user.email,
+                recipientName: user.name,
+                token: challenge.token,
+            });
+            if (!emailSent) {
+                user.verificationEmailLastSentAt = undefined;
+                try {
+                    await user.save();
+                } catch {
+                    // Preserve the generic response and allow later recovery.
+                }
+            }
+
+            return res.json({ message: genericResendMessage });
+        } catch {
+            return res.json({ message: genericResendMessage });
+        }
+    }
+);
+
+// Login
+router.post('/login', async (req: Request, res: Response) => {
+    try {
+        const email = normalizeEmail(req.body.email);
+        const password = typeof req.body.password === 'string' ? req.body.password : '';
+
+        if (!isValidEmail(email) || !password) {
             return res.status(400).json({ message: 'Email and password are required' });
         }
 
-        const normalizedEmail = email.toLowerCase().trim();
-
-        const user = await User.findOne({ email: normalizedEmail }).select('+password');
+        const user = await User.findOne({ email }).select('+password');
         if (!user) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
@@ -110,19 +303,8 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ id: user._id }, getJwtSecret(), { expiresIn: '7d' });
-
-        res.json({
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                loyaltyPoints: user.loyaltyPoints,
-                shippingAddress: user.shippingAddress,
-            }
-        });
+        const token = createAuthToken(user._id.toString());
+        return res.json({ token, user: toPublicUser(user) });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
@@ -245,83 +427,114 @@ router.post('/password/reset', async (req, res) => {
 });
 
 // Get Current User
-router.get('/me', protect, async (req: AuthRequest, res) => {
-    res.json(req.user);
+router.get('/me', protect, async (req: AuthRequest, res: Response) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized.' });
+    }
+    return res.json(toPublicUser(req.user));
 });
 
 // Update Profile
-router.put('/profile', protect, async (req: AuthRequest, res) => {
+router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
     try {
-        const user = await User.findById(req.user?._id);
-
-        if (user) {
-            const nextName = typeof req.body.name === 'string' ? req.body.name.trim() : user.name;
-            const nextEmail = typeof req.body.email === 'string'
-                ? req.body.email.trim().toLowerCase()
-                : user.email;
-
-            if (!nextName || !nextEmail) {
-                return res.status(400).json({ message: 'Name and email are required' });
-            }
-            if (nextName.length > 100 || !isValidEmail(nextEmail)) {
-                return res.status(400).json({ message: 'Enter a valid name and email address' });
-            }
-
-            if (req.body.password && (typeof req.body.password !== 'string' || req.body.password.length < 8)) {
-                return res.status(400).json({ message: 'Password must contain at least 8 characters' });
-            }
-
-            const duplicateEmail = await User.exists({ email: nextEmail, _id: { $ne: user._id } });
-            if (duplicateEmail) {
-                return res.status(409).json({ message: 'Email is already in use' });
-            }
-
-            user.name = nextName;
-            user.email = nextEmail;
-            
-            if (req.body.password) {
-                user.password = req.body.password;
-            }
-
-            if (req.body.shippingAddress) {
-                const shippingAddress = req.body.shippingAddress;
-                const addressValues = ['address', 'city', 'postalCode', 'phone']
-                    .map((field) => String(shippingAddress[field] || '').trim());
-                if (
-                    addressValues.some((value) => !value || value.length > 200) ||
-                    String(shippingAddress.country || '').trim().toLowerCase() !== 'sri lanka'
-                ) {
-                    return res.status(400).json({ message: 'Enter a complete Sri Lankan shipping address' });
-                }
-                user.shippingAddress = {
-                    address: addressValues[0],
-                    city: addressValues[1],
-                    postalCode: addressValues[2],
-                    country: 'Sri Lanka',
-                    phone: addressValues[3],
-                };
-            }
-
-            const updatedUser = await user.save();
-
-            const token = jwt.sign({ id: updatedUser._id }, getJwtSecret(), { expiresIn: '7d' });
-
-            res.json({
-                token,
-                user: {
-                    id: updatedUser._id,
-                    name: updatedUser.name,
-                    email: updatedUser.email,
-                    role: updatedUser.role,
-                    loyaltyPoints: updatedUser.loyaltyPoints,
-                    shippingAddress: updatedUser.shippingAddress
-                }
-            });
-        } else {
-            res.status(404).json({ message: 'User not found' });
+        const user = await User.findById(req.user?._id).select(
+            '+emailVerificationTokenHash +emailVerificationExpiresAt +verificationEmailLastSentAt'
+        );
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
         }
-    } catch (error: any) {
-        res.status(500).json({ message: error.message });
+
+        const nextName = typeof req.body.name === 'string' ? req.body.name.trim() : user.name;
+        const nextEmail = req.body.email !== undefined
+            ? normalizeEmail(req.body.email)
+            : user.email;
+
+        if (!nextName || nextName.length > 100 || !isValidEmail(nextEmail)) {
+            return res.status(400).json({ message: 'Enter a valid name and email address' });
+        }
+
+        if (
+            req.body.password !== undefined
+            && (typeof req.body.password !== 'string' || req.body.password.length < 8)
+        ) {
+            return res.status(400).json({ message: 'Password must contain at least 8 characters' });
+        }
+
+        const duplicateEmail = await User.exists({
+            email: nextEmail,
+            _id: { $ne: user._id },
+        });
+        if (duplicateEmail) {
+            return res.status(409).json({ message: 'Email is already in use' });
+        }
+
+        user.name = nextName;
+        let newEmailChallenge: ReturnType<typeof createEmailVerificationChallenge> | null = null;
+        if (nextEmail !== user.email) {
+            newEmailChallenge = createEmailVerificationChallenge();
+            user.email = nextEmail;
+            user.emailVerified = false;
+            user.emailVerifiedAt = undefined;
+            user.emailVerificationTokenHash = newEmailChallenge.tokenHash;
+            user.emailVerificationExpiresAt = newEmailChallenge.expiresAt;
+            user.verificationEmailLastSentAt = newEmailChallenge.issuedAt;
+        }
+
+        if (req.body.password) {
+            user.password = req.body.password;
+        }
+
+        if (req.body.shippingAddress) {
+            const shippingAddress = req.body.shippingAddress;
+            const addressValues = ['address', 'city', 'postalCode', 'phone']
+                .map((field) => String(shippingAddress[field] || '').trim());
+            if (
+                addressValues.some((value) => !value || value.length > 200) ||
+                String(shippingAddress.country || '').trim().toLowerCase() !== 'sri lanka'
+            ) {
+                return res.status(400).json({ message: 'Enter a complete Sri Lankan shipping address' });
+            }
+            user.shippingAddress = {
+                address: addressValues[0],
+                city: addressValues[1],
+                postalCode: addressValues[2],
+                country: 'Sri Lanka',
+                phone: addressValues[3],
+            };
+        }
+
+        const updatedUser = await user.save();
+
+        if (newEmailChallenge) {
+            const emailSent = await trySendVerificationEmail({
+                recipientEmail: updatedUser.email,
+                recipientName: updatedUser.name,
+                token: newEmailChallenge.token,
+            });
+            if (!emailSent) {
+                updatedUser.verificationEmailLastSentAt = undefined;
+                try {
+                    await updatedUser.save();
+                } catch {
+                    // The changed address remains unverified and can request a resend.
+                }
+            }
+        }
+
+        return res.json({
+            token: createAuthToken(updatedUser._id.toString()),
+            user: toPublicUser(updatedUser),
+        });
+    } catch (error: unknown) {
+        if (
+            typeof error === 'object' &&
+            error !== null &&
+            'code' in error &&
+            error.code === 11000
+        ) {
+            return res.status(409).json({ message: 'Email is already in use' });
+        }
+        return res.status(500).json({ message: 'Unable to update profile right now.' });
     }
 });
 

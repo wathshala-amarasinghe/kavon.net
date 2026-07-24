@@ -34,8 +34,17 @@ export default function RegisterPage() {
 
         setIsSubmitting(true);
         try {
-            await register({ name: name.trim(), email: email.trim(), password });
-            router.push('/dashboard');
+            const result = await register({ name: name.trim(), email: email.trim(), password });
+            sessionStorage.setItem('kavon-verification-email', result.user.email);
+            sessionStorage.setItem(
+                'kavon-verification-last-sent-at',
+                result.emailSent ? Date.now().toString() : '0'
+            );
+            sessionStorage.setItem(
+                'kavon-verification-email-sent',
+                result.emailSent ? 'true' : 'false'
+            );
+            router.push('/check-email');
         } catch (error) {
             setFormError(error instanceof Error ? error.message : 'Account creation failed.');
         } finally {

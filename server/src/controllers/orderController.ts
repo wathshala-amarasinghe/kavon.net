@@ -269,6 +269,12 @@ export const addOrderItems = async (req: AuthRequest, res: Response) => {
         await session.withTransaction(async () => {
             const user = await User.findById(req.user?._id).session(session);
             if (!user) throw new OrderValidationError('User not found', 404);
+            if (user.emailVerified === false) {
+                throw new OrderValidationError(
+                    'Please verify your email before completing your purchase.',
+                    403
+                );
+            }
 
             const productIds = [...new Set(orderItems.map((item: any) => String(item.product || '')))];
             if (productIds.some((id) => !mongoose.isValidObjectId(id))) {

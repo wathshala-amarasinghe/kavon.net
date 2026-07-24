@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCheckout } from "@/context/CheckoutContext";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MailWarning, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
 import { PaymentProtocol } from "@/components/checkout/PaymentProtocol";
@@ -13,6 +13,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useSettings } from "@/context/UserSettingsContext";
 import { calculateTacticalShipping } from "@/lib/logistics";
+import { resendVerificationEmail } from "@/lib/api";
 
 export default function CheckoutPage() {
     const {
@@ -28,6 +29,8 @@ export default function CheckoutPage() {
     const { location } = useSettings();
     const [step, setStep] = useState(1);
     const [isCompletingOrder, setIsCompletingOrder] = useState(false);
+    const [isResendingVerification, setIsResendingVerification] = useState(false);
+    const [verificationMessage, setVerificationMessage] = useState("");
     const [deliveryMethod, setDeliveryMethod] = useState({ 
         id: 'standard', 
         price: calculateTacticalShipping(subtotal, location) 
@@ -67,6 +70,65 @@ export default function CheckoutPage() {
     );
 
     if (!user || (!activeCheckoutItem && cart.length === 0)) return null;
+
+    if (user.emailVerified === false) {
+        const handleResendVerification = async () => {
+            setIsResendingVerification(true);
+            setVerificationMessage("");
+            try {
+                const response = await resendVerificationEmail(user.email);
+                setVerificationMessage(response.message);
+            } catch (error) {
+                setVerificationMessage(
+                    error instanceof Error
+                        ? error.message
+                        : "Unable to request a verification email right now."
+                );
+            } finally {
+                setIsResendingVerification(false);
+            }
+        };
+
+        return (
+            <div className="min-h-screen bg-brand-black px-6 pb-20 pt-44 text-white">
+                <div className="mx-auto max-w-xl border border-brand-volt/30 bg-brand-surface p-8 text-center shadow-2xl md:p-12">
+                    <MailWarning className="mx-auto mb-7 h-12 w-12 text-brand-volt" />
+                    <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.35em] text-brand-volt">
+                        Verification required
+                    </p>
+                    <h1 className="mb-5 text-3xl font-black uppercase italic">
+                        Verify before checkout
+                    </h1>
+                    <p className="mx-auto max-w-md text-sm leading-7 text-white/60">
+                        Please verify your email before completing your purchase. We will
+                        send the verification link to <span className="text-white">{user.email}</span>.
+                    </p>
+                    {verificationMessage && (
+                        <p className="mt-6 border border-white/10 bg-black/30 p-4 text-xs leading-6 text-white/60">
+                            {verificationMessage}
+                        </p>
+                    )}
+                    <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={isResendingVerification}
+                        className="mt-8 flex w-full items-center justify-center gap-3 bg-brand-volt px-5 py-5 text-xs font-black uppercase tracking-[0.2em] text-black disabled:opacity-50"
+                    >
+                        <RefreshCw
+                            className={`h-4 w-4 ${isResendingVerification ? "animate-spin" : ""}`}
+                        />
+                        {isResendingVerification ? "Sending" : "Resend verification email"}
+                    </button>
+                    <Link
+                        href="/cart"
+                        className="mt-4 block border border-white/10 px-5 py-4 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white"
+                    >
+                        Return to cart
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     const nextStep = () => setStep(prev => Math.min(prev + 1, 3));
     const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
