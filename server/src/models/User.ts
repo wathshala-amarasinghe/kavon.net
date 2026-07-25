@@ -27,6 +27,11 @@ export interface IUser extends Document {
     passwordResetExpires?: Date;
     passwordResetAttempts?: number;
     passwordResetTokenHash?: string;
+    marketingEmailConsent: boolean;
+    marketingConsentAt?: Date;
+    marketingConsentSource?: string;
+    emailUnsubscribedAt?: Date;
+    emailSuppressed: boolean;
 }
 
 const UserSchema: Schema = new Schema(
@@ -65,6 +70,11 @@ const UserSchema: Schema = new Schema(
         passwordResetExpires: { type: Date, select: false },
         passwordResetAttempts: { type: Number, default: 0, select: false },
         passwordResetTokenHash: { type: String, select: false },
+        marketingEmailConsent: { type: Boolean, default: false },
+        marketingConsentAt: { type: Date },
+        marketingConsentSource: { type: String },
+        emailUnsubscribedAt: { type: Date },
+        emailSuppressed: { type: Boolean, default: false },
     },
     { timestamps: true }
 );

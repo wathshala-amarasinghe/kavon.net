@@ -110,6 +110,7 @@ router.post('/register', registrationLimiter, async (req: Request, res: Response
     const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
     const email = normalizeEmail(req.body.email);
     const password = typeof req.body.password === 'string' ? req.body.password : '';
+    const marketingEmailConsent = req.body.marketingEmailConsent === true;
 
     try {
         if (name.length < 2 || name.length > 100) {
@@ -138,6 +139,9 @@ router.post('/register', registrationLimiter, async (req: Request, res: Response
             emailVerificationTokenHash: challenge.tokenHash,
             emailVerificationExpiresAt: challenge.expiresAt,
             verificationEmailLastSentAt: challenge.issuedAt,
+            marketingEmailConsent,
+            marketingConsentAt: marketingEmailConsent ? new Date() : undefined,
+            marketingConsentSource: marketingEmailConsent ? 'registration' : undefined,
         });
         await user.save();
 
@@ -626,6 +630,38 @@ router.put('/:id/role', protect, admin, async (req: AuthRequest, res) => {
         });
     } catch (error: any) {
         res.status(500).json({ message: error.message || 'Failed to update user role' });
+    }
+});
+
+// Unsubscribe
+router.post('/unsubscribe', async (req: Request, res: Response) => {
+    try {
+        const email = normalizeEmail(req.body.email);
+        const token = req.body.token; // HMAC token for security
+        
+        if (!isValidEmail(email)) {
+            return res.status(400).json({ message: 'Invalid email' });
+        }
+        
+        const expectedToken = crypto.createHmac('sha256', getJwtSecret()).update(`unsubscribe:${email}`).digest('hex');
+        if (token !== expectedToken) {
+            return res.status(401).json({ message: 'Invalid or expired unsubscribe token' });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            // Silently succeed for non-existent users
+            return res.json({ message: 'Unsubscribed successfully' });
+        }
+
+        user.marketingEmailConsent = false;
+        user.emailUnsubscribedAt = new Date();
+        user.emailSuppressed = true;
+        await user.save();
+
+        res.json({ message: 'Unsubscribed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to process unsubscribe request' });
     }
 });
 

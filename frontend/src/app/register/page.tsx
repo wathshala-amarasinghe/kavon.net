@@ -13,6 +13,7 @@ export default function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [marketingConsent, setMarketingConsent] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState('');
 
@@ -34,7 +35,7 @@ export default function RegisterPage() {
 
         setIsSubmitting(true);
         try {
-            const result = await register({ name: name.trim(), email: email.trim(), password });
+            const result = await register({ name: name.trim(), email: email.trim(), password, marketingEmailConsent: marketingConsent });
             sessionStorage.setItem('kavon-verification-email', result.user.email);
             sessionStorage.setItem(
                 'kavon-verification-last-sent-at',
@@ -130,6 +131,20 @@ export default function RegisterPage() {
                                 placeholder="••••••••"
                             />
                         </div>
+
+                        <div className="flex items-start gap-3 mt-4">
+                            <input 
+                                type="checkbox" 
+                                id="marketing"
+                                checked={marketingConsent}
+                                onChange={(e) => setMarketingConsent(e.target.checked)}
+                                className="mt-1 w-4 h-4 rounded-sm border border-white/20 bg-black/60 checked:bg-[#3fff75] checked:border-[#3fff75] appearance-none cursor-pointer relative checked:after:content-[''] checked:after:absolute checked:after:left-[5px] checked:after:top-[2px] checked:after:w-[4px] checked:after:h-[8px] checked:after:border-r-2 checked:after:border-b-2 checked:after:border-black checked:after:rotate-45"
+                            />
+                            <label htmlFor="marketing" className="text-[11px] font-mono text-white/60 leading-relaxed cursor-pointer select-none">
+                                Send me KAVON new-drop announcements, offers and exclusive updates.
+                            </label>
+                        </div>
+
                         {formError && (
                             <p role="alert" className="border border-red-500/30 bg-red-500/10 p-3 text-[11px] font-mono text-red-400 uppercase tracking-wide">
                                 {formError}

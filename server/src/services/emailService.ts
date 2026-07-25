@@ -75,15 +75,16 @@ interface EmailTemplateOptions {
     preheader?: string;
     contentHtml: string;
     showUnsubscribe?: boolean;
+    unsubscribeUrl?: string;
 }
 
-const generateKavonEmailHtml = ({ title, preheader, contentHtml, showUnsubscribe = false }: EmailTemplateOptions) => {
+const generateKavonEmailHtml = ({ title, preheader, contentHtml, showUnsubscribe = false, unsubscribeUrl }: EmailTemplateOptions) => {
     const cfg = getEmailConfig();
     const safeSupportEmail = escapeHtml(process.env.EMAIL_SUPPORT_ADDRESS?.trim() || cfg.fromAddress);
     const safePreheader = escapeHtml(preheader || title);
     
-    // Create Unsubscribe Link pointing to local server settings
-    const unsubscribeUrl = new URL('/dashboard?tab=settings', cfg.frontendUrl).toString();
+    // Create Unsubscribe Link pointing to local server settings or direct link
+    const finalUnsubscribeUrl = unsubscribeUrl || new URL('/dashboard?tab=settings', cfg.frontendUrl).toString();
 
     return `
 <!doctype html>
@@ -133,7 +134,7 @@ const generateKavonEmailHtml = ({ title, preheader, contentHtml, showUnsubscribe
         <tr>
           <td class="footer">
             <p class="footer-text">Need help? Contact <a href="mailto:${safeSupportEmail}" style="color:#df0715;">${safeSupportEmail}</a>.</p>
-            ${showUnsubscribe ? `<p class="footer-text" style="margin-top:10px;"><a href="${unsubscribeUrl}" style="color:#555555;text-decoration:underline;">Unsubscribe from marketing emails</a></p>` : ''}
+            ${showUnsubscribe ? `<p class="footer-text" style="margin-top:10px;"><a href="${finalUnsubscribeUrl}" style="color:#555555;text-decoration:underline;">Unsubscribe from marketing emails</a> | <a href="${new URL('/dashboard?tab=settings', cfg.frontendUrl).toString()}" style="color:#555555;text-decoration:underline;">Manage Preferences</a></p>` : ''}
             <p class="footer-text" style="margin-top:16px;">© ${new Date().getFullYear()} KAVON. All rights reserved.</p>
           </td>
         </tr>
@@ -417,4 +418,33 @@ export const sendTestEmail = async (adminEmail: string) => {
 // Legacy Brevo-compatible export (keeps other imports working temporarily)
 export const sendTransactionalEmail = async (_: unknown) => {
     throw new Error('sendTransactionalEmail: use specific template functions instead');
+};
+
+// ─── Marketing Email ────────────────────────────────────────────────────────
+
+export const sendMarketingEmail = async (user: any, subject: string, contentHtml: string, textContent: string) => {
+    if (!user.marketingEmailConsent || user.emailSuppressed) {
+        return; // Suppressed or opted out
+    }
+
+    const cfg = getEmailConfig();
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) throw new Error('JWT_SECRET is required for unsubscribe token');
+    
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const crypto = require('crypto');
+    const unsubscribeToken = crypto.createHmac('sha256', jwtSecret).update(`unsubscribe:${user.email}`).digest('hex');
+    
+    const unsubscribeUrl = new URL('/unsubscribe', cfg.frontendUrl);
+    unsubscribeUrl.searchParams.set('email', user.email);
+    unsubscribeUrl.searchParams.set('token', unsubscribeToken);
+
+    const html = generateKavonEmailHtml({
+        title: subject,
+        contentHtml,
+        showUnsubscribe: true,
+        unsubscribeUrl: unsubscribeUrl.toString()
+    });
+
+    await dispatchEmail(user.email, user.name, subject, html, textContent);
 };

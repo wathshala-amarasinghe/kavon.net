@@ -121,6 +121,21 @@ export async function register(userData: Record<string, unknown>) {
   return res.json();
 }
 
+export async function unsubscribeMarketing(email: string, token: string) {
+  const res = await fetch(`${API_URL}/auth/unsubscribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, token }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Unsubscribe failed');
+  }
+
+  return res.json();
+}
+
 export async function verifyEmail(token: string) {
   const res = await fetch(`${API_URL}/auth/verify-email`, {
     method: 'POST',
