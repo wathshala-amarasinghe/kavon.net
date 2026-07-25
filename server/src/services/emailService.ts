@@ -453,7 +453,7 @@ export const sendTransactionalEmail = async (_: unknown) => {
 
 // ─── Marketing Email ────────────────────────────────────────────────────────
 
-export const sendMarketingEmail = async (user: any, subject: string, contentHtml: string, textContent: string) => {
+export const sendMarketingEmail = async (user: any, subject: string, contentHtml: string, textContent: string, product?: any) => {
     if (!user.marketingEmailConsent || user.emailSuppressed) {
         return; // Suppressed or opted out
     }
@@ -470,9 +470,32 @@ export const sendMarketingEmail = async (user: any, subject: string, contentHtml
     unsubscribeUrl.searchParams.set('email', user.email);
     unsubscribeUrl.searchParams.set('token', unsubscribeToken);
 
+    let finalHtml = contentHtml;
+    
+    if (product) {
+        const productUrl = new URL(`/products/${product._id}`, cfg.frontendUrl).toString();
+        const mainImage = product.images?.[0] || '';
+        const priceDisplay = product.originalPrice && product.originalPrice > product.price
+            ? `<span style="color:#df0715;text-decoration:line-through;margin-right:8px;font-size:12px;">LKR ${product.originalPrice.toLocaleString()}</span> <span style="color:#brand-volt;font-weight:bold;font-size:16px;">LKR ${product.price.toLocaleString()}</span>`
+            : `<span style="color:#fff;font-weight:bold;font-size:16px;">LKR ${product.price.toLocaleString()}</span>`;
+            
+        finalHtml += `
+            <div style="background:#111;border:1px solid #222;padding:20px;margin-top:24px;text-align:center;">
+                <img src="${escapeHtml(mainImage)}" alt="${escapeHtml(product.name)}" style="max-width:100%;height:auto;margin-bottom:16px;" />
+                <h2 style="margin:0 0 8px;font-size:18px;text-transform:uppercase;font-style:italic;">${escapeHtml(product.name)}</h2>
+                <div style="margin-bottom:16px;">
+                    ${priceDisplay}
+                </div>
+                <div class="btn-container">
+                    <a href="${escapeHtml(productUrl)}" class="btn">VIEW PRODUCT INTEL</a>
+                </div>
+            </div>
+        `;
+    }
+
     const html = generateKavonEmailHtml({
         title: subject,
-        contentHtml,
+        contentHtml: finalHtml,
         showUnsubscribe: true,
         unsubscribeUrl: unsubscribeUrl.toString()
     });

@@ -72,7 +72,12 @@ export function ProductCard({ product, index, layout = "grid" }: { product: Cata
                         <Link href={`/products/${productId}`}>
                             <h3 className="text-white font-black text-2xl tracking-tighter uppercase italic hover:text-brand-volt transition-colors">{product.name}</h3>
                         </Link>
-                        <p className="text-brand-volt font-mono text-xl italic mt-2"><FormattedPrice amount={product.price} /></p>
+                        <div className="flex items-center gap-3 mt-2">
+                            {product.originalPrice && product.originalPrice > product.price && (
+                                <p className="text-red-500/80 font-mono text-sm line-through"><FormattedPrice amount={product.originalPrice} /></p>
+                            )}
+                            <p className="text-brand-volt font-mono text-xl italic"><FormattedPrice amount={product.price} /></p>
+                        </div>
                     </div>
 
                     <p className="text-white/60 text-sm font-body tracking-wider leading-relaxed max-w-xl">
@@ -150,8 +155,13 @@ export function ProductCard({ product, index, layout = "grid" }: { product: Cata
                 <Link href={`/products/${productId}`}>
                     <h3 className="text-white font-black text-[13px] tracking-[0.15em] uppercase hover:text-brand-volt transition-colors leading-tight">{product.name}</h3>
                 </Link>
-                <div className="flex justify-between items-center">
-                    <p className="text-brand-volt font-mono text-[14px] italic font-bold tracking-wider"><FormattedPrice amount={product.price} /></p>
+                <div className="flex justify-between items-center mt-1">
+                    <div className="flex items-center gap-2">
+                        {product.originalPrice && product.originalPrice > product.price && (
+                            <p className="text-red-500/80 font-mono text-[11px] line-through"><FormattedPrice amount={product.originalPrice} /></p>
+                        )}
+                        <p className="text-brand-volt font-mono text-[14px] italic font-bold tracking-wider"><FormattedPrice amount={product.price} /></p>
+                    </div>
                     <span className="text-[12px] font-mono text-white/20 uppercase tracking-widest">{product.category}</span>
                 </div>
             </div>

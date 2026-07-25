@@ -230,13 +230,13 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                 <span className="text-3xl md:text-4xl font-black italic text-brand-volt tracking-tighter tabular-nums shrink-0">
                                     <FormattedPrice amount={product.price} />
                                 </span>
-                                {product.oldPrice && (
+                                {product.originalPrice && product.originalPrice > product.price && (
                                     <div className="flex items-center gap-3 shrink-0">
                                         <span className="text-lg text-white/20 line-through font-mono tabular-nums">
-                                            <FormattedPrice amount={product.oldPrice} />
+                                            <FormattedPrice amount={product.originalPrice} />
                                         </span>
                                         <span className="bg-brand-volt/10 text-brand-volt text-[11px] font-bold px-2 py-0.5 rounded italic border border-brand-volt/20">
-                                            -{Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)}% OFF
+                                            -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
                                         </span>
                                     </div>
                                 )}

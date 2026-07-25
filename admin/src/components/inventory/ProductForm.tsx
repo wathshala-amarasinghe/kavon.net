@@ -19,6 +19,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
     const [formData, setFormData] = useState<any>({
         name: '',
         price: 0,
+        originalPrice: '',
         stock: 0,
         category: '',
         gender: 'Unisex',
@@ -57,6 +58,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
             setFormData({
                 name: '',
                 price: 0,
+                originalPrice: '',
                 stock: 0,
                 category: '',
                 gender: 'Unisex',
@@ -227,7 +229,7 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                                         placeholder="IDENTIFY_ASSET..."
                                     />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-4">
                                     <div className="space-y-2">
                                         <label className="font-mono text-[9px] text-white/40 uppercase tracking-widest">Base_Valuation (LKR)</label>
                                         <input 
@@ -238,6 +240,18 @@ export default function ProductForm({ isOpen, onClose, onSubmit, initialData, ti
                                             value={formData.price}
                                             onChange={(e) => setFormData({...formData, price: e.target.value === '' ? '' : Number(e.target.value)})}
                                             className="w-full bg-black/40 border border-white/5 p-4 font-mono text-xs focus:border-brand-volt outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="font-mono text-[9px] text-white/40 uppercase tracking-widest">Original_Price (Cut)</label>
+                                        <input 
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={formData.originalPrice}
+                                            onChange={(e) => setFormData({...formData, originalPrice: e.target.value === '' ? '' : Number(e.target.value)})}
+                                            className="w-full bg-black/40 border border-white/5 p-4 font-mono text-xs focus:border-brand-volt outline-none transition-all"
+                                            placeholder="Optional"
                                         />
                                     </div>
                                     <div className="space-y-2">

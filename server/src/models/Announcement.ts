@@ -6,6 +6,7 @@ export interface IAnnouncement extends Document {
     type: 'offer' | 'maintenance' | 'delivery' | 'security';
     targetAudience: 'all' | 'consented' | 'affected';
     channels: ('banner' | 'email')[];
+    linkedProductId?: mongoose.Types.ObjectId;
     startDate: Date;
     endDate?: Date;
     status: 'draft' | 'scheduled' | 'active' | 'completed' | 'cancelled';
@@ -30,6 +31,7 @@ const AnnouncementSchema: Schema = new Schema(
             type: String, 
             enum: ['banner', 'email']
         }],
+        linkedProductId: { type: Schema.Types.ObjectId, ref: 'Product' },
         startDate: { type: Date, required: true },
         endDate: { type: Date },
         status: { 

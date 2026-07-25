@@ -12,7 +12,9 @@ const BATCH_LIMIT = 50;
 // @access  Private/Admin
 export const getAnnouncements = async (req: AuthRequest, res: Response) => {
     try {
-        const announcements = await Announcement.find().sort({ createdAt: -1 });
+        const announcements = await Announcement.find()
+            .populate('linkedProductId', 'name images price originalPrice')
+            .sort({ createdAt: -1 });
         res.json(announcements);
     } catch (error: any) {
         res.status(500).json({ message: error.message || 'Server Error' });
@@ -42,7 +44,7 @@ export const getActiveBanners = async (req: Request, res: Response) => {
 // @access  Private/Admin
 export const createAnnouncement = async (req: AuthRequest, res: Response) => {
     try {
-        const { title, message, type, targetAudience, channels, startDate, endDate, status } = req.body;
+        const { title, message, type, targetAudience, channels, startDate, endDate, status, linkedProductId } = req.body;
         if (!title || !message || !type || !targetAudience || !channels || !startDate) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
@@ -55,6 +57,7 @@ export const createAnnouncement = async (req: AuthRequest, res: Response) => {
             channels,
             startDate,
             endDate,
+            linkedProductId: linkedProductId || undefined,
             status: status || 'draft'
         });
 
@@ -98,17 +101,23 @@ export const estimateRecipients = async (req: AuthRequest, res: Response) => {
 // @access  Private/Admin
 export const sendTestEmail = async (req: AuthRequest, res: Response) => {
     try {
-        const { title, message, type } = req.body;
+        const { title, message, type, linkedProductId } = req.body;
         const user = req.user;
 
         if (!user) return res.status(401).json({ message: 'Not authorized' });
 
         if (type === 'offer') {
+            let product = undefined;
+            if (linkedProductId) {
+                const mongoose = require('mongoose');
+                product = await mongoose.model('Product').findById(linkedProductId).select('name images price originalPrice');
+            }
             await sendMarketingEmail(
                 { ...user.toObject(), marketingEmailConsent: true, emailSuppressed: false }, 
                 title, 
                 message, 
-                message
+                message,
+                product
             );
         } else {
             await sendOperationalEmail(user.email, user.name, title, message, message);
@@ -125,7 +134,7 @@ export const sendTestEmail = async (req: AuthRequest, res: Response) => {
 // @access  Private/Admin
 export const dispatchAnnouncement = async (req: AuthRequest, res: Response) => {
     try {
-        const announcement = await Announcement.findById(req.params.id);
+        const announcement = await Announcement.findById(req.params.id).populate('linkedProductId', 'name images price originalPrice');
         if (!announcement) {
             return res.status(404).json({ message: 'Announcement not found' });
         }
@@ -153,7 +162,13 @@ export const dispatchAnnouncement = async (req: AuthRequest, res: Response) => {
                 for (const user of users) {
                     try {
                         if (announcement.type === 'offer') {
-                            await sendMarketingEmail(user, announcement.title, announcement.message, announcement.message);
+                            await sendMarketingEmail(
+                                user, 
+                                announcement.title, 
+                                announcement.message, 
+                                announcement.message,
+                                announcement.linkedProductId
+                            );
                         } else {
                             await sendOperationalEmail(user.email, user.name, announcement.title, announcement.message, announcement.message);
                         }

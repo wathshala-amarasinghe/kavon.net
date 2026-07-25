@@ -25,8 +25,10 @@ export default function CommunicationsPage() {
     const [channels, setChannels] = useState<string[]>(['banner']);
     const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 16));
     const [endDate, setEndDate] = useState('');
+    const [linkedProductId, setLinkedProductId] = useState('');
     
     const [estimatedCount, setEstimatedCount] = useState<number | null>(null);
+    const [products, setProducts] = useState<any[]>([]);
 
     const fetchAnnouncements = async () => {
         try {
@@ -42,6 +44,17 @@ export default function CommunicationsPage() {
 
     useEffect(() => {
         fetchAnnouncements();
+        // Fetch products for dropdown
+        const fetchProducts = async () => {
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/products`);
+                const data = await res.json();
+                if (data.products) setProducts(data.products);
+            } catch (e) {
+                console.error('Failed to load products');
+            }
+        };
+        fetchProducts();
     }, []);
 
     const toggleChannel = (c: string) => {
@@ -64,7 +77,7 @@ export default function CommunicationsPage() {
         try {
             setIsSubmitting(true);
             const token = localStorage.getItem('kavon-admin-token') || '';
-            await sendTestAnnouncement({ title, message, type }, token);
+            await sendTestAnnouncement({ title, message, type, linkedProductId: type === 'offer' && linkedProductId ? linkedProductId : undefined }, token);
             toast.success('Test email sent to your inbox');
         } catch (e: any) {
             toast.error(e.message || 'Test failed');
@@ -91,6 +104,7 @@ export default function CommunicationsPage() {
                 title, message, type, targetAudience, channels, 
                 startDate: new Date(startDate).toISOString(),
                 endDate: endDate ? new Date(endDate).toISOString() : undefined,
+                linkedProductId: type === 'offer' && linkedProductId ? linkedProductId : undefined,
                 status
             };
 
@@ -104,7 +118,7 @@ export default function CommunicationsPage() {
             }
             
             // Reset form
-            setTitle(''); setMessage(''); setChannels(['banner']); setEstimatedCount(null);
+            setTitle(''); setMessage(''); setChannels(['banner']); setEstimatedCount(null); setLinkedProductId('');
             fetchAnnouncements();
         } catch (e: any) {
             toast.error(e.message || 'Deployment failed');
@@ -195,6 +209,22 @@ export default function CommunicationsPage() {
                                 </select>
                             </div>
                         </div>
+
+                        {type === 'offer' && (
+                            <div>
+                                <label className="block text-[10px] font-mono uppercase text-white/50 mb-2">Linked Product (Embed in Email)</label>
+                                <select 
+                                    value={linkedProductId}
+                                    onChange={(e) => setLinkedProductId(e.target.value)}
+                                    className="w-full bg-black/50 border border-white/10 px-3 py-2 text-[12px] font-mono text-white outline-none"
+                                >
+                                    <option value="">None</option>
+                                    {products.map(p => (
+                                        <option key={p._id} value={p._id}>{p.name} - LKR {p.price}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         <div>
                             <label className="block text-[10px] font-mono uppercase text-white/50 mb-2">Channels</label>
@@ -319,7 +349,7 @@ export default function CommunicationsPage() {
                                             <span className="border border-white/10 px-2 py-0.5 bg-white/5">Status: {a.status}</span>
                                             {a.channels.includes('email') && (
                                                 <span className="border border-white/10 px-2 py-0.5 bg-white/5 flex items-center gap-1">
-                                                    <Mail size={10} /> {a.emailSentCount} Sent
+                                                    <Mail size={10} /> {a.emailSentCount || 0} Sent
                                                 </span>
                                             )}
                                             {a.channels.includes('banner') && (

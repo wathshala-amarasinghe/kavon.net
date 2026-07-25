@@ -4,7 +4,7 @@ export interface CatalogProduct {
     name: string;
     description?: string;
     price: number;
-    oldPrice?: number;
+    originalPrice?: number;
     category: string;
     gender?: "Men" | "Women" | "Child" | "Unisex";
     images: string[];
