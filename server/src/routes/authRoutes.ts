@@ -45,6 +45,9 @@ const toPublicUser = (user: IUser) => ({
     emailVerified: user.emailVerified !== false,
     emailVerifiedAt: user.emailVerifiedAt,
     shippingAddress: user.shippingAddress,
+    avatarUrl: user.avatarUrl,
+    avatarPublicId: user.avatarPublicId,
+    avatarUpdatedAt: user.avatarUpdatedAt,
 });
 
 const registrationLimiter = rateLimit({

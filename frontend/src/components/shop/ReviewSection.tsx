@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Star, X, Plus, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { getProductReviews, createReview } from '@/lib/api';
+import Avatar from '@/components/Avatar';
 import toast from 'react-hot-toast';
 
 interface Review {
@@ -14,6 +15,10 @@ interface Review {
     image?: string;
     verifiedPurchase?: boolean;
     createdAt: string;
+    user?: {
+        name: string;
+        avatarUrl?: string;
+    };
 }
 
 export function ReviewSection({ productId }: { productId: string }) {
@@ -99,7 +104,14 @@ export function ReviewSection({ productId }: { productId: string }) {
                 ) : reviews.map((rev) => (
                     <div key={rev._id} className="group p-8 bg-white/[0.02] border border-white/5 space-y-6 hover:border-white/20 transition-all">
                         <div className="flex justify-between items-center">
-                            <span className="font-mono text-[11px] text-brand-volt uppercase tracking-widest">{rev.userName}</span>
+                            <div className="flex items-center gap-3">
+                                <Avatar 
+                                    src={rev.user?.avatarUrl} 
+                                    name={rev.user?.name || rev.userName} 
+                                    size={32} 
+                                />
+                                <span className="font-mono text-[11px] text-brand-volt uppercase tracking-widest">{rev.userName}</span>
+                            </div>
                             <div className="flex gap-1">
                                 {[...Array(5)].map((_, i) => (
                                     <Star key={i} size={10} fill={i < rev.rating ? "#df0715" : "none"} className={i < rev.rating ? "text-brand-volt" : "text-white/10"} />

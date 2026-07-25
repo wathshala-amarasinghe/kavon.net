@@ -58,6 +58,8 @@ export interface AuthUser {
         country: string;
         phone: string;
     };
+    avatarUrl?: string;
+    avatarPublicId?: string;
 }
 
 export interface RegistrationResult {
@@ -79,6 +81,7 @@ interface AuthContextType {
     transmissions: Transmission[];
     deductPoints: (amount: number) => void;
     updateProfile: (userData: Record<string, unknown>) => Promise<void>;
+    updateAvatar: (avatarUrl?: string, avatarPublicId?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -230,11 +233,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const updateAvatar = (avatarUrl?: string, avatarPublicId?: string) => {
+        setUser(prev => prev ? { ...prev, avatarUrl, avatarPublicId } : null);
+    };
+
     return (
         <AuthContext.Provider value={{ 
             user, loading, login, register, logout, 
             addOrderToHistory, loyaltyPoints, orderHistory, transmissions,
-            deductPoints, updateProfile
+            deductPoints, updateProfile, updateAvatar
         }}>
             {children}
         </AuthContext.Provider>

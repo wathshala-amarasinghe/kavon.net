@@ -12,6 +12,9 @@ export interface IUser extends Document {
     emailVerificationTokenHash?: string;
     emailVerificationExpiresAt?: Date;
     verificationEmailLastSentAt?: Date;
+    avatarUrl?: string;
+    avatarPublicId?: string;
+    avatarUpdatedAt?: Date;
     shippingAddress?: {
         address: string;
         city: string;
@@ -48,6 +51,9 @@ const UserSchema: Schema = new Schema(
         emailVerificationTokenHash: { type: String, select: false },
         emailVerificationExpiresAt: { type: Date, select: false },
         verificationEmailLastSentAt: { type: Date, select: false },
+        avatarUrl: { type: String },
+        avatarPublicId: { type: String },
+        avatarUpdatedAt: { type: Date },
         shippingAddress: {
             address: { type: String },
             city: { type: String },

@@ -5,6 +5,7 @@ import { getUsers, deleteUser, updateUserRole } from '@/lib/api';
 import { Users, Shield, ShieldCheck, Trash2, Mail, Award, Search, MoreVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import Avatar from '@/components/Avatar';
 
 export default function PersonnelPage() {
     const [personnel, setPersonnel] = useState<any[]>([]);
@@ -126,9 +127,7 @@ export default function PersonnelPage() {
                             <tr key={user._id} className="hover:bg-white/[0.02] transition-colors group">
                                 <td className="p-6">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-brand-volt/10 border border-brand-volt/20 flex items-center justify-center text-brand-volt font-black italic">
-                                            {user.name.charAt(0)}
-                                        </div>
+                                        <Avatar src={user.avatarUrl} name={user.name} size={40} />
                                         <div className="space-y-1">
                                             <p className="font-bold text-xs uppercase tracking-wider">{user.name}</p>
                                             <p className="font-mono text-[11px] text-white/20 uppercase tracking-tighter">ID: {user._id.toUpperCase()}</p>

@@ -14,6 +14,7 @@ import { CatalogProduct } from '@/types/product';
 import { SearchDropdown } from './SearchDropdown';
 import { MiniCart } from './MiniCart';
 import { COLLECTION_NAV_LINKS } from '@/lib/catalog';
+import Avatar from '../Avatar';
 import {
     Search,
     ShoppingBag,
@@ -241,7 +242,10 @@ export function Navbar() {
                                     {user.name}
                                 </Link>
                             </div>
-                            <button onClick={handleLogout} className="text-white/60 hover:text-red-500 transition-all" aria-label="Logout">
+                            <Link href="/dashboard" aria-label="Go to dashboard">
+                                <Avatar src={user.avatarUrl} name={user.name} size={36} className="hidden lg:flex hover:ring-2 ring-brand-volt/50 transition-all" />
+                            </Link>
+                            <button onClick={handleLogout} className="text-white/60 hover:text-red-500 transition-all ml-2" aria-label="Logout">
                                 <LogOut size={20} strokeWidth={2.5} />
                             </button>
                         </div>

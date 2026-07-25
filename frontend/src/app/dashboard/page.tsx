@@ -18,9 +18,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
+import Avatar from '@/components/Avatar';
+import toast from 'react-hot-toast';
 
 export default function DashboardPage() {
-    const { user, loading, orderHistory, loyaltyPoints, transmissions, logout, updateProfile } = useAuth();
+    const { user, loading, orderHistory, loyaltyPoints, transmissions, logout, updateProfile, updateAvatar } = useAuth();
     const { location } = useSettings();
     const [activeTab, setActiveTab] = useState<'history' | 'comms' | 'intel'>('history');
     const [isEditingAddress, setIsEditingAddress] = useState(false);
@@ -33,6 +35,7 @@ export default function DashboardPage() {
         country: 'Sri Lanka',
         phone: '',
     });
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -75,6 +78,92 @@ export default function DashboardPage() {
             setAddressError(error instanceof Error ? error.message : 'Address update failed.');
         } finally {
             setIsSavingAddress(false);
+        }
+    };
+
+    const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error('File too large. Maximum size is 2MB.');
+            return;
+        }
+
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            toast.error('Invalid file type. Only JPG, PNG, and WebP are allowed.');
+            return;
+        }
+
+        setIsUploadingAvatar(true);
+        try {
+            const token = localStorage.getItem('kavon-token-v1');
+            
+            // 1. Get Signature
+            const sigRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/avatar/signature`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!sigRes.ok) throw new Error('Failed to obtain upload signature');
+            const { signature, timestamp, folder, cloudName, apiKey } = await sigRes.json();
+
+            // 2. Upload to Cloudinary
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('api_key', apiKey);
+            formData.append('timestamp', timestamp);
+            formData.append('signature', signature);
+            formData.append('folder', folder);
+
+            const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            if (!uploadRes.ok) throw new Error('Failed to upload image to Cloudinary');
+            const uploadData = await uploadRes.json();
+
+            // 3. Save to backend
+            const updateRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/avatar`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    avatarUrl: uploadData.secure_url,
+                    avatarPublicId: uploadData.public_id
+                })
+            });
+
+            if (!updateRes.ok) throw new Error('Failed to save avatar to profile');
+            
+            // 4. Update Context
+            updateAvatar(uploadData.secure_url, uploadData.public_id);
+            toast.success('Avatar updated successfully');
+        } catch (error: any) {
+            toast.error(error.message || 'Avatar upload failed');
+        } finally {
+            setIsUploadingAvatar(false);
+            event.target.value = '';
+        }
+    };
+
+    const handleAvatarRemove = async () => {
+        if (!confirm('Are you sure you want to remove your profile picture?')) return;
+        setIsUploadingAvatar(true);
+        try {
+            const token = localStorage.getItem('kavon-token-v1');
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/avatar`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Failed to remove avatar');
+            updateAvatar(undefined, undefined);
+            toast.success('Avatar removed successfully');
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to remove avatar');
+        } finally {
+            setIsUploadingAvatar(false);
         }
     };
 
@@ -299,6 +388,40 @@ export default function DashboardPage() {
                                     exit={{ opacity: 0, x: -20 }}
                                     className="grid grid-cols-1 md:grid-cols-2 gap-8"
                                 >
+                                    {/* PROFILE_AVATAR */}
+                                    <div className="bg-white/[0.02] border border-white/10 p-8 space-y-6 md:col-span-2">
+                                        <div className="flex items-center gap-6">
+                                            <Avatar src={user.avatarUrl} name={user.name} size={80} />
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <h3 className="text-lg font-black uppercase italic text-white tracking-[0.2em]">Profile Avatar</h3>
+                                                    <p className="text-[11px] font-mono text-white/50 uppercase tracking-[0.1em]">JPG, PNG, WebP up to 2MB. Crops to square.</p>
+                                                </div>
+                                                <div className="flex flex-wrap gap-3">
+                                                    <label className={`cursor-pointer px-4 py-2 bg-brand-volt text-black text-[11px] font-black uppercase tracking-[0.2em] transition-opacity ${isUploadingAvatar ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110'}`}>
+                                                        {isUploadingAvatar ? 'Uploading...' : 'Upload Picture'}
+                                                        <input 
+                                                            type="file" 
+                                                            accept="image/jpeg, image/png, image/webp" 
+                                                            className="hidden" 
+                                                            onChange={handleAvatarUpload}
+                                                            disabled={isUploadingAvatar}
+                                                        />
+                                                    </label>
+                                                    {user.avatarUrl && (
+                                                        <button 
+                                                            onClick={handleAvatarRemove}
+                                                            disabled={isUploadingAvatar}
+                                                            className="px-4 py-2 border border-white/20 text-white/70 hover:text-white hover:bg-white/5 text-[11px] font-mono uppercase tracking-[0.2em] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {/* ADDRESS_MANAGEMENT */}
                                     <div className="bg-white/[0.02] border border-white/10 p-8 space-y-6">
                                         <div className="flex items-center justify-between">

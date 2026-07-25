@@ -16,6 +16,7 @@ import uploadRoutes from "./routes/uploadRoutes";
 import campaignRoutes from "./routes/campaignRoutes";
 import couponRoutes from "./routes/couponRoutes";
 import communicationRoutes from "./routes/communicationRoutes";
+import avatarRoutes from "./routes/avatarRoutes";
 
 dotenv.config({ path: ".env.local" });
 
@@ -146,6 +147,7 @@ app.use("/api/settings", requireDatabase, settingsRoutes);
 app.use("/api/campaigns", requireDatabase, campaignRoutes);
 app.use("/api/coupons", requireDatabase, couponRoutes);
 app.use("/api/communications", requireDatabase, communicationRoutes);
+app.use("/api/users/avatar", requireDatabase, avatarRoutes);
 
 app.get("/", (_req, res) => {
     res.send("KAVON_API: SYSTEM_ACTIVE");

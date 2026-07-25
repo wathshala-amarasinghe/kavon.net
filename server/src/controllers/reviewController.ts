@@ -10,8 +10,9 @@ import mongoose from 'mongoose';
 export const getFeaturedReviews = async (_req: Request, res: Response) => {
     try {
         const reviews = await Review.find({ verifiedPurchase: true })
-            .select('userName rating comment image product createdAt verifiedPurchase')
+            .select('userName rating comment image product createdAt verifiedPurchase user')
             .populate('product', 'name images')
+            .populate('user', 'name avatarUrl')
             .sort({ createdAt: -1 })
             .limit(6);
         res.json(reviews);
@@ -27,7 +28,9 @@ export const getProductReviews = async (req: Request, res: Response) => {
         if (!mongoose.isValidObjectId(req.params.productId)) {
             return res.status(400).json({ message: 'Invalid product ID' });
         }
-        const reviews = await Review.find({ product: req.params.productId }).sort({ createdAt: -1 });
+        const reviews = await Review.find({ product: req.params.productId })
+            .populate('user', 'name avatarUrl')
+            .sort({ createdAt: -1 });
         res.json(reviews);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
