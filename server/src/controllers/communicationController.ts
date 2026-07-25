@@ -1,120 +1,196 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import User from '../models/User';
-import {
-    sendNewOfferEmail,
-    sendMaintenanceAnnouncementEmail,
-    sendSecurityAlertEmail,
-    sendTestEmail
-} from '../services/emailService';
+import Announcement from '../models/Announcement';
+import { sendMarketingEmail, sendOperationalEmail } from '../services/emailService';
 
-// To prevent hitting Gmail's strict SMTP limits during testing, we limit mass emails to 50 users for now.
+// To prevent hitting strict SMTP limits during testing, we limit mass emails
 const BATCH_LIMIT = 50;
 
-// @desc    Send Marketing Offer
-// @route   POST /api/communications/offer
+// @desc    Get all announcements
+// @route   GET /api/communications
 // @access  Private/Admin
-export const sendMarketingOffer = async (req: AuthRequest, res: Response) => {
+export const getAnnouncements = async (req: AuthRequest, res: Response) => {
     try {
-        const { title, detailsHtml, linkUrl } = req.body;
-        if (!title || !detailsHtml || !linkUrl) {
-            return res.status(400).json({ message: 'Title, details HTML, and link URL are required.' });
-        }
-
-        // Return early so the admin UI doesn't hang
-        res.status(202).json({ message: 'Marketing offer dispatch initiated in the background.' });
-
-        // Fire and forget logic
-        setImmediate(async () => {
-            try {
-                // Fetch verified users up to limit
-                const users = await User.find({ emailVerified: true }).select('name email').limit(BATCH_LIMIT);
-                console.log(`[COMMUNICATIONS] Sending Marketing Offer to ${users.length} users.`);
-                for (const user of users) {
-                    await sendNewOfferEmail(user.email, user.name, title, detailsHtml, linkUrl).catch(e => console.error(`[EMAIL ERROR] to ${user.email}`, e));
-                }
-                console.log(`[COMMUNICATIONS] Marketing Offer dispatch complete.`);
-            } catch (error) {
-                console.error('[COMMUNICATIONS ERROR] Marketing Offer:', error);
-            }
-        });
+        const announcements = await Announcement.find().sort({ createdAt: -1 });
+        res.json(announcements);
     } catch (error: any) {
         res.status(500).json({ message: error.message || 'Server Error' });
     }
 };
 
-// @desc    Send Maintenance Notice
-// @route   POST /api/communications/maintenance
-// @access  Private/Admin
-export const sendMaintenanceNotice = async (req: AuthRequest, res: Response) => {
+// @desc    Get active banners for public website
+// @route   GET /api/communications/active-banners
+// @access  Public
+export const getActiveBanners = async (req: Request, res: Response) => {
     try {
-        const { date, details } = req.body;
-        if (!date || !details) {
-            return res.status(400).json({ message: 'Maintenance date and details are required.' });
-        }
-
-        res.status(202).json({ message: 'Maintenance notice dispatch initiated in the background.' });
-
-        setImmediate(async () => {
-            try {
-                const users = await User.find({ emailVerified: true }).select('name email').limit(BATCH_LIMIT);
-                console.log(`[COMMUNICATIONS] Sending Maintenance Notice to ${users.length} users.`);
-                for (const user of users) {
-                    await sendMaintenanceAnnouncementEmail(user.email, user.name, date, details).catch(e => console.error(`[EMAIL ERROR] to ${user.email}`, e));
-                }
-                console.log(`[COMMUNICATIONS] Maintenance Notice dispatch complete.`);
-            } catch (error) {
-                console.error('[COMMUNICATIONS ERROR] Maintenance Notice:', error);
-            }
-        });
+        const now = new Date();
+        const banners = await Announcement.find({
+            status: 'active',
+            channels: 'banner',
+            startDate: { $lte: now },
+            $or: [{ endDate: { $exists: false } }, { endDate: null }, { endDate: { $gte: now } }]
+        }).sort({ createdAt: -1 });
+        res.json(banners);
     } catch (error: any) {
         res.status(500).json({ message: error.message || 'Server Error' });
     }
 };
 
-// @desc    Send Security Alert
-// @route   POST /api/communications/security
+// @desc    Create announcement
+// @route   POST /api/communications
 // @access  Private/Admin
-export const sendSecurityAlert = async (req: AuthRequest, res: Response) => {
+export const createAnnouncement = async (req: AuthRequest, res: Response) => {
     try {
-        const { message } = req.body;
-        if (!message) {
-            return res.status(400).json({ message: 'Security alert message is required.' });
+        const { title, message, type, targetAudience, channels, startDate, endDate, status } = req.body;
+        if (!title || !message || !type || !targetAudience || !channels || !startDate) {
+            return res.status(400).json({ message: 'Missing required fields' });
         }
 
-        res.status(202).json({ message: 'Security alert dispatch initiated in the background.' });
-
-        setImmediate(async () => {
-            try {
-                const users = await User.find({ emailVerified: true }).select('name email').limit(BATCH_LIMIT);
-                console.log(`[COMMUNICATIONS] Sending Security Alert to ${users.length} users.`);
-                for (const user of users) {
-                    await sendSecurityAlertEmail(user.email, user.name, message).catch(e => console.error(`[EMAIL ERROR] to ${user.email}`, e));
-                }
-                console.log(`[COMMUNICATIONS] Security Alert dispatch complete.`);
-            } catch (error) {
-                console.error('[COMMUNICATIONS ERROR] Security Alert:', error);
-            }
+        const announcement = new Announcement({
+            title,
+            message,
+            type,
+            targetAudience,
+            channels,
+            startDate,
+            endDate,
+            status: status || 'draft'
         });
+
+        await announcement.save();
+        res.status(201).json(announcement);
     } catch (error: any) {
         res.status(500).json({ message: error.message || 'Server Error' });
     }
 };
 
-// @desc    Send Test Email
-// @route   POST /api/communications/test
+// @desc    Estimate recipients
+// @route   POST /api/communications/estimate-recipients
 // @access  Private/Admin
-export const sendAdminTestEmail = async (req: AuthRequest, res: Response) => {
+export const estimateRecipients = async (req: AuthRequest, res: Response) => {
     try {
-        const adminUser = await User.findById(req.user?._id);
-        if (!adminUser) {
-            return res.status(404).json({ message: 'Admin user not found' });
+        const { type, targetAudience } = req.body;
+        
+        let query: any = { emailVerified: true };
+
+        if (type === 'offer') {
+            query.marketingEmailConsent = true;
+            query.emailSuppressed = { $ne: true };
         }
 
-        await sendTestEmail(adminUser.email);
-        res.json({ message: `Test email successfully sent to ${adminUser.email}` });
+        // Simulating 'affected' as all users for now since we don't track region/cohort.
+        if (targetAudience === 'consented') {
+            query.marketingEmailConsent = true;
+            query.emailSuppressed = { $ne: true };
+        }
+
+        const count = await User.countDocuments(query);
+        // Apply batch limit for safety
+        res.json({ count: Math.min(count, BATCH_LIMIT) });
     } catch (error: any) {
-        console.error('[COMMUNICATIONS ERROR] Admin Test Email:', error);
-        res.status(500).json({ message: error.message || 'Failed to send test email' });
+        res.status(500).json({ message: error.message || 'Server Error' });
+    }
+};
+
+// @desc    Send test email
+// @route   POST /api/communications/test-email
+// @access  Private/Admin
+export const sendTestEmail = async (req: AuthRequest, res: Response) => {
+    try {
+        const { title, message, type } = req.body;
+        const user = req.user;
+
+        if (!user) return res.status(401).json({ message: 'Not authorized' });
+
+        if (type === 'offer') {
+            await sendMarketingEmail(
+                { ...user.toObject(), marketingEmailConsent: true, emailSuppressed: false }, 
+                title, 
+                message, 
+                message
+            );
+        } else {
+            await sendOperationalEmail(user.email, user.name, title, message, message);
+        }
+
+        res.json({ message: 'Test email sent successfully' });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message || 'Server Error' });
+    }
+};
+
+// @desc    Dispatch announcement emails
+// @route   POST /api/communications/:id/dispatch
+// @access  Private/Admin
+export const dispatchAnnouncement = async (req: AuthRequest, res: Response) => {
+    try {
+        const announcement = await Announcement.findById(req.params.id);
+        if (!announcement) {
+            return res.status(404).json({ message: 'Announcement not found' });
+        }
+
+        if (!announcement.channels.includes('email')) {
+            return res.status(400).json({ message: 'Announcement is not configured for email channel' });
+        }
+
+        res.status(202).json({ message: 'Email dispatch initiated in the background' });
+
+        // Fire and forget
+        setImmediate(async () => {
+            try {
+                let query: any = { emailVerified: true };
+
+                if (announcement.type === 'offer' || announcement.targetAudience === 'consented') {
+                    query.marketingEmailConsent = true;
+                    query.emailSuppressed = { $ne: true };
+                }
+
+                const users = await User.find(query).select('name email marketingEmailConsent emailSuppressed').limit(BATCH_LIMIT);
+                console.log(`[COMMUNICATIONS] Sending announcement ${announcement.title} to ${users.length} users.`);
+                
+                let sentCount = 0;
+                for (const user of users) {
+                    try {
+                        if (announcement.type === 'offer') {
+                            await sendMarketingEmail(user, announcement.title, announcement.message, announcement.message);
+                        } else {
+                            await sendOperationalEmail(user.email, user.name, announcement.title, announcement.message, announcement.message);
+                        }
+                        sentCount++;
+                    } catch (e) {
+                        console.error(`[EMAIL ERROR] to ${user.email}`, e);
+                    }
+                }
+
+                announcement.emailSentCount += sentCount;
+                if (announcement.status === 'draft' || announcement.status === 'scheduled') {
+                    announcement.status = 'active';
+                }
+                await announcement.save();
+                console.log(`[COMMUNICATIONS] Announcement dispatch complete.`);
+            } catch (error) {
+                console.error('[COMMUNICATIONS ERROR] Dispatch:', error);
+            }
+        });
+
+    } catch (error: any) {
+        res.status(500).json({ message: error.message || 'Server Error' });
+    }
+};
+
+// @desc    Delete announcement
+// @route   DELETE /api/communications/:id
+// @access  Private/Admin
+export const deleteAnnouncement = async (req: AuthRequest, res: Response) => {
+    try {
+        const announcement = await Announcement.findById(req.params.id);
+        if (!announcement) {
+            return res.status(404).json({ message: 'Announcement not found' });
+        }
+        await announcement.deleteOne();
+        res.json({ message: 'Announcement removed' });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message || 'Server Error' });
     }
 };

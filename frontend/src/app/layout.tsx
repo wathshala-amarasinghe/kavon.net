@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { PromoBanner } from "@/components/layout/PromoBanner";
+import { AlertBanner } from "@/components/layout/AlertBanner";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { PageLoader } from "@/components/ui/PageLoader";
@@ -111,6 +112,7 @@ export default function RootLayout({
                         <PageLoader />
 
                       <PromoBanner />
+                      <AlertBanner />
                       <Navbar />
 
                       <MaintenanceGuard>

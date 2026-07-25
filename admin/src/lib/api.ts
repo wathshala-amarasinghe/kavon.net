@@ -343,3 +343,61 @@ export async function uploadImage(file: File, token: string) {
 
   return res.json();
 }
+
+// --- ANNOUNCEMENTS / COMMUNICATIONS ---
+
+export async function getAnnouncements(token: string) {
+  const res = await fetch(`${API_URL}/communications`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw await apiError(res, "Failed to fetch announcements");
+  return res.json();
+}
+
+export async function createAnnouncement(data: any, token: string) {
+  const res = await fetch(`${API_URL}/communications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw await apiError(res, "Failed to create announcement");
+  return res.json();
+}
+
+export async function estimateRecipients(data: { type: string, targetAudience: string }, token: string) {
+  const res = await fetch(`${API_URL}/communications/estimate-recipients`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw await apiError(res, "Failed to estimate recipients");
+  return res.json();
+}
+
+export async function sendTestAnnouncement(data: { title: string, message: string, type: string }, token: string) {
+  const res = await fetch(`${API_URL}/communications/test-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw await apiError(res, "Failed to send test email");
+  return res.json();
+}
+
+export async function dispatchAnnouncement(id: string, token: string) {
+  const res = await fetch(`${API_URL}/communications/${id}/dispatch`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw await apiError(res, "Failed to dispatch announcement");
+  return res.json();
+}
+
+export async function deleteAnnouncement(id: string, token: string) {
+  const res = await fetch(`${API_URL}/communications/${id}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw await apiError(res, "Failed to delete announcement");
+  return res.json();
+}

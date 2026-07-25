@@ -448,3 +448,16 @@ export const sendMarketingEmail = async (user: any, subject: string, contentHtml
 
     await dispatchEmail(user.email, user.name, subject, html, textContent);
 };
+
+// ─── Operational Email ──────────────────────────────────────────────────────
+
+export const sendOperationalEmail = async (email: string, name: string, subject: string, contentHtml: string, textContent: string) => {
+    // Operational emails bypass marketing suppression
+    const html = generateKavonEmailHtml({
+        title: subject,
+        contentHtml,
+        showUnsubscribe: false
+    });
+
+    await dispatchEmail(email, name, subject, html, textContent);
+};
