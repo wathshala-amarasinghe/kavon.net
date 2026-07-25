@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { label: 'LOYALTY', href: '/loyalty', icon: <Award size={18} /> },
   { label: 'PROMOTIONS', href: '/promotions', icon: <Tag size={18} /> },
   { label: 'COMMUNICATIONS', href: '/communications', icon: <Mail size={18} /> },
+  { label: 'EMAIL LOGS', href: '/operations/emails', icon: <Mail size={18} /> },
   { label: 'PERSONNEL', href: '/users', icon: <Users size={18} /> },
   { label: 'SETTINGS', href: '/settings', icon: <Settings size={18} /> },
 ];

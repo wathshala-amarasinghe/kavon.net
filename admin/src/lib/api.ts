@@ -401,3 +401,27 @@ export async function deleteAnnouncement(id: string, token: string) {
   if (!res.ok) throw await apiError(res, "Failed to delete announcement");
   return res.json();
 }
+
+// --- EMAIL LOGS / JOBS ---
+
+export async function getEmailJobs(token: string, params: { page?: number; limit?: number; status?: string } = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) query.append(key, value.toString());
+  });
+
+  const res = await fetch(`${API_URL}/email-jobs?${query.toString()}`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw await apiError(res, "Failed to fetch email jobs");
+  return res.json();
+}
+
+export async function retryEmailJob(id: string, token: string) {
+  const res = await fetch(`${API_URL}/email-jobs/${id}/retry`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!res.ok) throw await apiError(res, "Failed to retry email job");
+  return res.json();
+}

@@ -517,6 +517,17 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
             };
         }
 
+        if (req.body.marketingEmailConsent !== undefined) {
+            user.marketingEmailConsent = req.body.marketingEmailConsent === true;
+            if (user.marketingEmailConsent) {
+                user.emailSuppressed = false;
+                user.marketingConsentAt = new Date();
+                user.marketingConsentSource = 'profile';
+            } else {
+                user.emailUnsubscribedAt = new Date();
+            }
+        }
+
         const updatedUser = await user.save();
 
         if (newEmailChallenge) {

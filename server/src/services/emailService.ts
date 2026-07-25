@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode';
+import EmailJob from '../models/EmailJob';
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -147,17 +148,47 @@ const generateKavonEmailHtml = ({ title, preheader, contentHtml, showUnsubscribe
 
 // ─── Email Dispatcher ────────────────────────────────────────────────────────
 
-const dispatchEmail = async (toEmail: string, toName: string, subject: string, htmlContent: string, textContent: string) => {
+const dispatchEmail = async (toEmail: string, toName: string, subject: string, htmlContent: string, textContent: string, jobType: string = 'operational') => {
     const cfg = getEmailConfig();
     const transporter = getTransporter();
     
-    await transporter.sendMail({
-        from:    `"${cfg.fromName}" <${cfg.fromAddress}>`,
-        to:      `"${toName}" <${toEmail}>`,
+    // Create Email Job
+    const job = new EmailJob({
+        type: jobType,
+        recipient: toEmail,
+        recipientName: toName,
         subject,
-        html:    htmlContent,
-        text:    textContent,
+        htmlContent,
+        textContent,
+        status: 'Processing',
+        attempts: 1
     });
+    await job.save();
+
+    try {
+        const info = await transporter.sendMail({
+            from:    `"${cfg.fromName}" <${cfg.fromAddress}>`,
+            to:      `"${toName}" <${toEmail}>`,
+            subject,
+            html:    htmlContent,
+            text:    textContent,
+            // Custom header for Brevo webhook tracking
+            headers: {
+                'X-Mailin-custom': JSON.stringify({ emailJobId: job._id.toString() })
+            }
+        });
+
+        job.status = 'Sent';
+        job.sentAt = new Date();
+        job.providerMessageId = info.messageId || (info as any).id || undefined;
+        await job.save();
+        return info;
+    } catch (error: any) {
+        job.status = 'Failed';
+        job.lastError = error.message || 'Unknown SMTP Error';
+        await job.save();
+        throw error;
+    }
 };
 
 // ─── 1. Verification Email ───────────────────────────────────────────────────
@@ -446,7 +477,7 @@ export const sendMarketingEmail = async (user: any, subject: string, contentHtml
         unsubscribeUrl: unsubscribeUrl.toString()
     });
 
-    await dispatchEmail(user.email, user.name, subject, html, textContent);
+    await dispatchEmail(user.email, user.name, subject, html, textContent, 'marketing');
 };
 
 // ─── Operational Email ──────────────────────────────────────────────────────
@@ -459,5 +490,40 @@ export const sendOperationalEmail = async (email: string, name: string, subject:
         showUnsubscribe: false
     });
 
-    await dispatchEmail(email, name, subject, html, textContent);
+    await dispatchEmail(email, name, subject, html, textContent, 'announcement');
+};
+
+// ─── Retry Email Job ────────────────────────────────────────────────────────
+
+export const retryEmailJob = async (job: any) => {
+    const cfg = getEmailConfig();
+    const transporter = getTransporter();
+    
+    job.status = 'Processing';
+    job.attempts += 1;
+    await job.save();
+
+    try {
+        const info = await transporter.sendMail({
+            from:    `"${cfg.fromName}" <${cfg.fromAddress}>`,
+            to:      `"${job.recipientName}" <${job.recipient}>`,
+            subject: job.subject,
+            html:    job.htmlContent,
+            text:    job.textContent,
+            headers: {
+                'X-Mailin-custom': JSON.stringify({ emailJobId: job._id.toString() })
+            }
+        });
+
+        job.status = 'Sent';
+        job.sentAt = new Date();
+        job.providerMessageId = info.messageId || (info as any).id || undefined;
+        await job.save();
+        return info;
+    } catch (error: any) {
+        job.status = 'Failed';
+        job.lastError = error.message || 'Unknown SMTP Error';
+        await job.save();
+        throw error;
+    }
 };
