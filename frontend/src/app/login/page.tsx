@@ -15,6 +15,7 @@ function LoginContent() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [name, setName] = useState('');
+    const [marketingEmailConsent, setMarketingEmailConsent] = useState(false);
     const [error, setError] = useState('');
     const verifiedNotice = searchParams.get('verified') === 'true';
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +46,7 @@ function LoginContent() {
                 if (password !== confirmPassword) {
                     throw new Error('Passwords do not match');
                 }
-                const result = await register({ name, email, password });
+                const result = await register({ name, email, password, marketingEmailConsent });
                 sessionStorage.setItem('kavon-verification-email', result.user.email);
                 sessionStorage.setItem(
                     'kavon-verification-last-sent-at',
@@ -207,6 +208,26 @@ function LoginContent() {
                                         placeholder="••••••••••••"
                                     />
                                 </div>
+                            </div>
+                        )}
+
+                        {!isLogin && (
+                            <div className="flex items-start gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    role="checkbox"
+                                    aria-checked={marketingEmailConsent}
+                                    onClick={() => setMarketingEmailConsent(!marketingEmailConsent)}
+                                    className={`w-5 h-5 mt-0.5 shrink-0 border flex items-center justify-center transition-colors ${marketingEmailConsent ? 'bg-brand-volt border-brand-volt text-black' : 'border-white/20 bg-black/50'}`}
+                                >
+                                    {marketingEmailConsent && <CheckCircle2 size={14} />}
+                                </button>
+                                <label 
+                                    className="text-[11px] font-mono text-white/60 leading-relaxed cursor-pointer"
+                                    onClick={() => setMarketingEmailConsent(!marketingEmailConsent)}
+                                >
+                                    Send me KAVON new-drop announcements, offers and exclusive updates.
+                                </label>
                             </div>
                         )}
 

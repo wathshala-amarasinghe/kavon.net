@@ -30,7 +30,7 @@ export default function CommunicationsPage() {
 
     const fetchAnnouncements = async () => {
         try {
-            const token = localStorage.getItem('kavon_admin_token') || '';
+            const token = localStorage.getItem('kavon-admin-token') || '';
             const data = await getAnnouncements(token);
             setAnnouncements(data);
         } catch (e: any) {
@@ -50,7 +50,7 @@ export default function CommunicationsPage() {
 
     const handleCalculateRecipients = async () => {
         try {
-            const token = localStorage.getItem('kavon_admin_token') || '';
+            const token = localStorage.getItem('kavon-admin-token') || '';
             const data = await estimateRecipients({ type, targetAudience }, token);
             setEstimatedCount(data.count);
             toast.success(`Estimated recipients: ${data.count}`);
@@ -63,7 +63,7 @@ export default function CommunicationsPage() {
         if (!title || !message) return toast.error('Title and message required for test');
         try {
             setIsSubmitting(true);
-            const token = localStorage.getItem('kavon_admin_token') || '';
+            const token = localStorage.getItem('kavon-admin-token') || '';
             await sendTestAnnouncement({ title, message, type }, token);
             toast.success('Test email sent to your inbox');
         } catch (e: any) {
@@ -81,7 +81,7 @@ export default function CommunicationsPage() {
         
         setIsSubmitting(true);
         try {
-            const token = localStorage.getItem('kavon_admin_token') || '';
+            const token = localStorage.getItem('kavon-admin-token') || '';
             
             // Check if it's scheduled for future
             const isFuture = new Date(startDate) > new Date();
@@ -116,7 +116,7 @@ export default function CommunicationsPage() {
     const handleDelete = async (id: string) => {
         if (!confirm('Delete this announcement?')) return;
         try {
-            const token = localStorage.getItem('kavon_admin_token') || '';
+            const token = localStorage.getItem('kavon-admin-token') || '';
             await deleteAnnouncement(id, token);
             toast.success('Deleted');
             fetchAnnouncements();

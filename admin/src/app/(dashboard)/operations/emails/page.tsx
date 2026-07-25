@@ -18,7 +18,7 @@ export default function EmailLogsPage() {
     const fetchJobs = async (p = page) => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('kavon_admin_token') || '';
+            const token = localStorage.getItem('kavon-admin-token') || '';
             const data = await getEmailJobs(token, { page: p, limit: 20, status: statusFilter });
             setJobs(data.jobs);
             setTotalPages(data.pages);
@@ -37,7 +37,7 @@ export default function EmailLogsPage() {
     const handleRetry = async (id: string) => {
         setIsRetrying(id);
         try {
-            const token = localStorage.getItem('kavon_admin_token') || '';
+            const token = localStorage.getItem('kavon-admin-token') || '';
             await retryEmailJob(id, token);
             toast.success('Email re-queued and sent');
             fetchJobs();
