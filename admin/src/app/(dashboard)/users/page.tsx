@@ -111,6 +111,7 @@ export default function PersonnelPage() {
                         <tr>
                             <th className="p-6">Operator_ID</th>
                             <th className="p-6">Contact_Ciphers</th>
+                            <th className="p-6">Comms_Status</th>
                             <th className="p-6">Clearance_Level</th>
                             <th className="p-6">Division_Credits</th>
                             <th className="p-6 text-right">Security_Ops</th>
@@ -138,6 +139,23 @@ export default function PersonnelPage() {
                                     <div className="flex items-center gap-2 text-white/60">
                                         <Mail size={12} className="text-white/20" />
                                         <span className="font-mono text-xs lowercase">{user.email}</span>
+                                    </div>
+                                </td>
+                                <td className="p-6">
+                                    <div className="flex flex-col gap-1">
+                                        {user.emailSuppressed ? (
+                                            <span className="text-[10px] font-mono text-red-500 uppercase tracking-widest border border-red-500/20 bg-red-500/10 px-2 py-0.5 inline-block w-max">
+                                                Suppressed
+                                            </span>
+                                        ) : user.marketingEmailConsent ? (
+                                            <span className="text-[10px] font-mono text-brand-volt uppercase tracking-widest border border-brand-volt/20 bg-brand-volt/10 px-2 py-0.5 inline-block w-max">
+                                                Subscribed
+                                            </span>
+                                        ) : (
+                                            <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest border border-white/10 bg-white/5 px-2 py-0.5 inline-block w-max">
+                                                Opted_Out
+                                            </span>
+                                        )}
                                     </div>
                                 </td>
                                 <td className="p-6">

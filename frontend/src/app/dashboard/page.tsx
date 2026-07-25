@@ -422,6 +422,35 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
 
+                                    {/* NOTIFICATION_PREFERENCES */}
+                                    <div className="bg-white/[0.02] border border-white/10 p-8 space-y-6 md:col-span-2">
+                                        <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+                                            <Bell size={20} className="text-brand-volt" />
+                                            <h3 className="text-lg font-black uppercase italic text-white tracking-[0.2em]">Notification Preferences</h3>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 bg-black/40 border border-white/5">
+                                            <div className="space-y-1">
+                                                <div className="text-[12px] font-mono text-white uppercase tracking-[0.2em]">Marketing Emails</div>
+                                                <div className="text-[10px] font-mono text-white/50 tracking-[0.1em]">Receive offers, exclusive drops, and announcements.</div>
+                                            </div>
+                                            <button 
+                                                onClick={async () => {
+                                                    try {
+                                                        const newVal = !user.marketingEmailConsent;
+                                                        await updateProfile({ marketingEmailConsent: newVal });
+                                                        toast.success(newVal ? 'Subscribed to marketing emails' : 'Unsubscribed from marketing emails');
+                                                    } catch (e: any) {
+                                                        toast.error(e.message || 'Failed to update preferences');
+                                                    }
+                                                }}
+                                                className={`w-12 h-6 rounded-full p-1 transition-colors relative flex items-center ${user.marketingEmailConsent ? 'bg-brand-volt' : 'bg-white/20'}`}
+                                            >
+                                                <div className={`w-4 h-4 rounded-full bg-black transition-transform ${user.marketingEmailConsent ? 'translate-x-6' : 'translate-x-0'}`} />
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] font-mono text-white/40 italic">Note: You will always receive critical operational emails like order confirmations and security alerts regardless of this setting.</p>
+                                    </div>
+
                                     {/* ADDRESS_MANAGEMENT */}
                                     <div className="bg-white/[0.02] border border-white/10 p-8 space-y-6">
                                         <div className="flex items-center justify-between">

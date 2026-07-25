@@ -51,6 +51,9 @@ export interface AuthUser {
     loyaltyPoints: number;
     emailVerified: boolean;
     emailVerifiedAt?: string;
+    marketingEmailConsent?: boolean;
+    avatarUrl?: string;
+    avatarPublicId?: string;
     shippingAddress?: {
         address: string;
         city: string;
@@ -58,8 +61,6 @@ export interface AuthUser {
         country: string;
         phone: string;
     };
-    avatarUrl?: string;
-    avatarPublicId?: string;
 }
 
 export interface RegistrationResult {
