@@ -5,6 +5,13 @@ import Product from '../models/Product';
 import User from '../models/User';
 import Coupon from '../models/Coupon';
 import mongoose from 'mongoose';
+import {
+    sendOrderConfirmationEmail,
+    sendOrderStatusUpdatedEmail,
+    sendOrderShippedEmail,
+    sendOrderDeliveredEmail,
+    sendOrderCancelledRefundedEmail
+} from '../services/emailService';
 
 class OrderValidationError extends Error {
     statusCode: number;
@@ -196,6 +203,26 @@ const changeOrderStatus = async (req: AuthRequest, res: Response, requestedStatu
             order.status = status;
             updatedOrder = await order.save({ session });
         });
+
+        // Trigger email notification (fire-and-forget)
+        try {
+            if (updatedOrder) {
+                const user = await User.findById(updatedOrder.user);
+                if (user) {
+                    if (status === 'Delivered') {
+                        sendOrderDeliveredEmail(user.email, user.name, updatedOrder._id.toString()).catch(e => console.error('[EMAIL ERROR]', e));
+                    } else if (status === 'Cancelled' || status === 'Refunded') {
+                        sendOrderCancelledRefundedEmail(user.email, user.name, updatedOrder._id.toString(), updatedOrder.totalPrice).catch(e => console.error('[EMAIL ERROR]', e));
+                    } else if (status === 'Shipped') {
+                        sendOrderShippedEmail(user.email, user.name, updatedOrder._id.toString(), updatedOrder.trackingNumber || 'Pending tracking information').catch(e => console.error('[EMAIL ERROR]', e));
+                    } else {
+                        sendOrderStatusUpdatedEmail(user.email, user.name, updatedOrder._id.toString(), status).catch(e => console.error('[EMAIL ERROR]', e));
+                    }
+                }
+            }
+        } catch (emailError) {
+            console.error('Failed to send order status email:', emailError);
+        }
 
         res.json(updatedOrder);
     } catch (error: any) {
@@ -422,6 +449,23 @@ export const addOrderItems = async (req: AuthRequest, res: Response) => {
 
             createdOrder = order;
         });
+
+        // Trigger order confirmation email (fire-and-forget)
+        try {
+            if (createdOrder && req.user?._id) {
+                const user = await User.findById(req.user._id);
+                if (user) {
+                    sendOrderConfirmationEmail(
+                        user.email,
+                        user.name,
+                        createdOrder._id.toString(),
+                        createdOrder.totalPrice
+                    ).catch(e => console.error('[EMAIL ERROR]', e));
+                }
+            }
+        } catch (emailError) {
+            console.error('Failed to send order confirmation email:', emailError);
+        }
 
         res.status(201).json(createdOrder);
     } catch (error: any) {
