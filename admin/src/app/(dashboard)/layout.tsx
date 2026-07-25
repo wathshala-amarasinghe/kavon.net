@@ -16,7 +16,8 @@ import {
   X,
   Zap,
   Award,
-  Tag
+  Tag,
+  Mail
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdminSession } from '@/lib/api';
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { label: 'TACTICAL DROPS', href: '/drops', icon: <Zap size={18} /> },
   { label: 'LOYALTY', href: '/loyalty', icon: <Award size={18} /> },
   { label: 'PROMOTIONS', href: '/promotions', icon: <Tag size={18} /> },
+  { label: 'COMMUNICATIONS', href: '/communications', icon: <Mail size={18} /> },
   { label: 'PERSONNEL', href: '/users', icon: <Users size={18} /> },
   { label: 'SETTINGS', href: '/settings', icon: <Settings size={18} /> },
 ];
