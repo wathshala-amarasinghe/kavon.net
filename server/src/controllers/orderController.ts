@@ -454,13 +454,15 @@ export const addOrderItems = async (req: AuthRequest, res: Response) => {
         try {
             if (createdOrder && req.user?._id) {
                 const user = await User.findById(req.user._id);
-                if (user) {
+                if (user && !createdOrder.confirmationEmailSent) {
                     sendOrderConfirmationEmail(
                         user.email,
                         user.name,
-                        createdOrder._id.toString(),
-                        createdOrder.totalPrice
-                    ).catch(e => console.error('[EMAIL ERROR]', e));
+                        createdOrder
+                    ).then(async () => {
+                        createdOrder.confirmationEmailSent = true;
+                        await createdOrder.save();
+                    }).catch(e => console.error('[EMAIL ERROR]', e));
                 }
             }
         } catch (emailError) {

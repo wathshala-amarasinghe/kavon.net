@@ -41,6 +41,7 @@ export interface IOrder extends Document {
     paidAt?: Date;
     isDelivered: boolean;
     deliveredAt?: Date;
+    confirmationEmailSent?: boolean;
     status: 'Authorized' | 'Processing' | 'Shipped' | 'Out for Delivery' | 'Ready for Pickup' | 'Delivered' | 'Cancelled' | 'Refunded';
     loyaltyPointsEarned: number;
     loyaltyPointsUsed: number;

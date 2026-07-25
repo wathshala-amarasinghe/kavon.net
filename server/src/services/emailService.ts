@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import QRCode from 'qrcode';
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -231,21 +232,77 @@ export const sendVerificationSuccessfulEmail = async (recipientEmail: string, re
 
 // ─── 3. Order Confirmation ───────────────────────────────────────────────────
 
-export const sendOrderConfirmationEmail = async (email: string, name: string, orderId: string, total: number) => {
+export const sendOrderConfirmationEmail = async (email: string, name: string, order: any) => {
+    let qrCodeDataUrl = '';
+    try {
+        qrCodeDataUrl = await QRCode.toDataURL(order._id.toString(), {
+            color: { dark: '#df0715', light: '#050505' },
+            width: 150,
+            margin: 1
+        });
+    } catch (e) {
+        console.error('Failed to generate QR code for email', e);
+    }
+
+    const itemsHtml = order.orderItems.map((item: any) => `
+        <div style="display:flex;padding:16px 0;border-bottom:1px solid #1a1a1a;">
+            <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" style="width:70px;height:70px;object-fit:cover;border:1px solid #292929;background:#000;">
+            <div style="margin-left:16px;flex:1;">
+                <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#fff;">${escapeHtml(item.name)}</p>
+                <p style="margin:0 0 4px;font-size:12px;color:#999;">Size: ${escapeHtml(item.size)} | Color: ${escapeHtml(item.color)}</p>
+                <p style="margin:0;font-size:12px;color:#df0715;font-weight:700;">Qty: ${item.quantity} × $${Number(item.price).toFixed(2)}</p>
+            </div>
+        </div>
+    `).join('');
+
     const contentHtml = `
         <h1 style="margin:0 0 18px;font-size:24px;line-height:1.25;text-transform:uppercase;font-style:italic;font-weight:900;">Acquisition Confirmed</h1>
         <p style="margin:0 0 16px;color:#d6d6d6;font-size:15px;line-height:1.65;">Operative ${escapeHtml(name)},</p>
-        <p style="margin:0 0 24px;color:#d6d6d6;font-size:15px;line-height:1.65;">Your order <strong style="color:#fff;">#${escapeHtml(orderId)}</strong> has been received and is being processed.</p>
-        <div style="background:#111;padding:20px;border:1px solid #222;margin-bottom:24px;">
-            <p style="margin:0 0 10px;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:1px;">Total Authorized</p>
-            <p style="margin:0;font-size:20px;font-weight:700;color:#df0715;">$${total.toFixed(2)}</p>
+        <p style="margin:0 0 24px;color:#d6d6d6;font-size:15px;line-height:1.65;">Your order <strong style="color:#fff;">#${escapeHtml(order._id.toString())}</strong> has been successfully processed and is preparing for deployment.</p>
+        
+        <div style="background:#0d0d0d;border:1px solid #292929;padding:24px;margin-bottom:24px;">
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid #1a1a1a;padding-bottom:16px;margin-bottom:16px;">
+                <div style="width: 60%;">
+                    <p style="margin:0 0 8px;font-size:11px;color:#df0715;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Deployment Logistics</p>
+                    <p style="margin:0 0 4px;font-size:13px;color:#fff;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                    <p style="margin:0 0 4px;font-size:13px;color:#fff;"><strong>Method:</strong> ${escapeHtml(order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Credit Card')}</p>
+                    <p style="margin:0 0 4px;font-size:13px;color:#fff;"><strong>Status:</strong> <span style="color:#df0715;">${escapeHtml(order.status)}</span></p>
+                    <p style="margin:0 0 4px;font-size:13px;color:#fff;"><strong>Delivery:</strong> ${escapeHtml(order.deliveryMethod.toUpperCase())}</p>
+                </div>
+                <div style="text-align:right;">
+                    ${qrCodeDataUrl ? `<img src="${qrCodeDataUrl}" alt="Order QR" style="width:80px;height:80px;border:1px solid #df0715;padding:4px;background:#000;">` : ''}
+                </div>
+            </div>
+            
+            <p style="margin:0 0 8px;font-size:11px;color:#df0715;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Destination Coordinates</p>
+            <p style="margin:0 0 16px;font-size:13px;color:#ccc;line-height:1.5;">
+                ${escapeHtml(order.shippingAddress.address)}<br/>
+                ${escapeHtml(order.shippingAddress.city)}, ${escapeHtml(order.shippingAddress.postalCode)}<br/>
+                ${escapeHtml(order.shippingAddress.country)}
+            </p>
+
+            <p style="margin:0 0 8px;font-size:11px;color:#df0715;text-transform:uppercase;letter-spacing:1px;font-weight:700;">Acquired Assets</p>
+            <div style="margin-bottom:16px;border-top:1px solid #1a1a1a;">
+                ${itemsHtml}
+            </div>
+
+            <table width="100%" cellspacing="0" cellpadding="0" style="font-size:13px;color:#ccc;margin-bottom:8px;">
+                <tr><td style="padding:4px 0;">Subtotal</td><td align="right" style="color:#fff;">$${Number(order.itemsPrice).toFixed(2)}</td></tr>
+                <tr><td style="padding:4px 0;">Discount</td><td align="right" style="color:#df0715;">-$${Number(order.discountPrice).toFixed(2)}</td></tr>
+                <tr><td style="padding:4px 0;">Delivery Fee</td><td align="right" style="color:#fff;">$${Number(order.shippingPrice).toFixed(2)}</td></tr>
+            </table>
+            <div style="border-top:1px dashed #292929;padding-top:12px;display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:14px;color:#fff;font-weight:700;">TOTAL AUTHORIZED</span>
+                <span style="font-size:24px;color:#df0715;font-weight:900;font-style:italic;">$${Number(order.totalPrice).toFixed(2)}</span>
+            </div>
         </div>
+        
         <div class="btn-container">
-            <a href="${getEmailConfig().frontendUrl}/dashboard" class="btn">VIEW ORDER STATUS</a>
+            <a href="${getEmailConfig().frontendUrl}/order/${order._id.toString()}" class="btn">VIEW MY ORDER</a>
         </div>
     `;
-    const html = generateKavonEmailHtml({ title: 'Order Confirmation', preheader: `Order #${orderId} received`, contentHtml });
-    await dispatchEmail(email, name, `Order Received: #${orderId}`, html, `Order #${orderId} confirmed for $${total.toFixed(2)}`);
+    const html = generateKavonEmailHtml({ title: 'Order Confirmation', preheader: `Order #${order._id.toString()} received`, contentHtml });
+    await dispatchEmail(email, name, `Order Received: #${order._id.toString()}`, html, `Order #${order._id.toString()} confirmed for $${Number(order.totalPrice).toFixed(2)}`);
 };
 
 // ─── 4. Order Status Updated ─────────────────────────────────────────────────
