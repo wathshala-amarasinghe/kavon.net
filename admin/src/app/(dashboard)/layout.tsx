@@ -17,7 +17,8 @@ import {
   Zap,
   Award,
   Tag,
-  Mail
+  Mail,
+  QrCode
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdminSession } from '@/lib/api';
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { label: 'OVERVIEW', href: '/', icon: <LayoutDashboard size={18} /> },
   { label: 'INVENTORY', href: '/inventory', icon: <Package size={18} /> },
   { label: 'ORDERS', href: '/orders', icon: <ShoppingCart size={18} /> },
+  { label: 'OPERATIONS', href: '/operations', icon: <QrCode size={18} /> },
   { label: 'TACTICAL DROPS', href: '/drops', icon: <Zap size={18} /> },
   { label: 'LOYALTY', href: '/loyalty', icon: <Award size={18} /> },
   { label: 'PROMOTIONS', href: '/promotions', icon: <Tag size={18} /> },

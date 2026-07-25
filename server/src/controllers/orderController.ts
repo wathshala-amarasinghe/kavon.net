@@ -5,6 +5,7 @@ import Product from '../models/Product';
 import User from '../models/User';
 import Coupon from '../models/Coupon';
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 import {
     sendOrderConfirmationEmail,
     sendOrderStatusUpdatedEmail,
@@ -92,14 +93,15 @@ export const updateOrderToPaid = async (req: AuthRequest, res: Response) => {
 // @route   PUT /api/orders/:id/status
 // @access  Private/Admin
 const statusTransitions: Record<string, string[]> = {
-    Authorized: ['Processing', 'Cancelled'],
-    Processing: ['Shipped', 'Ready for Pickup', 'Cancelled'],
-    Shipped: ['Out for Delivery', 'Delivered', 'Cancelled'],
-    'Out for Delivery': ['Delivered', 'Cancelled'],
-    'Ready for Pickup': ['Delivered', 'Cancelled'],
-    Delivered: ['Refunded'],
+    'Order Placed': ['Confirmed', 'Cancelled'],
+    Confirmed: ['Processing', 'Cancelled'],
+    Processing: ['Packed', 'Cancelled'],
+    Packed: ['Shipped', 'Cancelled'],
+    Shipped: ['Out for Delivery', 'Delivered', 'Cancelled', 'Returned'],
+    'Out for Delivery': ['Delivered', 'Cancelled', 'Returned'],
+    Delivered: ['Returned'],
     Cancelled: [],
-    Refunded: [],
+    Returned: [],
 };
 
 const changeOrderStatus = async (req: AuthRequest, res: Response, requestedStatus?: string) => {
@@ -174,7 +176,7 @@ const changeOrderStatus = async (req: AuthRequest, res: Response, requestedStatu
                 }
             }
 
-            if (status === 'Refunded') {
+            if (status === 'Returned') {
                 for (const item of order.orderItems) {
                     const product: any = await Product.findById(item.product).session(session);
                     if (product) {
@@ -201,6 +203,14 @@ const changeOrderStatus = async (req: AuthRequest, res: Response, requestedStatu
             }
 
             order.status = status;
+            order.statusHistory.push({
+                status,
+                timestamp: new Date(),
+                note: req.body.note || undefined
+            });
+            if (req.body.courierReference !== undefined) order.courierReference = req.body.courierReference;
+            if (req.body.internalNotes !== undefined) order.internalNotes = req.body.internalNotes;
+            
             updatedOrder = await order.save({ session });
         });
 
@@ -211,10 +221,10 @@ const changeOrderStatus = async (req: AuthRequest, res: Response, requestedStatu
                 if (user) {
                     if (status === 'Delivered') {
                         sendOrderDeliveredEmail(user.email, user.name, updatedOrder._id.toString()).catch(e => console.error('[EMAIL ERROR]', e));
-                    } else if (status === 'Cancelled' || status === 'Refunded') {
+                    } else if (status === 'Cancelled' || status === 'Returned') {
                         sendOrderCancelledRefundedEmail(user.email, user.name, updatedOrder._id.toString(), updatedOrder.totalPrice).catch(e => console.error('[EMAIL ERROR]', e));
                     } else if (status === 'Shipped') {
-                        sendOrderShippedEmail(user.email, user.name, updatedOrder._id.toString(), updatedOrder.trackingNumber || 'Pending tracking information').catch(e => console.error('[EMAIL ERROR]', e));
+                        sendOrderShippedEmail(user.email, user.name, updatedOrder._id.toString(), updatedOrder.courierReference || updatedOrder.trackingNumber || 'Pending tracking information').catch(e => console.error('[EMAIL ERROR]', e));
                     } else {
                         sendOrderStatusUpdatedEmail(user.email, user.name, updatedOrder._id.toString(), status).catch(e => console.error('[EMAIL ERROR]', e));
                     }
@@ -444,7 +454,12 @@ export const addOrderItems = async (req: AuthRequest, res: Response) => {
                 totalPrice,
                 loyaltyPointsEarned: pointsEarned,
                 loyaltyPointsUsed: requestedPoints,
-                status: 'Authorized',
+                trackingId: `KAV-TRK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+                status: 'Order Placed',
+                statusHistory: [{
+                    status: 'Order Placed',
+                    timestamp: new Date()
+                }]
             }], { session });
 
             createdOrder = order;
@@ -574,6 +589,24 @@ export const updateOrderTracking = async (req: AuthRequest, res: Response) => {
             res.json(updatedOrder);
         } else {
             res.status(404).json({ message: 'Order not found' });
+        }
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get public tracking details
+// @route   GET /api/orders/track/:trackingId
+// @access  Public
+export const getPublicTrackingOrder = async (req: Request, res: Response) => {
+    try {
+        const order = await Order.findOne({ trackingId: req.params.trackingId })
+            .select('trackingId orderItems.name orderItems.size orderItems.color status statusHistory updatedAt');
+
+        if (order) {
+            res.json(order);
+        } else {
+            res.status(404).json({ message: 'Tracking information not found' });
         }
     } catch (error: any) {
         res.status(500).json({ message: error.message });

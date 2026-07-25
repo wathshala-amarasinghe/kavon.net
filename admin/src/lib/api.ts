@@ -120,14 +120,14 @@ export async function updateOrderToDelivered(id: string, token: string) {
   return res.json();
 }
 
-export async function updateOrderStatus(id: string, status: string, token: string) {
+export async function updateOrderStatus(id: string, updateData: any, token: string) {
   const res = await fetch(`${API_URL}/orders/${id}/status`, {
     method: 'PUT',
     headers: { 
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}` 
     },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(updateData),
   });
 
   if (!res.ok) throw await apiError(res, "Status update failed");

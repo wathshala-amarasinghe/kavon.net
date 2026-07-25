@@ -42,7 +42,15 @@ export interface IOrder extends Document {
     isDelivered: boolean;
     deliveredAt?: Date;
     confirmationEmailSent?: boolean;
-    status: 'Authorized' | 'Processing' | 'Shipped' | 'Out for Delivery' | 'Ready for Pickup' | 'Delivered' | 'Cancelled' | 'Refunded';
+    trackingId: string;
+    status: 'Order Placed' | 'Confirmed' | 'Processing' | 'Packed' | 'Shipped' | 'Out for Delivery' | 'Delivered' | 'Cancelled' | 'Returned';
+    statusHistory: Array<{
+        status: string;
+        timestamp: Date;
+        note?: string;
+    }>;
+    courierReference?: string;
+    internalNotes?: string;
     loyaltyPointsEarned: number;
     loyaltyPointsUsed: number;
     trackingNumber?: string;
@@ -143,12 +151,23 @@ const OrderSchema: Schema = new Schema(
         deliveredAt: {
             type: Date,
         },
-    status: {
-      type: String,
-      required: true,
-      enum: ['Authorized', 'Processing', 'Shipped', 'Out for Delivery', 'Ready for Pickup', 'Delivered', 'Cancelled', 'Refunded'],
-      default: 'Authorized'
-    },
+        confirmationEmailSent: { type: Boolean, default: false },
+        trackingId: { type: String, required: true, unique: true },
+        status: {
+            type: String,
+            required: true,
+            enum: ['Order Placed', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Returned'],
+            default: 'Order Placed',
+        },
+        statusHistory: [
+            {
+                status: { type: String, required: true },
+                timestamp: { type: Date, default: Date.now },
+                note: { type: String },
+            },
+        ],
+        courierReference: { type: String },
+        internalNotes: { type: String },
         loyaltyPointsEarned: {
             type: Number,
             default: 0

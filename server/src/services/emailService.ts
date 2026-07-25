@@ -235,7 +235,8 @@ export const sendVerificationSuccessfulEmail = async (recipientEmail: string, re
 export const sendOrderConfirmationEmail = async (email: string, name: string, order: any) => {
     let qrCodeDataUrl = '';
     try {
-        qrCodeDataUrl = await QRCode.toDataURL(order._id.toString(), {
+        const trackingUrl = `${getEmailConfig().frontendUrl}/track/${order.trackingId}`;
+        qrCodeDataUrl = await QRCode.toDataURL(trackingUrl, {
             color: { dark: '#df0715', light: '#050505' },
             width: 150,
             margin: 1

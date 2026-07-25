@@ -266,6 +266,15 @@ export async function getWishlist(token: string) {
   return res.json();
 }
 
+export async function getPublicTracking(trackingId: string) {
+  const res = await fetch(`${API_URL}/orders/track/${trackingId}`);
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || 'Tracking information not found');
+  }
+  return res.json();
+}
+
 export async function toggleWishlistApi(productId: string, token: string) {
   const res = await fetch(`${API_URL}/wishlist/toggle`, {
     method: 'POST',
