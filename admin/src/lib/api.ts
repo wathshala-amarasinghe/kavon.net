@@ -374,7 +374,7 @@ export async function estimateRecipients(data: { type: string, targetAudience: s
   return res.json();
 }
 
-export async function sendTestAnnouncement(data: { title: string, message: string, type: string }, token: string) {
+export async function sendTestAnnouncement(data: { title: string, message: string, type: string, linkedProductId?: string }, token: string) {
   const res = await fetch(`${API_URL}/communications/test-email`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },

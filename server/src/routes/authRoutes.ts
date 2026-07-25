@@ -311,7 +311,7 @@ router.post('/login', async (req: Request, res: Response) => {
         }
 
         if (user.emailVerified === false) {
-            return res.status(403).json({ 
+            return res.status(403).json({
                 message: 'Please verify your email address before signing in.',
                 requiresEmailVerification: true
             });
@@ -649,11 +649,11 @@ router.post('/unsubscribe', async (req: Request, res: Response) => {
     try {
         const email = normalizeEmail(req.body.email);
         const token = req.body.token; // HMAC token for security
-        
+
         if (!isValidEmail(email)) {
             return res.status(400).json({ message: 'Invalid email' });
         }
-        
+
         const expectedToken = crypto.createHmac('sha256', getJwtSecret()).update(`unsubscribe:${email}`).digest('hex');
         if (token !== expectedToken) {
             return res.status(401).json({ message: 'Invalid or expired unsubscribe token' });
