@@ -303,6 +303,13 @@ router.post('/login', async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
+        if (user.emailVerified === false) {
+            return res.status(403).json({ 
+                message: 'Please verify your email address before signing in.',
+                requiresEmailVerification: true
+            });
+        }
+
         const token = createAuthToken(user._id.toString());
         return res.json({ token, user: toPublicUser(user) });
     } catch (error: any) {

@@ -29,8 +29,8 @@ const closeServer = (server: Server) =>
 test('registration remains successful when the email provider is unavailable', async () => {
     const originalFindOne = User.findOne;
     const originalSave = User.prototype.save;
-    const originalApiKey = process.env.BREVO_API_KEY;
-    delete process.env.BREVO_API_KEY;
+    const originalEmailPassword = process.env.EMAIL_PASSWORD;
+    delete process.env.EMAIL_PASSWORD;
 
     (User.findOne as unknown as (query: unknown) => Promise<null>) = async () => null;
     User.prototype.save = async function () {
@@ -60,8 +60,8 @@ test('registration remains successful when the email provider is unavailable', a
         await closeServer(server);
         User.findOne = originalFindOne;
         User.prototype.save = originalSave;
-        if (originalApiKey === undefined) delete process.env.BREVO_API_KEY;
-        else process.env.BREVO_API_KEY = originalApiKey;
+        if (originalEmailPassword === undefined) delete process.env.EMAIL_PASSWORD;
+        else process.env.EMAIL_PASSWORD = originalEmailPassword;
     }
 });
 
