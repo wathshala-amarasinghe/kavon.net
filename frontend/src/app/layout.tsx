@@ -14,7 +14,11 @@ import { CheckoutProvider } from "@/context/CheckoutContext";
 import { AssistantPanel } from '@/components/ai/AssistantPanel';
 import { MaintenanceGuard } from "@/components/layout/MaintenanceGuard";
 
+<<<<<<< HEAD
 
+=======
+// NEW_LOGIC_IMPORTS
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 import { UserSettingsProvider } from "@/context/UserSettingsContext";
 import { SystemSettingsProvider } from "@/context/SystemSettingsContext";
 import { InventoryProvider } from "@/context/InventoryContext";

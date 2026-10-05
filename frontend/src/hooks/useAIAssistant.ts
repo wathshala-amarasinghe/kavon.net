@@ -10,7 +10,11 @@ export function useAIAssistant() {
     const analyzeAndSearch = async (input: string) => {
         const query = input.toLowerCase();
 
+<<<<<<< HEAD
         // 1. FAQ intent detection
+=======
+        // 1. INTENT DETECTION (FAQ)
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
         if (query.includes("shipping") || query.includes("delivery")) {
             return {
                 type: 'faq',
@@ -33,7 +37,11 @@ export function useAIAssistant() {
             };
         }
 
+<<<<<<< HEAD
         // 2. Extract color, category, and price filters from query
+=======
+        // 2. EXTRACTION PROTOCOL (Enhanced)
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
         const colors = ["black", "white", "grey", "gray", "volt", "crimson", "blue", "olive", "sand", "charcoal"];
         const categories = ["oversized", "hoodie", "pant", "streetwear", "limited", "shirt", "tee", "cargo", "jacket", "accessory"];
 
@@ -42,7 +50,11 @@ export function useAIAssistant() {
         const priceMatch = query.match(/(?:under|below|less than|max|budget)\s?(\d+)/);
         const maxPrice = priceMatch ? parseInt(priceMatch[1]) : null;
 
+<<<<<<< HEAD
         // 3. Filter against live catalog
+=======
+        // 3. FILTER ENGINE using the live catalog, including products created in Admin.
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
         const firstPage = await getProducts({ limit: 100, page: 1 });
         const remainingPageCount = Math.max(0, Number(firstPage.pages || 0) - 1);
         const remainingPages = remainingPageCount > 0
@@ -61,6 +73,12 @@ export function useAIAssistant() {
             const matchCategory = detectedCategory ? p.category.toLowerCase().includes(detectedCategory) : true;
             const matchPrice = maxPrice ? p.price <= maxPrice : true;
 
+<<<<<<< HEAD
+=======
+            // Search by name logic: 
+            // If we didn't detect a specific category, check if the query matches the product name or tags
+            // We exclude detected colors from the name search to avoid redundant matches
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
             const nameSearchTerm = query
                 .replace(detectedColor || "", "")
                 .replace(detectedCategory || "", "")
@@ -77,7 +95,11 @@ export function useAIAssistant() {
 
         return {
             type: 'search',
+<<<<<<< HEAD
             results: results.slice(0, 3),
+=======
+            results: results.slice(0, 3), // Limit to top 3 for chat UI
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
             found: results.length > 0
         };
     };

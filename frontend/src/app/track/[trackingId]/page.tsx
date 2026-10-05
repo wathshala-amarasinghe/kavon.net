@@ -6,11 +6,18 @@ import { getPublicTracking } from '@/lib/api';
 import { Shield, Package, Truck, Clock, CheckCircle2 } from 'lucide-react';
 import { TrackingTimeline, Stage } from '@/components/tracking/TrackingTimeline';
 import Link from 'next/link';
+<<<<<<< HEAD
 import type { StoreOrder } from '@/types/order';
 
 export default function PublicTrackingPage() {
     const { trackingId } = useParams();
     const [order, setOrder] = useState<StoreOrder | null>(null);
+=======
+
+export default function PublicTrackingPage() {
+    const { trackingId } = useParams();
+    const [order, setOrder] = useState<any>(null);
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -19,8 +26,13 @@ export default function PublicTrackingPage() {
             try {
                 const data = await getPublicTracking(trackingId as string);
                 setOrder(data);
+<<<<<<< HEAD
             } catch (error: unknown) {
                 setError(error instanceof Error ? error.message : 'Tracking ID Not Found');
+=======
+            } catch (err: any) {
+                setError(err.message || 'Tracking ID Not Found');
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
             } finally {
                 setLoading(false);
             }
@@ -60,7 +72,11 @@ export default function PublicTrackingPage() {
             id: '1', 
             label: 'Order Placed', 
             status: order.status === 'Order Placed' ? 'current' : 'completed', 
+<<<<<<< HEAD
             date: new Date(order.statusHistory?.find((entry) => entry.status === 'Order Placed' || entry.status === 'Confirmed')?.timestamp || order.updatedAt).toLocaleDateString(), 
+=======
+            date: new Date(order.statusHistory.find((s: any) => s.status === 'Order Placed' || s.status === 'Confirmed')?.timestamp || order.updatedAt).toLocaleDateString(), 
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
             icon: <CheckCircle2 size={18} /> 
         },
         { 
@@ -118,7 +134,11 @@ export default function PublicTrackingPage() {
                     <div className="bg-white/[0.02] border border-white/5 p-8 space-y-6">
                         <h2 className="text-[13px] font-mono text-white/60 uppercase tracking-widest">Acquired Assets</h2>
                         <div className="space-y-4">
+<<<<<<< HEAD
                             {order.orderItems.map((item, i: number) => (
+=======
+                            {order.orderItems.map((item: any, i: number) => (
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                                 <div key={i} className="flex gap-4 p-4 border border-white/5 bg-black/40 items-center justify-between">
                                     <div>
                                         <h3 className="text-sm font-bold text-white uppercase tracking-wider">{item.name}</h3>

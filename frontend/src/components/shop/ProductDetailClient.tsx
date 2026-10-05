@@ -315,6 +315,7 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                 })}
                             </div>
                         </div>
+<<<<<<< HEAD
 
                         {/* PRODUCT DESCRIPTION */}
                         {product.description && (
@@ -329,6 +330,8 @@ export default function ProductDetailClient({ product: initialProduct }: { produ
                                 </div>
                             </div>
                         )}
+=======
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                     </div>
 
                     {/* SIDEBAR LOGISTICS SECTION */}

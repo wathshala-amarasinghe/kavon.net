@@ -1,6 +1,10 @@
 "use client";
 
+<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
+=======
+import React, { useState, useEffect } from 'react';
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, RefreshCw, AlertTriangle, CheckCircle2, XCircle, Search, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -15,7 +19,11 @@ export default function EmailLogsPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [statusFilter, setStatusFilter] = useState('all');
 
+<<<<<<< HEAD
     const fetchJobs = useCallback(async (p = page) => {
+=======
+    const fetchJobs = async (p = page) => {
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
         setIsLoading(true);
         try {
             const token = localStorage.getItem('kavon-admin-token') || '';
@@ -28,11 +36,19 @@ export default function EmailLogsPage() {
         } finally {
             setIsLoading(false);
         }
+<<<<<<< HEAD
     }, [page, statusFilter]);
 
     useEffect(() => {
         fetchJobs(1);
     }, [fetchJobs]);
+=======
+    };
+
+    useEffect(() => {
+        fetchJobs(1);
+    }, [statusFilter]);
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 
     const handleRetry = async (id: string) => {
         setIsRetrying(id);

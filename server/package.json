@@ -4,10 +4,16 @@
   "description": "Backend server for KAVON e-commerce platform",
   "main": "dist/index.js",
   "scripts": {
+<<<<<<< HEAD
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "seed:admin": "tsx src/utils/initAdmin.ts",
     "test": "node --import tsx --test src/utils/emailVerification.test.ts src/services/emailService.test.ts src/routes/authRoutes.test.ts",
+=======
+    "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "test": "node --test -r ts-node/register src/utils/emailVerification.test.ts src/services/emailService.test.ts src/routes/authRoutes.test.ts",
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     "start": "node dist/index.js"
   },
   "dependencies": {
@@ -17,6 +23,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+<<<<<<< HEAD
     "express-rate-limit": "^8.7.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
@@ -24,6 +31,15 @@
     "morgan": "^1.12.1",
     "multer": "^2.4.0",
     "nodemailer": "^10.0.14",
+=======
+    "express-rate-limit": "^8.5.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.6.2",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
+    "nodemailer": "^9.0.3",
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
@@ -34,10 +50,18 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.96",
     "@types/morgan": "^1.9.10",
+<<<<<<< HEAD
     "@types/multer": "^2.3.0",
     "@types/node": "^25.6.2",
     "@types/qrcode": "^1.5.6",
     "tsx": "^4.23.15",
+=======
+    "@types/multer": "^2.1.0",
+    "@types/node": "^25.6.2",
+    "@types/qrcode": "^1.5.6",
+    "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     "typescript": "^5.7.3"
   }
 }

@@ -9,7 +9,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+<<<<<<< HEAD
  * Splits text into parts based on search query for highlighting
+=======
+ * Highlighting Engine: Splits text into parts based on search query
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
  */
 export function getHighlightedParts(text: string, query: string) {
     if (!query.trim()) return [{ text, isMatch: false }];
@@ -26,7 +30,11 @@ export function getHighlightedParts(text: string, query: string) {
 }
 
 /**
+<<<<<<< HEAD
  * Ensures absolute URLs for Next.js Image component
+=======
+ * Image URL Resolver: Ensures absolute URLs for Next.js Image component
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
  */
 export function getImageUrl(url: string | undefined | null) {
     if (!url) return "/logo/logo-1.png";
@@ -36,7 +44,11 @@ export function getImageUrl(url: string | undefined | null) {
     const backendUrl = (
         process.env.NEXT_PUBLIC_BACKEND_URL ||
         configuredApiUrl?.replace(/\/api\/?$/, '') ||
+<<<<<<< HEAD
         (process.env.NODE_ENV === 'development' ? "http://localhost:5000" : "")
+=======
+        "http://localhost:5000"
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     ).replace(/\/$/, '');
     
     if (url.startsWith('/uploads')) {

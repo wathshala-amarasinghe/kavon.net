@@ -19,12 +19,17 @@ export function CartItem({ item }: { item: CartItemType }) {
                 <div className="flex justify-between items-start">
                     <div>
                         <h4 className="font-black uppercase italic text-lg leading-tight">{item.name}</h4>
+<<<<<<< HEAD
                         <div className="flex flex-col gap-1 mt-2">
                             <p className="text-[11px] font-mono text-white/50 uppercase">Size: <span className="text-white/80">{item.size}</span></p>
                             {item.color && (
                                 <p className="text-[11px] font-mono text-white/50 uppercase">Color: <span className="text-white/80">{item.color}</span></p>
                             )}
                             <p className="text-[11px] font-mono text-white/50 uppercase">Unit Price: <span className="text-white font-bold"><FormattedPrice amount={item.price} /></span></p>
+=======
+                        <div className="text-[10px] font-mono text-white/40 uppercase mt-1 flex items-center gap-1">
+                            Size: {item.size} {item.color ? `// Color: ${item.color} ` : ''}{"//"} Price: <FormattedPrice amount={item.price} />
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                         </div>
                     </div>
                     <button onClick={() => removeFromCart(item.id, item.size, item.isBundle, item.color)} className="text-white/20 hover:text-red-500 transition-colors">

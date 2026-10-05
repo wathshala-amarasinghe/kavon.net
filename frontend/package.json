@@ -12,21 +12,38 @@
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@swc/helpers": "^0.5.23",
+<<<<<<< HEAD
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.475.0",
     "next": "^16.3.8",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+=======
+    "caniuse-lite": "^1.0.30001806",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^0.475.0",
+    "mongodb": "^7.2.0",
+    "mongoose": "^9.6.1",
+    "next": "^16.2.11",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     "react-hot-toast": "^2.6.0",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+<<<<<<< HEAD
     "@tailwindcss/postcss": "^4.3.3",
+=======
+    "@tailwindcss/postcss": "^4",
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
+<<<<<<< HEAD
     "eslint-config-next": "^16.3.8",
     "tailwindcss": "^4.3.3",
     "typescript": "^5"
@@ -34,5 +51,14 @@
   "overrides": {
     "postcss": "8.5.28",
     "sharp": "0.35.5"
+=======
+    "eslint-config-next": "^16.2.11",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "8.5.22",
+    "sharp": "0.35.3"
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
   }
 }

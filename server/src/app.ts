@@ -23,7 +23,10 @@ import emailJobRoutes from "./routes/emailJobRoutes";
 dotenv.config({ path: ".env.local" });
 
 const app = express();
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
@@ -56,7 +59,11 @@ app.use(
 );
 
 app.use(express.json());
+<<<<<<< HEAD
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+=======
+app.use(morgan("dev"));
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,

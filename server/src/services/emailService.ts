@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import nodemailer, { type Transporter } from 'nodemailer';
+=======
+import nodemailer from 'nodemailer';
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 import QRCode from 'qrcode';
 import EmailJob from '../models/EmailJob';
 
@@ -46,6 +50,7 @@ const getEmailConfig = () => {
 
 // ─── Transporter (cached per process) ─────────────────────────────────────────
 
+<<<<<<< HEAD
 let _transporter: Transporter | null = null;
 
 export const resetEmailTransporterForTests = () => {
@@ -55,6 +60,9 @@ export const resetEmailTransporterForTests = () => {
 export const setEmailTransporterForTests = (transporter: Transporter) => {
     _transporter = transporter;
 };
+=======
+let _transporter: nodemailer.Transporter | null = null;
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 
 const getTransporter = () => {
     // Re-create on each startup; cache within a running process for efficiency
@@ -223,7 +231,11 @@ export const sendVerificationEmail = async ({
         <p style="margin:0 0 24px;color:#d6d6d6;font-size:15px;line-height:1.65;">Welcome to the network. Secure your credentials by verifying this transmission endpoint.</p>
         
         <div class="btn-container">
+<<<<<<< HEAD
             <a href="${safeUrl}" class="btn">VERIFY MY EMAIL</a>
+=======
+            <a href="${safeUrl}" class="btn">VERIFY CONNECTION</a>
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
         </div>
         
         <p style="margin:0 0 10px;color:#9f9f9f;font-size:12px;line-height:1.55;">This secure link expires in 24 hours.</p>

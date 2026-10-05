@@ -20,7 +20,10 @@ import Link from 'next/link';
 import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import Avatar from '@/components/Avatar';
 import toast from 'react-hot-toast';
+<<<<<<< HEAD
 import { API_URL } from '@/lib/api';
+=======
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 
 export default function DashboardPage() {
     const { user, loading, orderHistory, loyaltyPoints, transmissions, logout, updateProfile, updateAvatar } = useAuth();
@@ -102,7 +105,11 @@ export default function DashboardPage() {
             const token = localStorage.getItem('kavon-token-v1');
             
             // 1. Get Signature
+<<<<<<< HEAD
             const sigRes = await fetch(`${API_URL}/users/avatar/signature`, {
+=======
+            const sigRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/avatar/signature`, {
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!sigRes.ok) throw new Error('Failed to obtain upload signature');
@@ -124,7 +131,11 @@ export default function DashboardPage() {
             const uploadData = await uploadRes.json();
 
             // 3. Save to backend
+<<<<<<< HEAD
             const updateRes = await fetch(`${API_URL}/users/avatar`, {
+=======
+            const updateRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/avatar`, {
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -141,8 +152,13 @@ export default function DashboardPage() {
             // 4. Update Context
             updateAvatar(uploadData.secure_url, uploadData.public_id);
             toast.success('Avatar updated successfully');
+<<<<<<< HEAD
         } catch (error: unknown) {
             toast.error(error instanceof Error ? error.message : 'Avatar upload failed');
+=======
+        } catch (error: any) {
+            toast.error(error.message || 'Avatar upload failed');
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
         } finally {
             setIsUploadingAvatar(false);
             event.target.value = '';
@@ -154,15 +170,24 @@ export default function DashboardPage() {
         setIsUploadingAvatar(true);
         try {
             const token = localStorage.getItem('kavon-token-v1');
+<<<<<<< HEAD
             const res = await fetch(`${API_URL}/users/avatar`, {
+=======
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/avatar`, {
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!res.ok) throw new Error('Failed to remove avatar');
             updateAvatar(undefined, undefined);
             toast.success('Avatar removed successfully');
+<<<<<<< HEAD
         } catch (error: unknown) {
             toast.error(error instanceof Error ? error.message : 'Failed to remove avatar');
+=======
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to remove avatar');
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
         } finally {
             setIsUploadingAvatar(false);
         }
@@ -440,8 +465,13 @@ export default function DashboardPage() {
                                                         const newVal = !user.marketingEmailConsent;
                                                         await updateProfile({ marketingEmailConsent: newVal });
                                                         toast.success(newVal ? 'Subscribed to marketing emails' : 'Unsubscribed from marketing emails');
+<<<<<<< HEAD
                                                     } catch (error: unknown) {
                                                         toast.error(error instanceof Error ? error.message : 'Failed to update preferences');
+=======
+                                                    } catch (e: any) {
+                                                        toast.error(e.message || 'Failed to update preferences');
+>>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                                                     }
                                                 }}
                                                 className={`w-12 h-6 rounded-full p-1 transition-colors relative flex items-center ${user.marketingEmailConsent ? 'bg-brand-volt' : 'bg-white/20'}`}
