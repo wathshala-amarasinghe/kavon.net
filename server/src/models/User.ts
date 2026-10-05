@@ -1,0 +1,95 @@
+import mongoose, { Schema, Document } from 'mongoose';
+import bcrypt from 'bcryptjs';
+
+export interface IUser extends Document {
+    name: string;
+    email: string;
+    password: string;
+    role: 'user' | 'admin';
+    loyaltyPoints: number;
+    emailVerified: boolean;
+    emailVerifiedAt?: Date;
+    emailVerificationTokenHash?: string;
+    emailVerificationExpiresAt?: Date;
+    verificationEmailLastSentAt?: Date;
+    avatarUrl?: string;
+    avatarPublicId?: string;
+    avatarUpdatedAt?: Date;
+    shippingAddress?: {
+        address: string;
+        city: string;
+        postalCode: string;
+        country: string;
+        phone: string;
+    };
+    comparePassword: (password: string) => Promise<boolean>;
+    passwordResetCodeHash?: string;
+    passwordResetExpires?: Date;
+    passwordResetAttempts?: number;
+    passwordResetTokenHash?: string;
+    marketingEmailConsent: boolean;
+    marketingConsentAt?: Date;
+    marketingConsentSource?: string;
+    emailUnsubscribedAt?: Date;
+    emailSuppressed: boolean;
+}
+
+const UserSchema: Schema = new Schema(
+    {
+        name: { type: String, required: true, trim: true, maxlength: 100 },
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+            lowercase: true,
+            trim: true,
+            maxlength: 254,
+            match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        },
+        password: { type: String, required: true, minlength: 8, select: false },
+        role: { type: String, enum: ['user', 'admin'], default: 'user' },
+        loyaltyPoints: { type: Number, default: 0 },
+        // Accounts created before email verification was introduced are migrated
+        // to verified. New registrations explicitly set this field to false.
+        emailVerified: { type: Boolean, default: true },
+        emailVerifiedAt: { type: Date },
+        emailVerificationTokenHash: { type: String, select: false },
+        emailVerificationExpiresAt: { type: Date, select: false },
+        verificationEmailLastSentAt: { type: Date, select: false },
+        avatarUrl: { type: String },
+        avatarPublicId: { type: String },
+        avatarUpdatedAt: { type: Date },
+        shippingAddress: {
+            address: { type: String },
+            city: { type: String },
+            postalCode: { type: String },
+            country: { type: String },
+            phone: { type: String },
+        },
+        passwordResetCodeHash: { type: String, select: false },
+        passwordResetExpires: { type: Date, select: false },
+        passwordResetAttempts: { type: Number, default: 0, select: false },
+        passwordResetTokenHash: { type: String, select: false },
+        marketingEmailConsent: { type: Boolean, default: false },
+        marketingConsentAt: { type: Date },
+        marketingConsentSource: { type: String },
+        emailUnsubscribedAt: { type: Date },
+        emailSuppressed: { type: Boolean, default: false },
+    },
+    { timestamps: true }
+);
+
+// Hash password before saving
+UserSchema.pre<IUser>('save', async function () {
+    if (!this.isModified('password') || !this.password) return;
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Compare password method
+UserSchema.methods.comparePassword = async function (password: string) {
+    if (!this.password) return false;
+    return await bcrypt.compare(password, this.password);
+};
+
+export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
