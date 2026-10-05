@@ -42,11 +42,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
                         setCurrency('USD');
                     }
                 })
-<<<<<<< HEAD
                 .catch(() => { /* geo-sync offline: default to LKR */ });
-=======
-                .catch(() => console.log("GEO_SYNC_OFFLINE // DEFAULTING LKR"));
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
         }
     }, []);
 

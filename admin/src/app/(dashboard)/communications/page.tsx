@@ -12,10 +12,7 @@ import {
     dispatchAnnouncement, 
     deleteAnnouncement 
 } from '@/lib/api';
-<<<<<<< HEAD
 import { API_URL } from '@/lib/api';
-=======
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 
 export default function CommunicationsPage() {
     const [announcements, setAnnouncements] = useState<any[]>([]);
@@ -51,11 +48,7 @@ export default function CommunicationsPage() {
         // Fetch products for dropdown
         const fetchProducts = async () => {
             try {
-<<<<<<< HEAD
                 const res = await fetch(`${API_URL}/products`);
-=======
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/products`);
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                 const data = await res.json();
                 if (data.products) setProducts(data.products);
             } catch (e) {

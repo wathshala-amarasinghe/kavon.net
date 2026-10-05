@@ -104,11 +104,7 @@ export function AssistantPanel() {
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                     placeholder="TYPE_QUERY..."
-<<<<<<< HEAD
                                     className="flex-1 bg-transparent p-3 text-[12px] font-mono outline-none text-white uppercase placeholder:text-gray-400"
-=======
-                                    className="flex-1 bg-transparent p-3 text-[12px] font-mono outline-none text-white uppercase placeholder:text-white/20"
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                                 />
                                 <button
                                     onClick={handleSend}

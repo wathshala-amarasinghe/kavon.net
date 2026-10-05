@@ -25,15 +25,9 @@ function UnsubscribeContent() {
             try {
                 await unsubscribeMarketing(email, token);
                 setStatus('success');
-<<<<<<< HEAD
             } catch (error: unknown) {
                 setStatus('error');
                 setErrorMessage(error instanceof Error ? error.message : 'Failed to terminate communications.');
-=======
-            } catch (err: any) {
-                setStatus('error');
-                setErrorMessage(err.message || 'Failed to terminate communications.');
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
             }
         };
 

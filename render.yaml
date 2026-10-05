@@ -12,11 +12,7 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
-<<<<<<< HEAD
         sync: false
-=======
-        generateValue: true
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
       - key: CORS_ORIGINS
         sync: false
       - key: CLOUDINARY_CLOUD_NAME

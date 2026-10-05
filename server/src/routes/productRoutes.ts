@@ -5,7 +5,6 @@ import { protect, admin } from "../middleware/authMiddleware";
 
 const router = express.Router();
 
-<<<<<<< HEAD
 interface ProductPayload {
     name?: string;
     description?: string;
@@ -33,39 +32,15 @@ const normalizeProductPayload = (body: ProductPayload) => {
         : [];
     const submittedColors = Array.isArray(body.colors)
         ? body.colors.slice(0, 20).map((color) => ({
-=======
-const normalizeProductPayload = (body: any) => {
-    const normalizedSizes = Array.isArray(body.sizes)
-        ? body.sizes.slice(0, 20).map((size: any) => ({
-            label: String(size.label || '').trim().toUpperCase(),
-            stock: Math.max(0, Number(size.stock) || 0),
-        })).filter((size: any) => size.label)
-        : [];
-    const sizes = Array.from(
-        new Map(normalizedSizes.map((size: any) => [size.label, size])).values()
-    );
-    const images = Array.isArray(body.images)
-        ? body.images.slice(0, 10).map((image: any) => String(image || '').trim()).filter(Boolean)
-        : [];
-    const submittedColors = Array.isArray(body.colors)
-        ? body.colors.slice(0, 20).map((color: any) => ({
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
             name: String(color.name || '').trim() || 'Default',
             hex: /^#[0-9a-fA-F]{6}$/.test(String(color.hex || '').trim())
                 ? String(color.hex).trim()
                 : '#000000',
             img: String(color.img || '').trim(),
-<<<<<<< HEAD
         })).filter((color) => color.name)
         : [];
     const uniqueColors = Array.from(
         new Map(submittedColors.map((color) => [color.name.toLowerCase(), color])).values()
-=======
-        })).filter((color: any) => color.name)
-        : [];
-    const uniqueColors = Array.from(
-        new Map(submittedColors.map((color: any) => [color.name.toLowerCase(), color])).values()
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     );
     const colors = uniqueColors.length > 0
         ? uniqueColors
@@ -80,11 +55,7 @@ const normalizeProductPayload = (body: any) => {
         images,
         colors,
         sizes,
-<<<<<<< HEAD
         stock: sizes.reduce((total: number, size) => total + size.stock, 0),
-=======
-        stock: sizes.reduce((total: number, size: any) => total + size.stock, 0),
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
         isNewDrop: body.isNewDrop !== false,
     };
 };

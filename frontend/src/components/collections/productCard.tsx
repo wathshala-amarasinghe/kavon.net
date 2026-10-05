@@ -62,10 +62,7 @@ export function ProductCard({ product, index, layout = "grid" }: { product: Cata
                         alt={product.name}
                         fill
                         sizes="160px"
-<<<<<<< HEAD
                         loading={index === 0 ? "eager" : "lazy"}
-=======
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                         className="object-cover transition-all duration-700 group-hover:scale-110" 
                     />
                 </div>
@@ -121,10 +118,7 @@ export function ProductCard({ product, index, layout = "grid" }: { product: Cata
                     alt={product.name}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-<<<<<<< HEAD
                     loading={index === 0 ? "eager" : "lazy"}
-=======
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                     className="object-cover transition-all duration-700 group-hover:scale-110" 
                 />
 

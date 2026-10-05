@@ -3,10 +3,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldAlert, RefreshCw } from 'lucide-react';
-<<<<<<< HEAD
 import { useRouter } from 'next/navigation';
-=======
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 
 export default function Error({
     error,
@@ -15,11 +12,8 @@ export default function Error({
     error: Error & { digest?: string };
     reset: () => void;
 }) {
-<<<<<<< HEAD
     const router = useRouter();
 
-=======
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     useEffect(() => {
         console.error('CRITICAL_CLIENT_CRASH:', error);
     }, [error]);
@@ -67,11 +61,7 @@ export default function Error({
                             <RefreshCw size={16} className="animate-spin-slow" /> REINITIALIZE_CLIENT
                         </button>
                         <button
-<<<<<<< HEAD
                             onClick={() => router.push('/')}
-=======
-                            onClick={() => window.location.href = '/'}
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                             className="flex items-center justify-center gap-4 border border-white/10 text-white/40 px-10 py-5 font-black uppercase text-xs tracking-[0.3em] hover:text-white transition-all"
                         >
                             ABORT_MISSION

@@ -8,21 +8,14 @@ import { FormattedPrice } from '@/components/ui/FormattedPrice';
 import Link from 'next/link';
 import { Shield, Package, ArrowLeft, Truck, Clock, CheckCircle2 } from 'lucide-react';
 import { TrackingTimeline, Stage } from '@/components/tracking/TrackingTimeline';
-<<<<<<< HEAD
 import type { StoreOrder } from '@/types/order';
-=======
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 
 export default function OrderDetailsPage() {
     const { id } = useParams();
     const router = useRouter();
     const { user, loading: authLoading } = useAuth();
     
-<<<<<<< HEAD
     const [order, setOrder] = useState<StoreOrder | null>(null);
-=======
-    const [order, setOrder] = useState<any>(null);
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -41,13 +34,8 @@ export default function OrderDetailsPage() {
                 
                 const data = await getOrderById(id as string, token);
                 setOrder(data);
-<<<<<<< HEAD
             } catch (error: unknown) {
                 setError(error instanceof Error ? error.message : 'Failed to load order data');
-=======
-            } catch (err: any) {
-                setError(err.message || 'Failed to load order data');
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
             } finally {
                 setLoading(false);
             }
@@ -147,11 +135,7 @@ export default function OrderDetailsPage() {
                         <div className="bg-white/[0.02] border border-white/5 p-8 space-y-6">
                             <h2 className="text-[13px] font-mono text-white/60 uppercase tracking-widest">Acquired Assets</h2>
                             <div className="space-y-4">
-<<<<<<< HEAD
                                 {order.orderItems.map((item, i: number) => (
-=======
-                                {order.orderItems.map((item: any, i: number) => (
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
                                     <div key={i} className="flex gap-4 p-4 border border-white/5 bg-black/40">
                                         <div className="w-20 h-24 bg-black flex-shrink-0 border border-white/10">
                                             <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-80" />

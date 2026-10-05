@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
-=======
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 
 async function apiError(response: Response, fallback: string): Promise<Error> {
   const contentType = response.headers.get("content-type") || "";

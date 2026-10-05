@@ -3,15 +3,11 @@ import assert from 'node:assert/strict';
 import {
     sendVerificationEmail,
     trySendVerificationEmail,
-<<<<<<< HEAD
     resetEmailTransporterForTests,
     setEmailTransporterForTests,
 } from './emailService';
 import EmailJob from '../models/EmailJob';
 import type { Transporter } from 'nodemailer';
-=======
-} from './emailService';
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 
 const withEmailEnvironment = async (run: () => Promise<void>) => {
     const previous = {
@@ -39,20 +35,12 @@ test('sends a branded verification email without exposing HTML input', async () 
     await withEmailEnvironment(async () => {
         let capturedOptions: Record<string, unknown> = {};
 
-<<<<<<< HEAD
         const originalSave = EmailJob.prototype.save;
         setEmailTransporterForTests({
-=======
-        // Stub the nodemailer transporter so no real SMTP call is made
-        const { default: nodemailer } = await import('nodemailer');
-        const originalCreateTransport = nodemailer.createTransport.bind(nodemailer);
-        (nodemailer as unknown as Record<string, unknown>).createTransport = () => ({
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
             sendMail: async (options: Record<string, unknown>) => {
                 capturedOptions = options;
                 return { messageId: 'test-id' };
             },
-<<<<<<< HEAD
         } as unknown as Transporter);
         EmailJob.prototype.save = (async () => undefined) as unknown as typeof EmailJob.prototype.save;
 
@@ -72,30 +60,11 @@ test('sends a branded verification email without exposing HTML input', async () 
             EmailJob.prototype.save = originalSave;
             resetEmailTransporterForTests();
         }
-=======
-        });
-
-        await sendVerificationEmail({
-            recipientEmail: 'customer@example.com',
-            recipientName: '<script>alert(1)</script>',
-            token: 'a'.repeat(64),
-        });
-
-        assert.equal(capturedOptions.subject, 'Verify your KAVON account');
-        assert.match(String(capturedOptions.html), /VERIFY MY EMAIL/);
-        assert.match(String(capturedOptions.html), /token=/);
-        assert.doesNotMatch(String(capturedOptions.html), /<script>alert/);
-        assert.match(String(capturedOptions.html), /&lt;script&gt;/);
-
-        // Restore
-        (nodemailer as unknown as Record<string, unknown>).createTransport = originalCreateTransport;
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     });
 });
 
 test('provider failure is contained so account creation can still succeed', async () => {
     await withEmailEnvironment(async () => {
-<<<<<<< HEAD
         const originalSave = EmailJob.prototype.save;
         setEmailTransporterForTests({
             sendMail: async () => {
@@ -116,24 +85,5 @@ test('provider failure is contained so account creation can still succeed', asyn
             EmailJob.prototype.save = originalSave;
             resetEmailTransporterForTests();
         }
-=======
-        const { default: nodemailer } = await import('nodemailer');
-        const originalCreateTransport = nodemailer.createTransport.bind(nodemailer);
-        (nodemailer as unknown as Record<string, unknown>).createTransport = () => ({
-            sendMail: async () => {
-                throw new Error('SMTP unavailable');
-            },
-        });
-
-        const result = await trySendVerificationEmail({
-            recipientEmail: 'customer@example.com',
-            recipientName: 'Customer',
-            token: 'b'.repeat(64),
-        });
-
-        assert.equal(result, false);
-
-        (nodemailer as unknown as Record<string, unknown>).createTransport = originalCreateTransport;
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
     });
 });

@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "private": true,
   "scripts": {
     "install:all": "npm ci --prefix server && npm ci --prefix frontend && npm ci --prefix admin",
@@ -8,8 +7,6 @@
     "dev:admin": "npm --prefix admin run dev",
     "check": "npm --prefix server run build && npm --prefix server test && npm --prefix frontend run lint && npm --prefix frontend test && npm --prefix frontend run build && npm --prefix admin run lint && npm --prefix admin run build"
   },
-=======
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
   "dependencies": {
     "@vercel/speed-insights": "^2.0.0"
   }

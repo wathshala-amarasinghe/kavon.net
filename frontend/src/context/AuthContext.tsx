@@ -10,10 +10,7 @@ export interface OrderItem {
     price?: number;
     quantity?: number;
     size?: string;
-<<<<<<< HEAD
     color?: string;
-=======
->>>>>>> 0046e567ddbf60b0a1c0c1c6fa8ee5d2dd390c70
 }
 
 export interface Order {
